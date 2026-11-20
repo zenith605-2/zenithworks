@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>TS내비 관리</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--fg:#111;--sub:#667085;--line:#e4e7ec;--acc:#2b7bff;--bad:#e3151a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1013;--card:#171a1f;--fg:#eef1f5;--sub:#9aa1ab;--line:#262b33;--acc:#5b8dff;--bad:#ff5a5a}}
+:root[data-theme="dark"]{--bg:#0e1013;--card:#171a1f;--fg:#eef1f5;--sub:#9aa1ab;--line:#262b33;--acc:#5b8dff;--bad:#ff5a5a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;word-break:keep-all}
+main{max-width:860px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 10px;display:flex;align-items:center;gap:8px}
+h2 small{color:var(--sub);font-weight:500;font-size:13px}
+.sub{color:var(--sub);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input{flex:1;min-width:200px;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button{font-size:14px;padding:9px 14px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;cursor:pointer}
+button.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}button.del{background:transparent;color:var(--bad);border:1px solid var(--line);padding:4px 10px;font-size:12px}
+.fb .t{white-space:pre-wrap;font-size:16px;margin:4px 0}.fb .m{color:var(--sub);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.links a{display:inline-block;margin:0 10px 8px 0;color:var(--acc);text-decoration:none}
+.empty{color:var(--sub);padding:12px 0}
+#gate{display:none}#app{display:none}
+</style>
+</head>
+<body><main>
+<h1>TS내비 관리</h1>
+<p class="sub">의견·주행 기록 확인. 이 기기에서만 로그인 상태가 유지됩니다.</p>
+
+<div id="gate" class="card">
+  <div class="row"><input id="tok" type="password" placeholder="관리자 키" autocomplete="off"><button id="go">들어가기</button></div>
+  <p class="sub" id="gateMsg"></p>
+</div>
+
+<div id="app">
+  <div class="row" style="justify-content:flex-end"><button class="ghost" id="reload">새로고침</button><button class="ghost" id="out">나가기</button></div>
+
+  <h2>의견 <small id="fbN"></small></h2>
+  <div id="fb"></div>
+
+  <h2>주행 기록 <small>최근 7일, 내 차에서 켠 것만</small></h2>
+  <div id="logs"></div>
+
+  <h2>바로가기</h2>
+  <div class="links card">
+    <a href="https://zenithworks.app/tsnavi/" target="_blank">TS내비 열기</a>
+    <a href="https://dash.cloudflare.com/98444769ddde21f63303f6adbd9d15f5/workers/services/view/tsnavi-relay/production/metrics" target="_blank">중계 서버 요청 수 (Cloudflare)</a>
+    <a href="https://openapi.sk.com/" target="_blank">티맵 API 사용량 (SK open API)</a>
+    <a href="https://www.its.go.kr/" target="_blank">국가교통정보센터 마이페이지</a>
+    <a href="https://github.com/zenith605-2/zenithworks" target="_blank">사이트 저장소 (GitHub)</a>
+  </div>
+</div>
+
+<script>
+var API='https://tsnavi-relay.zenithworks.workers.dev/admin/',TOK='';
+function $(i){return document.getElementById(i)}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+function call(p,opt){opt=opt||{};opt.headers={'x-admin':TOK};return fetch(API+p,opt).then(function(r){if(r.status===403)throw new Error('키가 맞지 않습니다');return r.json()})}
+function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function when(at){var d=new Date(at);return isNaN(d)?'':(at.slice(5,10).replace('-','/')+' '+at.slice(11,16))}
+function device(ua){ua=ua||'';return /Tesla/i.test(ua)?'테슬라':/Android/i.test(ua)?'안드로이드':/iPhone|iPad/i.test(ua)?'아이폰':/Mac/i.test(ua)?'맥':/Windows/i.test(ua)?'윈도':ua?'기타':''}
+function loadFb(){$('fb').innerHTML='<div class="empty">불러오는 중…</div>';return call('feedback').then(function(a){$('fbN').textContent=a.length+'건';
+  if(!a.length){$('fb').innerHTML='<div class="empty">아직 받은 의견이 없습니다</div>';return}
+  $('fb').innerHTML=a.map(function(x){return '<div class="card fb"><div class="t">'+esc(x.text)+'</div><div class="m"><span>'+when(x.at)+' · '+device(x.ua)+'</span><button class="del" data-k="'+esc(x.key)+'">지우기</button></div></div>'}).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#fb .del'),function(b){b.onclick=function(){if(!confirm('이 의견을 지울까요? 되돌릴 수 없습니다.'))return;call('del?k='+encodeURIComponent(b.dataset.k),{method:'POST'}).then(loadFb)}})})}
+function loadLogs(){$('logs').innerHTML='<div class="empty">불러오는 중…</div>';var days=[];for(var i=0;i<7;i++){var d=new Date(Date.now()+9*3600e3-i*864e5);days.push(d.toISOString().slice(0,10))}
+  return Promise.all(days.map(function(d){return call('logs?d='+encodeURIComponent('log/'+d+'/')).then(function(a){return{d:d,n:a.length,keys:a}})})).then(function(r){r=r.filter(function(x){return x.n});
+    if(!r.length){$('logs').innerHTML='<div class="empty">최근 7일 기록이 없습니다</div>';return}
+    $('logs').innerHTML=r.map(function(x){return '<div class="card row" style="justify-content:space-between"><span><b>'+x.d+'</b> · 조각 '+x.n+'개 (1분마다 하나)</span><button class="ghost" data-d="'+x.d+'">내려받기</button></div>'}).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#logs button'),function(b){b.onclick=function(){var x=r.filter(function(y){return y.d===b.dataset.d})[0];b.textContent='모으는 중…';
+      Promise.all(x.keys.map(function(k){return fetch(API+'logs?f='+encodeURIComponent(k.name),{headers:{'x-admin':TOK}}).then(function(q){return q.text()})})).then(function(parts){var blob=new Blob(['['+parts.join(',')+']'],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tsnavi-log-'+x.d+'.json';a.click();b.textContent='내려받기'})}})})}
+function enter(){$('gate').style.display='none';$('app').style.display='block';loadFb().catch(fail);loadLogs().catch(fail)}
+function fail(e){ls('tsAdmin',null);TOK='';$('app').style.display='none';$('gate').style.display='block';$('gateMsg').textContent=e.message}
+$('go').onclick=function(){TOK=$('tok').value.trim();if(!TOK)return;call('feedback').then(function(){ls('tsAdmin',TOK);enter()}).catch(fail)};
+$('tok').onkeydown=function(e){if(e.key==='Enter')$('go').onclick()};
+$('reload').onclick=function(){loadFb();loadLogs()};$('out').onclick=function(){ls('tsAdmin',null);location.reload()};
+TOK=ls('tsAdmin')||'';if(TOK)enter();else $('gate').style.display='block';
+</script>
+</main></body></html>
