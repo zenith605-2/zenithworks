@@ -571,6 +571,7 @@ function zoomNow(kmh,now){var dt=zLastT?Math.min(0.2,(now-zLastT)/1000):0;zLastT
   var tz=autoZoom(kmh);zCur+=(tz-zCur)*Math.min(1,dt*0.8);return zCur+zoff}
 /* 두 손가락 핀치로 확대·축소 (지도는 계속 내 위치를 따라감) */
 var PT={},pinch0=null;
+function ptAng(){var k=Object.keys(PT);if(k.length<2)return 0;var a=PT[k[0]],b=PT[k[1]];return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function ptGap(){var k=Object.keys(PT);if(k.length<2)return 0;var a=PT[k[0]],b=PT[k[1]];return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y))}
 var drag=null,FREE=0;
 function mppNow(la,lo){var a=mapPx(la,lo),q=move(la,lo,0,100),b=mapPx(q[0],q[1]),d=Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));return d>1?100/d:1}
@@ -603,9 +604,9 @@ $('map').addEventListener('pointermove',function(){if(drag&&drag.moved)clearTime
 $('map').addEventListener('contextmenu',function(e){e.preventDefault()});
 function setFree(on){FREE=on?Date.now():0;$('recenter').style.display=on?'flex':'none';if(!on){tmZ=tmB=tmMppZ=null}}
 $('recenter').onclick=function(){setFree(false)};
-$('map').addEventListener('pointerdown',function(e){if(PREV)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};var n=Object.keys(PT).length;if(n===1)drag={x:e.clientX,y:e.clientY,moved:false};if(n===2){drag=null;pinch0={d:ptGap(),z:zoff}}},true);
+$('map').addEventListener('pointerdown',function(e){if(PREV)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};var n=Object.keys(PT).length;if(n===1)drag={x:e.clientX,y:e.clientY,moved:false};if(n===2){drag=null;pinch0={d:ptGap(),z:zoff,a:ptAng(),b:TMM?(TMM.getBearing()||0):(map?map.getBearing():0),rot:false}}},true);
 $('map').addEventListener('pointermove',function(e){if(!drag||!PT[e.pointerId]||Object.keys(PT).length!==1||!mapReady)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.sqrt(dx*dx+dy*dy)<8)return;drag.moved=true;panBy(dx,dy);drag.x=e.clientX;drag.y=e.clientY;setFree(true);e.preventDefault()},true);
-$('map').addEventListener('pointermove',function(e){if(!PT[e.pointerId]||Object.keys(PT).length<2)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};if(pinch0&&Object.keys(PT).length>=2){var g=ptGap();if(g>10&&pinch0.d>10){zoff=Math.max(-6,Math.min(3,pinch0.z+Math.log(g/pinch0.d)/Math.LN2));manZT=Date.now();if(FREE)FREE=Date.now()}e.preventDefault()}},true);
+$('map').addEventListener('pointermove',function(e){if(!PT[e.pointerId]||Object.keys(PT).length<2)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};if(pinch0&&Object.keys(PT).length>=2){var g=ptGap();if(g>10&&pinch0.d>10){zoff=Math.max(-6,Math.min(3,pinch0.z+Math.log(g/pinch0.d)/Math.LN2));manZT=Date.now();if(FREE)FREE=Date.now()}var da=adiff(pinch0.a,ptAng());if(!pinch0.rot&&Math.abs(da)>12)pinch0.rot=true;if(pinch0.rot){setFree(true);var nb=(pinch0.b-da+360)%360;if(TMM){TMM.setBearing(nb);tmB=nb}else if(map)map.setBearing(nb)}e.preventDefault()}},true);
 function ptEnd(e){delete PT[e.pointerId];if(!Object.keys(PT).length)drag=null;if(Object.keys(PT).length<2&&pinch0){pinch0=null;manZT=Date.now()}}
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,ptEnd,true)});
 $('map').addEventListener('wheel',function(e){e.preventDefault();setZ(e.deltaY>0?-0.25:0.25)},{passive:false});
@@ -741,7 +742,7 @@ function onFix(la,lo,acc,h,spd,t){
   if(fix){gaps.push(t-fix.t);if(gaps.length>10)gaps.shift()}
   prevFix=fix;fix={la:la,lo:lo,t:t,mt:t};var frozen=tunNear&&prevFix&&(spd!=null&&spd>0?spd:v)>5&&dist(prevFix.la,prevFix.lo,la,lo)<1&&t-prevFix.t<5000;if(frozen){if(!(spd!=null&&spd>0)){fix=prevFix;prevFix=null;return}fix.mt=prevFix.mt}
   var calc=null;
-  if(prevFix){var dt=(t-prevFix.t)/1000;if(dt>0.2&&dt<5){var dm=dist(prevFix.la,prevFix.lo,la,lo);calc=dm/dt;if(dm>3)head=brg(prevFix.la,prevFix.lo,la,lo)}}
+  if(prevFix){var dt=(t-prevFix.t)/1000;if(dt>0.2&&dt<5){var dm=dist(prevFix.la,prevFix.lo,la,lo);calc=dm/dt;if(dm>3&&calc>2)head=brg(prevFix.la,prevFix.lo,la,lo) /* 멈춰 있을 때 GPS 흔들림으로 지도가 돌지 않게 (7km/h 미만 무시) */}}
   if(spd!=null&&!isNaN(spd)&&spd>0){v=v*0.3+spd*0.7;spdSrc='차'}else if(calc!=null){v=v*0.5+calc*0.5;spdSrc='계산'}else if(spd===0){v=0;spdSrc='차'}
   if(h!=null&&!isNaN(h)&&v>1.5)head=h;
   if(!wxAt)setTimeout(loadWx,0);
