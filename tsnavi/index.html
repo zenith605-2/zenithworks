@@ -1330,7 +1330,7 @@ function tickBody(){
 /* 한 번의 오류로 화면 갱신이 영영 멈추지 않게: 오류는 진단 줄에 남기고 다음 프레임 계속 */
 /* 주행 기록(시험용): 주소에 ?log=1 로 한 번 열면 이 차에서만 켜짐(?log=0 끄기). 위치·추정 상태를 1분마다 중계 서버(비공개 저장소)로 */
 var LOGON=false,LOGB=[],LOGSID=Math.random().toString(36).slice(2,10),LOGT=Date.now(),LOGLS=0;
-var LOGK='';try{var lq=/[?&]log=([0-9a-z]+)/i.exec(location.search);if(lq){if(lq[1]==='0'){LS.removeItem('devLog');LS.removeItem('logKey')}else if(lq[1].length>=8){LS.setItem('devLog','1');LS.setItem('logKey',lq[1])}}LOGK=LS.getItem('logKey')||'';LOGON=LS.getItem('devLog')==='1'&&!!LOGK}catch(e){}
+var LOGK='';try{var lq=/[?&](?:log|me)=([0-9a-z]+)/i.exec(location.search);if(lq){if(lq[1]==='0'){LS.removeItem('devLog');LS.removeItem('logKey');LS.removeItem('dev')}else if(lq[1].length>=6){LS.setItem('devLog','1');LS.setItem('logKey',lq[1]);LS.setItem('dev','1')}}LOGK=LS.getItem('logKey')||'';LOGON=LS.getItem('devLog')==='1'&&!!LOGK}catch(e){}
 function lg(a){if(LOGON&&LOGB.length<20000)LOGB.push(a)}
 function logFlush(beacon){if(!LOGON||!LOGB.length)return;var body=JSON.stringify({sid:LOGSID,ua:navigator.userAgent,from:LOGT,to:Date.now(),rows:LOGB});LOGB=[];LOGT=Date.now();var u=RELAY+'log?sid='+LOGSID+'&k='+LOGK;
   if(beacon&&navigator.sendBeacon){try{navigator.sendBeacon(u,new Blob([body],{type:'text/plain'}));return}catch(e){}}fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:body,keepalive:body.length<60000}).catch(function(){})}
