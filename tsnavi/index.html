@@ -780,7 +780,7 @@ function renderFav(){
     box.appendChild(b)});
 }
 /* 오늘 남은 무료 길 안내 (전체 이용자 합계, 안내 한 번에 경로 계산 약 2번으로 셈). 1분마다·패널 열 때 갱신 */
-var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(left/2)+Math.floor(Math.max(0,(q.limit.kakao||0)-(q.used.kakao||0))/2),e=$('quota');
+var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(left/2)+Math.floor(Math.max(0,(q.limit.kakao||0)-(q.used.kakao||0))/2)+Math.floor(Math.min(2000,Math.max(0,(q.limit.naverMonth||0)-(q.used.naverMonth||0)))/2),e=$('quota');
   e.className=n<=0?'out':n<50?'low':'';e.innerHTML=n<=0?'오늘 무료 길 안내 <b>끝</b> · 카메라 경고는 계속':'오늘 남은 무료 길 안내 <b>약 '+n+'번</b>'}).catch(function(){})}
 setInterval(function(){if($('fav').classList.contains('show'))quotaLoad()},60000);
 function showFav(){quotaLoad();if(NAV||favDismissed||ARR)return;renderFav();show('fav',1)}
@@ -1014,14 +1014,14 @@ function predict(d,o,b){var t=new Date();if(o[0]==='am'||o[0]==='pm'){t.setDate(
     $('predOut').appendChild(el)}).catch(function(e){var el=document.createElement('div');el.className='muted';el.textContent=o[1]+': 예측 실패 ('+e.message+')';$('predOut').appendChild(el)})}
 function renderRecent(){var r=[];try{r=JSON.parse(LS.getItem('recentDest')||'[]')}catch(e){}var box=$('recent');box.innerHTML='';$('recentH').style.display=r.length?'':'none';r.forEach(function(d){box.appendChild(placeItem(d,fix?fmtD(dist(fix.la,fix.lo,d.la,d.lo)):'','clock'))})}
 function saveRecent(d){var r=[];try{r=JSON.parse(LS.getItem('recentDest')||'[]')}catch(e){}r=r.filter(function(x){return x.name!==d.name});r.unshift({name:d.name,la:d.la,lo:d.lo});LS.setItem('recentDest',JSON.stringify(r.slice(0,8)))}
-var OPTS=[['0','티맵 추천'],['k','카카오 추천'],['2','최소시간'],['1','무료도로'],['10','최단거리'],['4','고속도로 우선'],['3','초보'],['19','어린이보호구역 회피']];
+var OPTS=[['0','티맵 추천'],['k','카카오 추천'],['n','네이버 추천'],['2','최소시간'],['1','무료도로'],['10','최단거리'],['4','고속도로 우선'],['3','초보'],['19','어린이보호구역 회피']];
 function selRoute(el,d){if(rtSel)rtSel.classList.remove('sel');rtSel=el;el.classList.add('sel');$('rtGo').style.display='block';$('rtGo').onclick=function(){show('rtSheet',0);applyRoute(d,el._r)};previewRoute(el._r,d)}
 function startNav(d){try{lpClose()}catch(e){}
   rtSel=null;rtBase=0;$('rtGo').style.display='none';
   show('navSheet',0);hideFav();saveRecent(d);
   $('rtList').innerHTML='<div class="muted">경로 찾는 중…</div>';$('rtDest').textContent=d.name;renderPred(d);show('rtSheet',1);
   var c=fix||{la:37.4979,lo:127.0276};
-  RTS={d:d,c:c,seen:{},shown:0};$('rtList').innerHTML='';fetchOpts(OPTS.slice(0,2),true);
+  RTS={d:d,c:c,seen:{},shown:0};$('rtList').innerHTML='';fetchOpts(OPTS.slice(0,3),true);
 }
 /* 경로: 처음엔 추천 1개만(티맵 경로 11원/건 아끼기), 나머지는 [다른 경로 더 보기] */
 var RTS=null;
@@ -1058,7 +1058,22 @@ function kakaoRoute(c,dest,via){var q='origin='+c.lo+','+c.la+(head!=null&&v>2?'
     var j0=0;G.forEach(function(gp){var bi=j0,bd=1e9;for(var j=j0;j<R.length;j++){var dd=dist(gp.la,gp.lo,R[j][0],R[j][1]);if(dd<bd){bd=dd;bi=j}if(bd<5)break}gp.ri=bi;gp.s=S[bi];j0=Math.max(0,bi-2)});
     G.sort(function(x,y){return x.s-y.s});
     return{R:R,S:S,G:G,C:C,T:T,F:F,V:V,time:rt.summary.duration,fare:(rt.summary.fare||{}).toll||0,dist:S[S.length-1],prov:'kakao'}})}
-function fetchRoute(c,dest,opt,via){if(opt==='k')return kakaoRoute(c,dest,via);
+/* 네이버 클라우드 Directions 5 → 우리 경로 형식. 이 회사는 월 5만에서 서버가 멈춤(요금 0원) */
+var NTT={1:11,2:12,3:13,4:118,5:117,6:14,41:118,42:117,55:120,56:119,66:101,69:114,88:201,87:185};
+function naverTurn(g){var t=NTT[g.type];if(t!=null)return t;var m=g.instructions||'';if(/톨게이트|요금소|분기도로 진입/.test(m))return null;
+  if(/회전교차로/.test(m))return 131;if(/유턴/.test(m))return 14;if(/좌회전/.test(m))return 12;if(/우회전/.test(m))return 13;if(/출구/.test(m))return /왼쪽/.test(m)?105:104;if(/진입/.test(m)&&/고속/.test(m))return /왼쪽/.test(m)?102:101;if(/터널/.test(m))return 121;if(/지하차도/.test(m))return 119;if(/고가/.test(m))return 120;if(/왼쪽/.test(m))return 118;if(/오른쪽/.test(m))return 117;return null}
+function naverRoute(c,dest,via){var q='start='+c.lo+','+c.la+'&goal='+dest.lo+','+dest.la+'&option=trafast';if(via&&via.length)q+='&waypoints='+via.slice(0,5).map(function(p){return p.lo+','+p.la}).join('|');
+  return fetch(RELAY+'naver/driving?'+q).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
+    if(d.code!==0)throw new Error(d.message||'경로 없음');var rt=((d.route||{}).trafast||[])[0];if(!rt)throw new Error('경로 없음');
+    var P=rt.path,R=[],C=[],T=[],F=[],V=[],G=[],idx=[],CM={1:1,2:2,3:4};
+    P.forEach(function(xy,i){if(R.length){var L=R[R.length-1];if(L[0]===xy[1]&&L[1]===xy[0]){idx.push(R.length-1);return}}idx.push(R.length);R.push([xy[1],xy[0]]);C.push(0);T.push(-1);F.push(0);V.push(0)});
+    (rt.section||[]).forEach(function(sc){for(var k=sc.pointIndex;k<sc.pointIndex+sc.pointCount&&k<idx.length;k++){C[idx[k]]=CM[sc.congestion]||0;V[idx[k]]=sc.speed||0}});
+    var S=[0];for(var i=1;i<R.length;i++)S.push(S[i-1]+dist(R[i-1][0],R[i-1][1],R[i][0],R[i][1]));
+    (rt.guide||[]).forEach(function(g){var t=naverTurn(g);if(t==null)return;var ri=idx[Math.min(idx.length-1,g.pointIndex)]||0,m=g.instructions||'',dm=/'([^']+)'\s*방면/.exec(m),pm=/^(.+?)에서/.exec(m);
+      G.push({la:R[ri][0],lo:R[ri][1],t:t,name:'',pname:pm?pm[1]:'',dir:dm?dm[1].split(/[,·]\s*/).slice(0,2).join(' · '):'',ri:ri,s:S[ri]})});
+    G.sort(function(x,y){return x.s-y.s});
+    return{R:R,S:S,G:G,C:C,T:T,F:F,V:V,time:Math.round(rt.summary.duration/1000),fare:rt.summary.tollFare||0,dist:S[S.length-1],prov:'naver'}})}
+function fetchRoute(c,dest,opt,via){if(opt==='k')return kakaoRoute(c,dest,via);if(opt==='n')return naverRoute(c,dest,via);
   var body={startX:String(c.lo),startY:String(c.la),endX:String(dest.lo),endY:String(dest.la),reqCoordType:'WGS84GEO',resCoordType:'WGS84GEO',searchOption:opt,trafficInfo:'Y'};
   if(via&&via.length)body.passList=via.map(function(p){return p.lo+','+p.la}).join('_');
   /* 앱과 같은 입구로: 장소 id 를 넘기면 티맵이 단지 출입구로 안내한다 */
