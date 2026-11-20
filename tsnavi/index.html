@@ -780,7 +780,7 @@ function renderFav(){
     box.appendChild(b)});
 }
 /* 오늘 남은 무료 길 안내 (전체 이용자 합계, 안내 한 번에 경로 계산 약 2번으로 셈). 1분마다·패널 열 때 갱신 */
-var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(left/2),e=$('quota');
+var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(left/2)+Math.floor(Math.max(0,(q.limit.kakao||0)-(q.used.kakao||0))/2),e=$('quota');
   e.className=n<=0?'out':n<50?'low':'';e.innerHTML=n<=0?'오늘 무료 길 안내 <b>끝</b> · 카메라 경고는 계속':'오늘 남은 무료 길 안내 <b>약 '+n+'번</b>'}).catch(function(){})}
 setInterval(function(){if($('fav').classList.contains('show'))quotaLoad()},60000);
 function showFav(){quotaLoad();if(NAV||favDismissed||ARR)return;renderFav();show('fav',1)}
