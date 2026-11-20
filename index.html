@@ -1,16 +1,152 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Zenith Works</title>
+<meta name="description" content="1인 개발자 Zenith의 앱과 웹 서비스 모음">
+<meta property="og:title" content="Zenith Works">
+<meta property="og:description" content="1인 개발자 Zenith의 앱과 웹 서비스 모음">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
-:root{--bg:#f6f7f9;--fg:#111;--sub:#6b7280;--card:#fff;--line:#e5e7eb;--acc:#2b7bff}
-@media (prefers-color-scheme:dark){:root{--bg:#121417;--fg:#eceff3;--sub:#9aa1ab;--card:#1b1e23;--line:#2a2e35}}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
-main{max-width:720px;margin:0 auto;padding:56px 16px}
-h1{font-size:30px;margin:0 0 4px;letter-spacing:-.5px}p.sub{color:var(--sub);margin:0 0 32px}
-a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:12px;color:inherit;text-decoration:none}
-a.card:hover{border-color:var(--acc)}a.card b{font-size:18px}a.card span{display:block;color:var(--sub);font-size:15px;margin-top:2px}
-</style></head><body><main>
-<h1>Zenith Works</h1>
-<p class="sub">1인 개발 작업 모음</p>
-<a class="card" href="tsnavi/"><b>TS내비</b><span>차량 브라우저용 무료 웹 내비 · 단속카메라 경고 · 가는 길 CCTV</span></a>
-</main></body></html>
+:root{
+  --bg:#f5f6f8;--bg2:#ffffff;--fg:#0f1115;--sub:#5d6470;--mute:#8a919c;--line:#e4e7ec;
+  --acc:#3d7bff;--acc2:#7a5cff;--glow:#3d7bff22;--shadow:0 1px 2px #0000000a,0 8px 24px #0000000d;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c0e12;--bg2:#14171c;--fg:#eef1f5;--sub:#a3aab5;--mute:#6f7782;--line:#232830;
+  --acc:#5b8dff;--acc2:#9a7bff;--glow:#5b8dff26;--shadow:0 1px 2px #0006,0 12px 32px #0007}}
+:root[data-theme="dark"]{--bg:#0c0e12;--bg2:#14171c;--fg:#eef1f5;--sub:#a3aab5;--mute:#6f7782;--line:#232830;--acc:#5b8dff;--acc2:#9a7bff;--glow:#5b8dff26;--shadow:0 1px 2px #0006,0 12px 32px #0007}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 "Noto Sans KR",-apple-system,"Apple SD Gothic Neo",sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* 머리 */
+header{position:sticky;top:0;z-index:5;backdrop-filter:blur(10px);background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.3px;text-decoration:none}
+.logo i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center}
+.logo i svg{width:16px;height:16px}
+nav a{color:var(--sub);text-decoration:none;font-size:15px;margin-left:22px}nav a:hover{color:var(--fg)}
+
+/* 첫 화면 */
+.hero{position:relative;padding:96px 0 72px;overflow:hidden}
+.hero::before{content:"";position:absolute;width:720px;height:720px;left:50%;top:-360px;transform:translateX(-50%);background:radial-gradient(circle,var(--glow),transparent 62%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.eyebrow b{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px #22c55e33}
+h1{font-size:clamp(36px,6vw,60px);line-height:1.12;letter-spacing:-1.6px;margin:20px 0 16px;font-weight:900}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(16px,2.2vw,19px);color:var(--sub);max-width:640px;margin:0}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:36px}
+.stats div{min-width:110px}.stats b{display:block;font-size:26px;font-weight:900;letter-spacing:-.5px}.stats span{font-size:13px;color:var(--mute)}
+
+/* 작업 목록 */
+section{padding:40px 0 72px}
+.sh{display:flex;align-items:end;justify-content:space-between;margin-bottom:20px}
+.sh h2{font-size:24px;letter-spacing:-.5px;margin:0}.sh p{margin:0;color:var(--mute);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card{position:relative;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:22px;text-decoration:none;box-shadow:var(--shadow);transition:transform .18s ease,border-color .18s ease}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--acc) 55%,var(--line))}
+.card.big{grid-column:span 2;flex-direction:row;gap:28px;align-items:center}
+.ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex:none}
+.ic svg{width:28px;height:28px}
+.card h3{margin:14px 0 4px;font-size:20px;letter-spacing:-.3px}
+.card.big h3{margin-top:0;font-size:24px}
+.card p{margin:0;color:var(--sub);font-size:15px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tags span{font-size:12px;font-weight:700;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.go{margin-top:auto;padding-top:18px;font-size:14px;font-weight:700;color:var(--acc)}
+.card.big .go{padding-top:12px}
+.shot{flex:none;width:340px;aspect-ratio:16/10;border-radius:14px;background:linear-gradient(160deg,#1a2a44,#0e1726);position:relative;overflow:hidden;border:1px solid #ffffff14}
+.shot .road{position:absolute;left:46%;top:-10%;width:22px;height:130%;background:#22b14c;border-radius:12px;transform:rotate(18deg);box-shadow:0 0 0 6px #22b14c22}
+.shot .road.r2{left:62%;background:#f5b400;transform:rotate(-34deg);top:30%;height:80%;box-shadow:0 0 0 6px #f5b40022}
+.shot .turn{position:absolute;left:10px;top:10px;background:#16803a;color:#fff;border-radius:8px;padding:6px 10px;font-weight:900;font-size:18px;line-height:1}
+.shot .turn small{display:block;font-size:10px;font-weight:700;opacity:.9;margin-top:3px}
+.shot .lim{position:absolute;left:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:#fff;border:6px solid #e3151a;color:#111;font-weight:900;font-size:14px;display:grid;place-items:center}
+.shot .car{position:absolute;left:47%;top:58%;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid #1d6ff2;display:grid;place-items:center}
+.shot .car svg{width:14px;height:14px}
+.shot .cam{position:absolute;right:16px;top:30%;width:28px;height:28px;border-radius:50%;background:#fff;border:4px solid #e3151a;font-size:10px;font-weight:900;color:#111;display:grid;place-items:center}
+
+footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--mute);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}.card.big{grid-column:auto;flex-direction:column;align-items:stretch}
+  .shot{width:100%}.hero{padding:64px 0 48px}nav a{margin-left:14px}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="logo" href="./"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18 L12 5 L19 18"/><path d="M8.5 13h7"/></svg></i>Zenith Works</a>
+  <nav><a href="#works">작업</a><a href="tsnavi/">TS내비</a></nav>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <span class="eyebrow"><b></b>지금도 매일 고치는 중</span>
+  <h1>필요한 걸 직접 만들고<br><em>매일 쓰면서 다듬습니다</em></h1>
+  <p class="lead">1인 개발자 Zenith의 앱과 웹 서비스 모음입니다.<br>운전할 때, 앱을 출시할 때, 쉬는 시간에 쓰는 것들을 만듭니다.</p>
+  <div class="stats">
+    <div><b>4</b><span>공개된 서비스</span></div>
+    <div><b>32,399</b><span>단속카메라 데이터</span></div>
+    <div><b>11,214</b><span>연결된 도로 CCTV</span></div>
+  </div>
+</div></div>
+
+<section id="works"><div class="wrap">
+  <div class="sh"><h2>작업</h2><p>눌러서 바로 써 보세요</p></div>
+  <div class="grid">
+
+    <a class="card big" href="tsnavi/">
+      <div style="flex:1;min-width:0">
+        <div class="ic" style="background:#3d7bff1f"><svg viewBox="0 0 24 24" fill="none" stroke="#3d7bff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l7 17-7-4-7 4z"/></svg></div>
+        <h3 style="margin-top:14px">TS내비</h3>
+        <p>차량 브라우저에서 바로 여는 무료 웹 내비. 폰도, 앱 설치도 필요 없습니다. 단속카메라·과속방지턱 경고, 실시간 교통, 가는 길 CCTV까지.</p>
+        <div class="tags"><span>웹</span><span>로그인 없음</span><span>무료</span><span>테슬라 브라우저</span></div>
+        <div class="go">열어 보기 →</div>
+      </div>
+      <div class="shot" aria-hidden="true">
+        <div class="road"></div><div class="road r2"></div>
+        <div class="turn">320m<small>분당수서로 방면</small></div>
+        <div class="cam">60</div>
+        <div class="car"><svg viewBox="0 0 24 24"><path d="M12 3l6 16-6-3.5L6 19z" fill="#1d6ff2"/></svg></div>
+        <div class="lim">60</div>
+      </div>
+    </a>
+
+    <a class="card" href="https://actparty.app/">
+      <div class="ic" style="background:#22c55e1f"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><path d="M15 14.2c2.6-.3 4.8 1.3 5.4 4.3"/></svg></div>
+      <h3>ACT Party</h3>
+      <p>구글 플레이 비공개 테스트에 필요한 테스터 12명을 개발자끼리 서로 채워 주는 앱.</p>
+      <div class="tags"><span>안드로이드</span><span>개발자</span></div>
+      <div class="go">actparty.app →</div>
+    </a>
+
+    <a class="card" href="https://play.google.com/store/apps/details?id=com.zenith.cardigan">
+      <div class="ic" style="background:#f59e0b1f"><svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="3.5" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/><path d="M9.5 8.5l-2 3h4z" fill="#d97706"/></svg></div>
+      <h3>Cardigan</h3>
+      <p>5×5 판에 카드를 끼워 가로세로 모두 포커 족보를 만드는 퍼즐. 2,000 스테이지와 빅투.</p>
+      <div class="tags"><span>안드로이드</span><span>퍼즐 게임</span></div>
+      <div class="go">Google Play →</div>
+    </a>
+
+    <a class="card" href="https://camlisted.com/">
+      <div class="ic" style="background:#ef44441f"><svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z" fill="#dc2626"/></svg></div>
+      <h3>Camlisted</h3>
+      <p>전 세계 유튜브 라이브 캠을 한곳에서. 도시, 자연, 공항을 실시간으로 둘러봅니다.</p>
+      <div class="tags"><span>웹</span><span>라이브 캠</span></div>
+      <div class="go">camlisted.com →</div>
+    </a>
+
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>© 2026 Zenith Works</span>
+  <span>만든 사람: Zenith · 1인 개발</span>
+</div></footer>
+</body>
+</html>
