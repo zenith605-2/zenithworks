@@ -1162,7 +1162,7 @@ function limRoute(N){var R=N.R,n=R.length,step=Math.max(1,Math.ceil(n/480)),idx=
 function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
 function limNow(la,lo,kmh,now){var v=0;
   if(NAV&&NAV.R){if(!PREV&&NAV.R!==LIMR&&now-LIMT>5000&&now-(NAV.t0||0)>1500){LIMR=NAV.R;LIMT=now;NAV.LIM=null;limRoute(NAV)}if(NAV.LIM)v=NAV.LIM[Math.max(0,Math.min(NAV.LIM.length-1,NAV.idx))]||0}
-  if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&now-LIMN.t>15000&&dist(la,lo,LIMN.la,LIMN.lo)>150)limNear(la,lo);if(now-LIMN.t<60000&&dist(la,lo,LIMN.la,LIMN.lo)<300)v=LIMN.v}
+  if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&now-LIMN.t>90000&&dist(la,lo,LIMN.la,LIMN.lo)>500)limNear(la,lo);if(now-LIMN.t<150000&&dist(la,lo,LIMN.la,LIMN.lo)<1200)v=LIMN.v}
   var e=$('limNow');if(v){if(e.textContent!==String(v))e.textContent=v;e.classList.add('show')}else e.classList.remove('show');document.body.classList.toggle('overLim',!!v&&kmh>v+5)}
 /* 지도 버튼: 슈퍼차저·충전소 위치를 지도에 표시. 누르면 카드(여기로 안내·집·회사·★) */
 var LAY={sc:false,ev:false,mk:[],evAt:null};
@@ -1273,7 +1273,7 @@ function hwRows(kmh,now){if(!NAV||!NAV.S)return null;var T=NAV.T||[],rt=T[Math.m
   return L.map(function(x){var d=x.s-NAV.s,eta=new Date(now+d*secPerM*1000);return'<div class="hr2"><span class="hk" style="background:'+x.c+'">'+x.k+'</span><span class="hn">'+x.n+'</span><span class="hd">'+fmtD(d)+'</span><span class="he">'+tm(eta).replace('오전 ','').replace('오후 ','')+'</span></div>'}).join('')}
 /* 돌발(사고·공사·통제): 중계 서버가 티맵 교통정보에서 골라 준 지점. 3분마다, 20km 넘게 움직이면 새로 */
 var INC=[],incAt=0,incPos=null,incAnn={};
-function incFetch(now){if(!fix)return;if(incPos&&now-incAt<180000&&dist(incPos[0],incPos[1],fix.la,fix.lo)<20000)return;incAt=now;incPos=[fix.la,fix.lo];
+function incFetch(now){if(!fix)return;if(incPos&&now-incAt<300000&&dist(incPos[0],incPos[1],fix.la,fix.lo)<20000)return;incAt=now;incPos=[fix.la,fix.lo];
   fetch(RELAY+'inc?lat='+fix.la.toFixed(3)+'&lon='+fix.lo.toFixed(3)).then(function(r){return r.json()}).then(function(j){INC=j.list||[];incMatch();camSrcAt=null}).catch(function(){})}
 function incMatch(){if(!NAV||!NAV.S)return;var out=[],R=NAV.R,S=NAV.S,s0=NAV.s,s1=Math.min(S[S.length-1],s0+40000);
   INC.forEach(function(q){var best=1e9,bs=0;for(var i=Math.max(0,NAV.idx);i<R.length&&S[i]<=s1;i++){if(Math.abs(R[i][0]-q[0])>0.01||Math.abs(R[i][1]-q[1])>0.012)continue;var d=dist(R[i][0],R[i][1],q[0],q[1]);if(d<best){best=d;bs=S[i]}}if(best<45)out.push({s:bs,q:q})});
