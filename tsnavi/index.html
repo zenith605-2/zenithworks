@@ -441,7 +441,7 @@ var CFG={tollShow:LS.getItem('tollShow')!=='0',hipass:LS.getItem('hipass')!=='0'
 document.body.classList.toggle('big',CFG.bigText);
 var VIEW=LS.getItem('view')||(LS.getItem('rotOff')==='1'?'n':'2d');
 var KEY=LS.getItem('tmapKey')||'';
-var RELAY='https://chgodrjjalsrgyxuwjyq.supabase.co/functions/v1/webnav/';
+var RELAY='https://tsnavi-relay.zenithworks.workers.dev/';
 var urlK=(location.search.match(/[?&]k=([^&]+)/)||[])[1];if(urlK)KEY=decodeURIComponent(urlK);
 function optRow(box,opts,cur,cb){$(box).innerHTML='';opts.forEach(function(o){var b=document.createElement('button');b.textContent=o[1];b.className=cur===o[0]?'sel':'';b.onclick=function(){cb(o[0]);renderSet()};$(box).appendChild(b)})}
 function renderSet(){
