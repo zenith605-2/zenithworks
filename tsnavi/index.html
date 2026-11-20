@@ -303,7 +303,7 @@
   .pmk{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;border:0;padding:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center}
   .pmk i{display:flex;align-items:center;justify-content:center;gap:2px;min-width:30px;height:30px;padding:0 7px;border-radius:15px;font-style:normal;font-size:13px;font-weight:800;color:#fff;box-shadow:0 2px 6px #0006;border:2px solid #fff}
   .pmk i svg{width:15px;height:15px}.pmk b{width:0;height:0;border:6px solid transparent;border-top-color:#fff;margin-top:-1px}
-  .pmk.sc i{background:#e3151a}.pmk.ev i{background:#16a34a}.pmk.ev.full i{background:#8a919c}
+  .pmk.sc i{background:#e3151a}.pmk.ev i{background:#16a34a}.pmk.ev.full i{background:#8a919c}.pmk i u{text-decoration:none;font-size:11px;font-weight:700;opacity:.92;margin-right:4px}
   #quota{flex:1;font-size:13px;color:#8a919c;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#quota b{color:#22b14c;font-size:13px}#quota.low b{color:#f5a400}#quota.out b{color:#e3151a}
   #rtList .rt .rs{word-break:keep-all}
 /* 폰 세로 화면 (11/21): 아래 줄·버튼이 잘리지 않게 */
@@ -1231,10 +1231,14 @@ var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" f
 function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC.map(function(p){return{p:p,d:dist(c.la,c.lo,p[0],p[1])}}).sort(function(x,y){return x.d-y.d});var near=a.filter(function(x){return x.d<40000}).slice(0,40);if(!near.length)near=a.slice(0,3);
   near.forEach(function(x){layAdd('sc',x.p[0],x.p[1],SCI,{name:x.p[2],la:x.p[0],lo:x.p[1]},fmtD(x.d)+(x.p[3]?' · '+x.p[3]+'기':''))});
   toast(near.length?'가까운 슈퍼차저 '+fmtD(near[0].d)+' · '+near.length+'곳':'슈퍼차저 정보를 못 받았어요');if(near.length){var H=($('map').clientHeight||600)*0.38,c0=layCenter(),mpp=mppNow(c0.la,c0.lo)||1,need=near[0].d/H;if(need>mpp){setFree(true);zoff=Math.max(-6,zoff-Math.log(need/mpp)/Math.LN2-0.3);manZT=Date.now()}}}
+/* 충전 사업자: 충전기 많은 순. 지도엔 짧은 이름(글자만, 회사 로고는 상표라 안 씀) */
+function evOps(p){var n={};((p.evChargers||{}).evCharger||[]).forEach(function(e){var k=e.operatorName||e.operatorId;if(k)n[k]=(n[k]||0)+1});return Object.keys(n).sort(function(a,b){return n[b]-n[a]})}
+var EVSHORT={'환경부':'환경부','한국전력':'한전','한국전력공사':'한전','GS차지비':'GS','차지비':'GS','SK일렉링크':'SK','SK브로드밴드':'SK','에버온':'에버온','휴맥스이브이':'휴맥스','NICE인프라':'나이스','파워큐브코리아':'파워큐브','이카플러그':'이카플러그','플러그링크':'플러그링크','한솔엠에스':'한솔','스타코프':'스타코프','대영채비':'채비','채비':'채비','테슬라':'테슬라','LG유플러스':'LGU+','LG헬로비전':'LG헬로','현대자동차':'현대','E-pit':'E-pit','이피트':'E-pit','기아':'기아','KT':'KT'};
+function evShort(n){return EVSHORT[n]||n.replace(/(주식회사|\(주\)|코리아|이브이|모빌리티|에너지|일렉트릭)/g,'').trim().slice(0,5)}
 function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={};
     ps=ps.map(function(p){var l=poiLL(p);return{p:p,d:dist(c.la,c.lo,l.la,l.lo)}}).sort(function(x,y){return x.d-y.d}).map(function(x){return x.p});var cnt=0;
-    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length;
-      layAdd('ev',l.la,l.lo,(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id},fmtD(dist(c.la,c.lo,l.la,l.lo))+(e.html?'':''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
+    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p);
+      layAdd('ev',l.la,l.lo,(op.length?'<u>'+evShort(op[0])+'</u>':'')+(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id},fmtD(dist(c.la,c.lo,l.la,l.lo))+(op.length?' · '+op.join(', '):''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
     toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · 숫자는 빈 충전기':'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
 $('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
 $('evBtn').onclick=function(){LAY.ev=!LAY.ev;this.classList.toggle('on',LAY.ev);if(LAY.ev)layShowEv();else{layClear('ev');LAY.evAt=null}};
