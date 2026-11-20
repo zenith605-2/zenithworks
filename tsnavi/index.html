@@ -404,6 +404,7 @@
   <h2 style="font-size:20px;margin-top:22px">야간 모드</h2><div class="opt" id="nightOpts"></div>
   <div class="devOnly"><h2 style="font-size:20px;margin-top:22px">티맵 키 (지도 인증용 · 이 차에만 저장)</h2><div class="keyRow"><input id="keyIn" placeholder="앱 키 붙여 넣기" autocomplete="off"><button id="keySave">저장</button></div><p class="muted" id="keyState"></p>
   <h2 style="font-size:20px;margin-top:18px">CCTV 키 (국가교통정보센터 · 이 차에만 저장)</h2><div class="keyRow"><input id="itsIn" placeholder="인증키 붙여 넣기" autocomplete="off"><button id="itsSave">저장</button></div><p class="muted" id="itsState"></p></div>
+  <h2 style="font-size:20px;margin-top:22px">의견 보내기</h2><p class="muted" style="margin:2px 0 8px">불편한 점, 틀린 카메라 위치, 바라는 기능을 적어 주세요. 위치는 같이 보내지 않습니다.</p><textarea id="fbText" maxlength="1000" rows="3" style="width:100%;box-sizing:border-box;font-size:17px;padding:10px;border-radius:10px;border:1px solid #ccd2da;background:inherit;color:inherit" placeholder="예) ○○ 사거리 카메라가 없어졌어요"></textarea><div class="keyRow" style="justify-content:flex-end;margin-top:6px"><button id="fbSend" type="button">보내기</button></div><p class="muted" id="fbState"></p>
   <h2 style="font-size:20px;margin-top:22px"><a href="about.html" style="color:inherit">정보·출처·개인정보 ›</a></h2>
   <h2 style="font-size:20px;margin-top:22px">진단 정보 표시</h2><div class="opt"><button id="diagBtn">켜짐</button></div>
 </div></div>
@@ -461,6 +462,8 @@ function renderSet(){
 function onOffRows(box,list){var TB=$(box);TB.innerHTML='';list.forEach(function(o){var row=document.createElement('div');row.className='row';row.innerHTML='<span></span><i></i>';row.querySelector('span').textContent=o[1];row.querySelector('i').textContent=CFG[o[0]]?'켬':'끔';row.querySelector('i').style.color=CFG[o[0]]?'#2b7bff':'#999';row.onclick=function(){CFG[o[0]]=!CFG[o[0]];LS.setItem(o[0],CFG[o[0]]?'1':'0');renderSet()};TB.appendChild(row)})}
 $('keySave').onclick=function(){var k=$('keyIn').value.trim();if(!k){KEY='';LS.removeItem('tmapKey');renderSet();return}if(k.length<20){$('keyState').textContent='키가 너무 짧습니다';return}KEY=k;LS.setItem('tmapKey',k);$('keyIn').value='';renderSet()};
 try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);if(LS.getItem('dev')==='1')document.body.classList.add('dev')}catch(e){}
+$('fbSend').onclick=function(){var t=$('fbText').value.trim();if(t.length<2){$('fbState').textContent='내용을 적어 주세요';return}hideKb();$('fbSend').disabled=true;$('fbState').textContent='보내는 중…';
+  fetch(RELAY+'feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,ver:(document.title||'')+' '+(LS.getItem('camsRef')||'')})}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status)})}).then(function(){$('fbText').value='';$('fbState').textContent='보냈어요. 고맙습니다!';toast('의견을 보냈어요')}).catch(function(e){$('fbState').textContent='못 보냈어요: '+e.message}).then(function(){$('fbSend').disabled=false})};
 $('itsSave').onclick=function(){var k=$('itsIn').value.trim().replace(/\s/g,'');if(!k){LS.removeItem('itsKey');$('itsState').textContent='지움';return}if(!/^[0-9a-f]{32}$/i.test(k)){$('itsState').textContent='32자리 키가 아닙니다';return}LS.setItem('itsKey',k);$('itsIn').value='';$('itsState').textContent='저장됨 · 가는 길 CCTV 사용 가능'};
 try{if(LS.getItem('itsKey'))$('itsState').textContent='저장됨'}catch(e){}
 try{if(LS.getItem('agreed')!=='1')$('agree').classList.add('on')}catch(e){}
@@ -1327,9 +1330,9 @@ function tickBody(){
 /* 한 번의 오류로 화면 갱신이 영영 멈추지 않게: 오류는 진단 줄에 남기고 다음 프레임 계속 */
 /* 주행 기록(시험용): 주소에 ?log=1 로 한 번 열면 이 차에서만 켜짐(?log=0 끄기). 위치·추정 상태를 1분마다 중계 서버(비공개 저장소)로 */
 var LOGON=false,LOGB=[],LOGSID=Math.random().toString(36).slice(2,10),LOGT=Date.now(),LOGLS=0;
-try{var lq=/[?&]log=([01])/.exec(location.search);if(lq)LS.setItem('devLog',lq[1]);LOGON=LS.getItem('devLog')==='1'}catch(e){}
+var LOGK='';try{var lq=/[?&]log=([0-9a-z]+)/i.exec(location.search);if(lq){if(lq[1]==='0'){LS.removeItem('devLog');LS.removeItem('logKey')}else if(lq[1].length>=8){LS.setItem('devLog','1');LS.setItem('logKey',lq[1])}}LOGK=LS.getItem('logKey')||'';LOGON=LS.getItem('devLog')==='1'&&!!LOGK}catch(e){}
 function lg(a){if(LOGON&&LOGB.length<20000)LOGB.push(a)}
-function logFlush(beacon){if(!LOGON||!LOGB.length)return;var body=JSON.stringify({sid:LOGSID,ua:navigator.userAgent,from:LOGT,to:Date.now(),rows:LOGB});LOGB=[];LOGT=Date.now();var u=RELAY+'log?sid='+LOGSID;
+function logFlush(beacon){if(!LOGON||!LOGB.length)return;var body=JSON.stringify({sid:LOGSID,ua:navigator.userAgent,from:LOGT,to:Date.now(),rows:LOGB});LOGB=[];LOGT=Date.now();var u=RELAY+'log?sid='+LOGSID+'&k='+LOGK;
   if(beacon&&navigator.sendBeacon){try{navigator.sendBeacon(u,new Blob([body],{type:'text/plain'}));return}catch(e){}}fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:body,keepalive:body.length<60000}).catch(function(){})}
 if(LOGON){setInterval(function(){logFlush(false)},60000);addEventListener('pagehide',function(){logFlush(true)});document.addEventListener('visibilitychange',function(){lg(['v',Date.now(),document.hidden?1:0]);if(document.hidden)logFlush(true)})}
 var TL={on:false},tunNear=false,LIMR=null,LIMT=0,LIMN={v:0,la:0,lo:0,t:0,busy:0},lastErr='',errN=0,bootT0=Date.now(),DSP=null,DR={fix:null,s:null,on:false};
