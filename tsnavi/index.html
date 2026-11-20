@@ -1177,7 +1177,8 @@ function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC
   near.forEach(function(x){layAdd('sc',x.p[0],x.p[1],SCI,{name:x.p[2],la:x.p[0],lo:x.p[1]},fmtD(x.d)+(x.p[3]?' · '+x.p[3]+'기':''))});
   toast(near.length?'가까운 슈퍼차저 '+fmtD(near[0].d)+' · '+near.length+'곳':'슈퍼차저 정보를 못 받았어요');if(near.length){var H=($('map').clientHeight||600)*0.38,c0=layCenter(),mpp=mppNow(c0.la,c0.lo)||1,need=near[0].d/H;if(need>mpp){setFree(true);zoff=Math.max(-6,zoff-Math.log(need/mpp)/Math.LN2-0.3);manZT=Date.now()}}}
 function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={};
-    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k])return;seen[k]=1;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length;
+    ps=ps.map(function(p){var l=poiLL(p);return{p:p,d:dist(c.la,c.lo,l.la,l.lo)}}).sort(function(x,y){return x.d-y.d}).map(function(x){return x.p});var cnt=0;
+    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length;
       layAdd('ev',l.la,l.lo,(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id},fmtD(dist(c.la,c.lo,l.la,l.lo))+(e.html?'':''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
     toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · 숫자는 빈 충전기':'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
 $('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
