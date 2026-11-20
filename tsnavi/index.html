@@ -306,6 +306,20 @@
   .pmk.sc i{background:#e3151a}.pmk.ev i{background:#16a34a}.pmk.ev.full i{background:#8a919c}
   #quota{flex:1;font-size:13px;color:#8a919c;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#quota b{color:#22b14c;font-size:13px}#quota.low b{color:#f5a400}#quota.out b{color:#e3151a}
   #rtList .rt .rs{word-break:keep-all}
+/* 폰 세로 화면 (11/21): 아래 줄·버튼이 잘리지 않게 */
+@media (max-width:600px){
+  #bottom{padding:0 6px;gap:4px}
+  #bInfo{gap:8px;font-size:13px}
+  #bInfo b{font-size:20px}
+  #bInfo .gray{display:none}
+  .bsearch{padding:6px 12px 6px 9px;font-size:14px}
+  #tbar{width:80%}
+  .rb{width:40px;height:40px;font-size:24px}.rb svg{width:19px;height:19px}
+  #rightBtns{right:10px;gap:6px;top:84px;transform:none}#zoomGrp{gap:6px}
+  #fav .hd{flex-wrap:wrap;row-gap:2px}
+  #quota{order:5;flex-basis:100%;margin-left:0}
+  .fc{min-width:140px}
+}
 </style>
 </head>
 <body>
