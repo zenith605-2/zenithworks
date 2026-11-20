@@ -304,6 +304,7 @@
   .pmk i{display:flex;align-items:center;justify-content:center;gap:2px;min-width:30px;height:30px;padding:0 7px;border-radius:15px;font-style:normal;font-size:13px;font-weight:800;color:#fff;box-shadow:0 2px 6px #0006;border:2px solid #fff}
   .pmk i svg{width:15px;height:15px}.pmk b{width:0;height:0;border:6px solid transparent;border-top-color:#fff;margin-top:-1px}
   .pmk.sc i{background:#e3151a}.pmk.ev i{background:#16a34a}.pmk.ev.full i{background:#8a919c}
+  #quota{flex:1;font-size:13px;color:#8a919c;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#quota b{color:#22b14c;font-size:13px}#quota.low b{color:#f5a400}#quota.out b{color:#e3151a}
 </style>
 </head>
 <body>
@@ -363,7 +364,7 @@
   <button class="ic" id="menuBtn" title="메뉴"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 </div>
 
-<div id="fav"><div class="gripHit" id="favGrip"><div class="grip"></div></div><div class="hd"><b>어디로 갈까요?</b><button id="favSearch">검색</button><button id="favClose">닫기</button></div><div id="favList"></div></div>
+<div id="fav"><div class="gripHit" id="favGrip"><div class="grip"></div></div><div class="hd"><b>어디로 갈까요?</b><span id="quota"></span><button id="favSearch">검색</button><button id="favClose">닫기</button></div><div id="favList"></div></div>
 
 <div class="sheet" id="navSheet"><div class="panel">
   <form class="sbar" id="sbar" action="javascript:void(0)"><button class="bk" id="navClose" type="button" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><input id="q" type="search" enterkeyhint="search" placeholder="어디로 갈까요?" autocomplete="off"><button class="clr" id="qClr" type="button" aria-label="지우기"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 7l10 10M17 7L7 17" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></button><button class="go" id="qGo" type="submit">검색</button></form>
@@ -778,7 +779,11 @@ function renderFav(){
     else{b.querySelector('.n').textContent='등록하기';b.querySelector('.d').textContent='지도를 꾹 누르거나 검색에서 ['+it[0]+']';b.onclick=function(){hideFav();$('navBtn').onclick()}}
     box.appendChild(b)});
 }
-function showFav(){if(NAV||favDismissed||ARR)return;renderFav();show('fav',1)}
+/* 오늘 남은 무료 길 안내 (전체 이용자 합계, 안내 한 번에 경로 계산 약 2번으로 셈). 1분마다·패널 열 때 갱신 */
+var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(left/2),e=$('quota');
+  e.className=n<=0?'out':n<50?'low':'';e.innerHTML=n<=0?'오늘 무료 길 안내 <b>끝</b> · 카메라 경고는 계속':'오늘 남은 무료 길 안내 <b>약 '+n+'번</b>'}).catch(function(){})}
+setInterval(function(){if($('fav').classList.contains('show'))quotaLoad()},60000);
+function showFav(){quotaLoad();if(NAV||favDismissed||ARR)return;renderFav();show('fav',1)}
 function hideFav(){show('fav',0)}
 $('favClose').onclick=function(){favDismissed=true;hideFav()};
 /* 아래로 끌거나 손잡이를 누르면 내려간다 */
