@@ -331,10 +331,8 @@ body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!
 .evr .ch.ok{background:#e7f6ec;color:#167a3a}.evr .ch b{font-size:15px}
 .evn{margin:2px 0 0;font-size:12px;color:#8a919c}
 body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#aab1ba}body.night .evr .ch.ok{background:#1f3a2a;color:#6fd59a}
-/* 카메라 경고·속도: 왼쪽 가운데로 (11/21 시험, 눈높이 가깝게) */
-#alertBox{bottom:auto;top:max(240px,38%)}
-body.nav #alertBox{top:max(250px,40%)}
-@media (max-width:600px){#alertBox{top:auto;bottom:110px}}
+/* 카메라 경고·속도: 회전 카드·안내 목록 바로 아래에 붙인다 (11/21) */
+body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 18px}
 </style>
 </head>
 <body>
@@ -1476,5 +1474,6 @@ setMap(mapOn);
 requestAnimationFrame(tick);
 if(/autodemo/.test(location.search)){var iv=setInterval(function(){if(CAMS.length){clearInterval(iv);if(/navdemo/.test(location.search)){startNav(/far/.test(location.search)?{name:'대전역',la:36.3324,lo:127.4342}:{name:'양재역',la:37.4842,lo:127.0346});var iv2=setInterval(function(){var f=document.querySelector('#rtList .rt');if(f&&!/shot/.test(location.search)){clearInterval(iv2);f.click();setTimeout(toggleDemo,300)}},300)}else toggleDemo()}},200)}
 </script>
+<script>(function(){var l=document.getElementById('left'),a=document.getElementById('alertBox');if(l&&a)l.appendChild(a)})()</script>
 </body>
 </html>
