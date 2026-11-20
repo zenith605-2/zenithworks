@@ -1234,7 +1234,7 @@ function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC
 /* 충전 사업자: 충전기 많은 순. 지도엔 짧은 이름(글자만, 회사 로고는 상표라 안 씀) */
 function evOps(p){var n={};((p.evChargers||{}).evCharger||[]).forEach(function(e){var k=e.operatorName||e.operatorId;if(k)n[k]=(n[k]||0)+1});return Object.keys(n).sort(function(a,b){return n[b]-n[a]})}
 var EVSHORT={'환경부':'환경부','한국전력':'한전','한국전력공사':'한전','GS차지비':'GS','차지비':'GS','SK일렉링크':'SK','SK브로드밴드':'SK','에버온':'에버온','휴맥스이브이':'휴맥스','NICE인프라':'나이스','파워큐브코리아':'파워큐브','이카플러그':'이카플러그','플러그링크':'플러그링크','한솔엠에스':'한솔','스타코프':'스타코프','대영채비':'채비','채비':'채비','테슬라':'테슬라','LG유플러스':'LGU+','LG헬로비전':'LG헬로','현대자동차':'현대','E-pit':'E-pit','이피트':'E-pit','기아':'기아','KT':'KT'};
-function evShort(n){return EVSHORT[n]||n.replace(/(주식회사|\(주\)|코리아|이브이|모빌리티|에너지|일렉트릭)/g,'').trim().slice(0,5)}
+function evShort(n){if(EVSHORT[n])return EVSHORT[n];for(var k in EVSHORT)if(n.indexOf(k)===0)return EVSHORT[k];return n.replace(/(주식회사|\(주\)|코리아|이브이|모빌리티|에너지|일렉트릭)/g,'').trim().slice(0,5)}
 function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={};
     ps=ps.map(function(p){var l=poiLL(p);return{p:p,d:dist(c.la,c.lo,l.la,l.lo)}}).sort(function(x,y){return x.d-y.d}).map(function(x){return x.p});var cnt=0;
     ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p);
