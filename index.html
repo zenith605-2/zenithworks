@@ -7,6 +7,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="description" content="1인 개발자 Zenith의 앱과 웹 서비스 모음">
 <meta property="og:title" content="Zenith Works">
+<meta property="og:image" content="https://zenithworks.app/tsnavi/shot.jpg">
 <meta property="og:description" content="1인 개발자 Zenith의 앱과 웹 서비스 모음">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
@@ -61,7 +62,7 @@ section{padding:40px 0 72px}
 .tags span{font-size:12px;font-weight:700;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
 .go{margin-top:auto;padding-top:18px;font-size:14px;font-weight:700;color:var(--acc)}
 .card.big .go{padding-top:12px}
-.shot{flex:none;width:340px;aspect-ratio:16/10;border-radius:14px;background:linear-gradient(160deg,#1a2a44,#0e1726);position:relative;overflow:hidden;border:1px solid #ffffff14}
+.shot{flex:none;width:420px;aspect-ratio:1250/690;object-fit:cover;display:block;border-radius:14px;background:linear-gradient(160deg,#1a2a44,#0e1726);position:relative;overflow:hidden;border:1px solid #ffffff14}
 .shot .road{position:absolute;left:46%;top:-10%;width:22px;height:130%;background:#22b14c;border-radius:12px;transform:rotate(18deg);box-shadow:0 0 0 6px #22b14c22}
 .shot .road.r2{left:62%;background:#f5b400;transform:rotate(-34deg);top:30%;height:80%;box-shadow:0 0 0 6px #f5b40022}
 .shot .turn{position:absolute;left:10px;top:10px;background:#16803a;color:#fff;border-radius:8px;padding:6px 10px;font-weight:900;font-size:18px;line-height:1}
@@ -104,13 +105,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
         <div class="tags"><span>웹</span><span>로그인 없음</span><span>무료</span><span>테슬라 브라우저</span></div>
         <div class="go">열어 보기 →</div>
       </div>
-      <div class="shot" aria-hidden="true">
-        <div class="road"></div><div class="road r2"></div>
-        <div class="turn">320m<small>분당수서로 방면</small></div>
-        <div class="cam">60</div>
-        <div class="car"><svg viewBox="0 0 24 24"><path d="M12 3l6 16-6-3.5L6 19z" fill="#1d6ff2"/></svg></div>
-        <div class="lim">60</div>
-      </div>
+      <img class="shot" src="tsnavi/shot.jpg" alt="TS내비 안내 화면" loading="lazy">
     </a>
 
   </div>
