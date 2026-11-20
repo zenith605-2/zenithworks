@@ -324,6 +324,13 @@
 /* 티맵 로고(이용약관상 표시 필수)가 하단 바에 가리지 않게 */
 #map .vsm-pos-bottom-right,#map .vsm-pos-bottom-left{bottom:62px!important}
 body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!important}
+.evd{margin:2px 0 4px 60px;display:flex;flex-direction:column;gap:6px}
+.evr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.evr .op{min-width:64px;font-size:13px;font-weight:800;color:#555}
+.evr .ch{font-size:13px;border-radius:8px;padding:3px 8px;background:#eef1f5;color:#666}
+.evr .ch.ok{background:#e7f6ec;color:#167a3a}.evr .ch b{font-size:15px}
+.evn{margin:2px 0 0;font-size:12px;color:#8a919c}
+body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#aab1ba}body.night .evr .ch.ok{background:#1f3a2a;color:#6fd59a}
 </style>
 </head>
 <body>
@@ -1226,7 +1233,14 @@ function layCenter(){if(TMM){var c=TMM.getCenter();return{la:c.lat(),lo:c.lng()}
 function layClear(kind){LAY.mk=LAY.mk.filter(function(m){if(m.k===kind){m.el.remove();return false}return true})}
 function layAdd(kind,la,lo,html,dd,sub){var el=document.createElement('button');el.type='button';el.className='pmk '+kind;el.innerHTML='<i>'+html+'</i><b></b>';
   el.onclick=function(e){e.stopPropagation();layCard(dd,sub,kind)};$('poiLayer').appendChild(el);LAY.mk.push({k:kind,la:la,lo:lo,el:el})}
-function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
+/* 충전소 카드: 사업자별 급속·완속 빈자리, 상태, 갱신 시각 (티맵 POI 의 evChargers) */
+function poiAddr(p){return [p.upperAddrName,p.middleAddrName,p.lowerAddrName,p.roadName||'',p.firstBuildNo||''].filter(Boolean).slice(1).join(' ').trim()}
+function evDetail(p){var L=((p.evChargers||{}).evCharger)||[];if(!L.length)return '<div class="evd"><p class="evn">충전기 상태 정보가 없는 곳이에요</p></div>';
+  var G={},up=0,bad=0,busy=0;L.forEach(function(c){var fast=/급속/.test(c.powerType||'')||c.type!=='02',k=c.operatorName||c.operatorId||'기타',g=G[k]||(G[k]={f:0,fa:0,s:0,sa:0,kw:0});var m=/(\d+)kW/.exec(c.powerType||'');if(fast){g.f++;if(c.status==='2')g.fa++;if(m)g.kw=Math.max(g.kw,+m[1])}else{g.s++;if(c.status==='2')g.sa++}if(c.status==='3')busy++;if(/^[1459]$/.test(c.status))bad++;var u=+(c.updateDateTime||0);if(u>up)up=u});
+  var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op">'+evShort(k)+'</span>'+(g.f?'<span class="ch '+(g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' <b>'+g.fa+'</b>/'+g.f+'</span>':'')+(g.s?'<span class="ch '+(g.sa?'ok':'no')+'">완속 <b>'+g.sa+'</b>/'+g.s+'</span>':'')+'</div>'});
+  var t='';if(up){var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12)),mn=Math.round((Date.now()-d)/60000);t=mn<1?'방금':mn<60?mn+'분 전':mn<1440?Math.round(mn/60)+'시간 전':Math.round(mn/1440)+'일 전'}
+  h+='<p class="evn">'+[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',t?'상태 '+t+' 기준':''].filter(Boolean).join(' · ')+'</p></div>';return h}
+function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);el.appendChild(dv)}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
 function layDraw(){if(!LAY.mk.length)return;var W=innerWidth,H=innerHeight;for(var i=0;i<LAY.mk.length;i++){var m=LAY.mk[i],p=mapPx(m.la,m.lo);if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40){if(m.el.style.display!=='none')m.el.style.display='none'}else{if(m.el.style.display)m.el.style.display='';m.el.style.left=p.x+'px';m.el.style.top=p.y+'px'}}}
 var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#fff"/></svg>';
 function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC.map(function(p){return{p:p,d:dist(c.la,c.lo,p[0],p[1])}}).sort(function(x,y){return x.d-y.d});var near=a.filter(function(x){return x.d<40000}).slice(0,40);if(!near.length)near=a.slice(0,3);
@@ -1239,7 +1253,7 @@ function evShort(n){if(EVSHORT[n])return EVSHORT[n];for(var k in EVSHORT)if(n.in
 function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={};
     ps=ps.map(function(p){var l=poiLL(p);return{p:p,d:dist(c.la,c.lo,l.la,l.lo)}}).sort(function(x,y){return x.d-y.d}).map(function(x){return x.p});var cnt=0;
     ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p);
-      layAdd('ev',l.la,l.lo,(op.length?'<u>'+evShort(op[0])+'</u>':'')+(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id},fmtD(dist(c.la,c.lo,l.la,l.lo))+(op.length?' · '+op.join(', '):''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
+      layAdd('ev',l.la,l.lo,(op.length?'<u>'+evShort(op[0])+'</u>':'')+(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id,ev:p},fmtD(dist(c.la,c.lo,l.la,l.lo))+(poiAddr(p)?' · '+poiAddr(p):''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
     toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · 숫자는 빈 충전기':'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
 $('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
 $('evBtn').onclick=function(){LAY.ev=!LAY.ev;this.classList.toggle('on',LAY.ev);if(LAY.ev)layShowEv();else{layClear('ev');LAY.evAt=null}};
