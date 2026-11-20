@@ -1014,14 +1014,14 @@ function predict(d,o,b){var t=new Date();if(o[0]==='am'||o[0]==='pm'){t.setDate(
     $('predOut').appendChild(el)}).catch(function(e){var el=document.createElement('div');el.className='muted';el.textContent=o[1]+': 예측 실패 ('+e.message+')';$('predOut').appendChild(el)})}
 function renderRecent(){var r=[];try{r=JSON.parse(LS.getItem('recentDest')||'[]')}catch(e){}var box=$('recent');box.innerHTML='';$('recentH').style.display=r.length?'':'none';r.forEach(function(d){box.appendChild(placeItem(d,fix?fmtD(dist(fix.la,fix.lo,d.la,d.lo)):'','clock'))})}
 function saveRecent(d){var r=[];try{r=JSON.parse(LS.getItem('recentDest')||'[]')}catch(e){}r=r.filter(function(x){return x.name!==d.name});r.unshift({name:d.name,la:d.la,lo:d.lo});LS.setItem('recentDest',JSON.stringify(r.slice(0,8)))}
-var OPTS=[['0','추천'],['2','최소시간'],['1','무료도로'],['10','최단거리'],['4','고속도로 우선'],['3','초보'],['19','어린이보호구역 회피']];
+var OPTS=[['0','티맵 추천'],['k','카카오 추천'],['2','최소시간'],['1','무료도로'],['10','최단거리'],['4','고속도로 우선'],['3','초보'],['19','어린이보호구역 회피']];
 function selRoute(el,d){if(rtSel)rtSel.classList.remove('sel');rtSel=el;el.classList.add('sel');$('rtGo').style.display='block';$('rtGo').onclick=function(){show('rtSheet',0);applyRoute(d,el._r)};previewRoute(el._r,d)}
 function startNav(d){try{lpClose()}catch(e){}
   rtSel=null;rtBase=0;$('rtGo').style.display='none';
   show('navSheet',0);hideFav();saveRecent(d);
   $('rtList').innerHTML='<div class="muted">경로 찾는 중…</div>';$('rtDest').textContent=d.name;renderPred(d);show('rtSheet',1);
   var c=fix||{la:37.4979,lo:127.0276};
-  RTS={d:d,c:c,seen:{},shown:0};$('rtList').innerHTML='';fetchOpts(OPTS.slice(0,1),true);
+  RTS={d:d,c:c,seen:{},shown:0};$('rtList').innerHTML='';fetchOpts(OPTS.slice(0,2),true);
 }
 /* 경로: 처음엔 추천 1개만(티맵 경로 11원/건 아끼기), 나머지는 [다른 경로 더 보기] */
 var RTS=null;
@@ -1042,7 +1042,23 @@ function fetchOpts(list,first){var S0=RTS,d=S0.d,c=S0.c;var mb=$('rtMore');if(mb
   });
 }
 $('rtClose').onclick=function(){show('rtSheet',0);endPreview();showFav()};
-function fetchRoute(c,dest,opt,via){
+/* 카카오모빌리티 길찾기 → 우리 경로 형식(R,S,G,C,T,F,V). 티맵 한도와 따로라 무료 안내 횟수가 늘어남 */
+var KTT={0:11,1:12,2:13,3:14,5:118,6:117,8:105,10:103,14:120,44:114,49:101,101:201,1000:185,1001:185,1002:185};
+function kakaoTurn(g){var t=KTT[g.type];if(t!=null)return t;var m=g.guidance||'';if(g.type===29||g.type===100||/톨게이트|원톨링|요금소/.test(m))return null;
+  if(/회전교차로/.test(m))return 131;if(/유턴/.test(m))return 14;if(/좌회전/.test(m))return 12;if(/우회전/.test(m))return 13;if(/출구/.test(m))return /왼쪽/.test(m)?105:104;if(/입구|진입/.test(m)&&/고속/.test(m))return /왼쪽/.test(m)?102:101;if(/터널/.test(m))return 121;if(/지하차도/.test(m))return 119;if(/왼쪽/.test(m))return 118;if(/오른쪽/.test(m))return 117;return null}
+function kakaoRoute(c,dest,via){var q='origin='+c.lo+','+c.la+(head!=null&&v>2?',angle='+Math.round(head):'')+'&destination='+dest.lo+','+dest.la+'&priority=RECOMMEND';
+  if(via&&via.length)q+='&waypoints='+via.map(function(p){return p.lo+','+p.la}).join('|');
+  return fetch(RELAY+'kakao/directions?'+q).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
+    var rt=(d.routes||[])[0];if(!rt||rt.result_code!==0)throw new Error((rt&&rt.result_msg)||'경로 없음');
+    var R=[],C=[],T=[],F=[],V=[],G=[],CM={1:4,2:3,3:2,4:1};
+    rt.sections.forEach(function(sec){sec.roads.forEach(function(rd){var vx=rd.vertexes;for(var i=0;i<vx.length;i+=2){var la=vx[i+1],lo=vx[i];if(R.length){var L=R[R.length-1];if(L[0]===la&&L[1]===lo)continue}R.push([la,lo]);C.push(CM[rd.traffic_state]||0);T.push(-1);F.push(0);V.push(rd.traffic_speed||0)}});
+      sec.guides.forEach(function(g){var t=kakaoTurn(g);if(t==null)return;var dm=/(.+?)\s*방면/.exec(g.guidance||'');G.push({la:g.y,lo:g.x,t:t,name:'',pname:g.name||'',dir:dm?dm[1].trim().split(/\s+/).slice(0,2).join(' · '):'',ri:0})})});
+    if(R.length<2)throw new Error('경로 없음');
+    var S=[0];for(var i=1;i<R.length;i++)S.push(S[i-1]+dist(R[i-1][0],R[i-1][1],R[i][0],R[i][1]));
+    var j0=0;G.forEach(function(gp){var bi=j0,bd=1e9;for(var j=j0;j<R.length;j++){var dd=dist(gp.la,gp.lo,R[j][0],R[j][1]);if(dd<bd){bd=dd;bi=j}if(bd<5)break}gp.ri=bi;gp.s=S[bi];j0=Math.max(0,bi-2)});
+    G.sort(function(x,y){return x.s-y.s});
+    return{R:R,S:S,G:G,C:C,T:T,F:F,V:V,time:rt.summary.duration,fare:(rt.summary.fare||{}).toll||0,dist:S[S.length-1],prov:'kakao'}})}
+function fetchRoute(c,dest,opt,via){if(opt==='k')return kakaoRoute(c,dest,via);
   var body={startX:String(c.lo),startY:String(c.la),endX:String(dest.lo),endY:String(dest.la),reqCoordType:'WGS84GEO',resCoordType:'WGS84GEO',searchOption:opt,trafficInfo:'Y'};
   if(via&&via.length)body.passList=via.map(function(p){return p.lo+','+p.la}).join('_');
   /* 앱과 같은 입구로: 장소 id 를 넘기면 티맵이 단지 출입구로 안내한다 */
