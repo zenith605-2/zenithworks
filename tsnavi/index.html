@@ -295,7 +295,15 @@
   #agree button{width:100%;height:52px;border:0;border-radius:12px;background:#2b7bff;color:#fff;font-size:18px;font-weight:800}
   #agree a{display:block;text-align:center;margin-top:12px;color:#888;font-size:14px}
   body.night #agree .ag{background:#1c1f24;color:#eee}
-  .devOnly{display:none}body.dev .devOnly{display:block}
+  .fbType{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}.fbType button{font-size:14px;padding:7px 12px;border-radius:16px;border:1px solid #ccd2da;background:transparent;color:inherit}.fbType button.on{background:#2b7bff;border-color:#2b7bff;color:#fff}
+  .fbLoc{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 8px;opacity:.85}.fbLoc input{width:20px;height:20px}
+  .devOnly{display:none!important}body.dev .devOnly{display:block!important}
+  .rb.lay.on{background:#2b7bff;color:#fff}#scBtn.on{background:#e3151a}#evBtn.on{background:#16a34a}
+  #poiLayer{position:fixed;inset:0;pointer-events:none;z-index:3}
+  .pmk{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;border:0;padding:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center}
+  .pmk i{display:flex;align-items:center;justify-content:center;gap:2px;min-width:30px;height:30px;padding:0 7px;border-radius:15px;font-style:normal;font-size:13px;font-weight:800;color:#fff;box-shadow:0 2px 6px #0006;border:2px solid #fff}
+  .pmk i svg{width:15px;height:15px}.pmk b{width:0;height:0;border:6px solid transparent;border-top-color:#fff;margin-top:-1px}
+  .pmk.sc i{background:#e3151a}.pmk.ev i{background:#16a34a}.pmk.ev.full i{background:#8a919c}
 </style>
 </head>
 <body>
@@ -303,6 +311,7 @@
 <div id="agree"><div class="ag"><b>시작하기 전에</b><ul><li>참고용 안내입니다. 실제 표지판과 법규를 따르세요.</li><li>운전 중에는 화면을 조작하지 마세요.</li><li>단속카메라 정보는 늦게 반영될 수 있습니다.</li><li>위치는 이 차 안에서만 쓰고 저장하지 않습니다.</li></ul><button type="button" id="agreeOk">확인하고 시작</button><a href="about.html">정보·출처</a></div></div>
 <div id="boot"><div class="bx"><div class="sp"></div><div class="bt">지도를 불러오는 중</div></div></div><script>setTimeout(function(){var b=document.getElementById('boot');if(b)b.style.display='none'},15000)</script>
 <div id="map"></div>
+<div id="poiLayer"></div>
 <div id="drChip">GPS 신호 없음 · 추정 위치로 안내 중</div>
 <div id="lp"><button class="x" type="button">✕</button><div class="body"></div></div>
 <div id="carMk"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="#fff"/><circle cx="40" cy="40" r="36" fill="none" stroke="#1d6ff2" stroke-width="5"/><path d="M40 16 L56 56 L40 47 L24 56 Z" fill="#1d6ff2" stroke="#1d6ff2" stroke-width="3" stroke-linejoin="round"/></svg></div>
@@ -340,6 +349,8 @@
   <button class="rb" id="cctvBtn" title="경로 CCTV"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z" fill="currentColor"/></svg></button>
   <div id="zoomGrp"><button class="rb" id="zIn">+</button><button class="rb" id="zOut">−</button></div>
   <button class="rb" id="mute" title="소리"><svg viewBox="0 0 24 24" id="muteIc"></svg></button>
+  <button class="rb lay" id="scBtn" title="슈퍼차저"><svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="currentColor"/></svg></button>
+  <button class="rb lay" id="evBtn" title="충전소"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 6.5 8 12h3l-1 5 3.5-6.5h-3z" fill="currentColor"/><path d="M15 9h2a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V8l-2-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
 </div>
 <div id="cctvBar"><div class="hd"><b>가는 길 상황</b><span id="cctvN"></span><button type="button" id="cctvX">✕</button></div><div id="cctvRow"></div></div>
 <div id="cctvBig"><video id="cctvBigV" muted playsinline autoplay></video><div class="nm" id="cctvBigN"></div><button type="button" id="cctvBigX">✕</button></div>
@@ -384,7 +395,8 @@
   <h2>안내음성 크기</h2><input type="range" min="0" max="1" step="0.05" id="volG" style="width:100%">
   <h2>경고음 크기</h2><input type="range" min="0" max="1" step="0.05" id="volW" style="width:100%">
   <h2 style="margin-top:22px">메뉴</h2>
-  <div class="grid"><button id="mTrips">주행 기록</button><button id="mDemo">시연</button><button id="mFix">카메라 여기</button><button id="mMap">지도 끄기</button><button id="mSet">설정</button><button id="mClose">닫기</button></div>
+  <div class="grid"><button id="mTrips">주행 기록</button><button id="mFb">의견 보내기</button><button id="mSet">설정</button><button id="mInfo">정보·개인정보</button><button id="mClose">닫기</button><button id="mDemo" class="devOnly">시연</button><button id="mFix" class="devOnly">카메라 여기</button><button id="mMap" class="devOnly">지도 끄기</button></div>
+  <p class="muted" style="font-size:13px;margin:10px 2px 0;line-height:1.6">내 기록·즐겨찾기·설정은 이 차 브라우저에만 저장되고 서버로 보내지 않아요.<br>브라우저 데이터(캐시)를 지우면 모두 사라지고 되돌릴 수 없어요.</p>
   <button class="wide" id="clearVia" style="display:none;background:#eceff3;color:#111">경유지 빼기</button>
   <button class="wide" id="stopNav" style="display:none">안내 종료</button>
 </div></div>
@@ -404,7 +416,7 @@
   <h2 style="font-size:20px;margin-top:22px">야간 모드</h2><div class="opt" id="nightOpts"></div>
   <div class="devOnly"><h2 style="font-size:20px;margin-top:22px">티맵 키 (지도 인증용 · 이 차에만 저장)</h2><div class="keyRow"><input id="keyIn" placeholder="앱 키 붙여 넣기" autocomplete="off"><button id="keySave">저장</button></div><p class="muted" id="keyState"></p>
   <h2 style="font-size:20px;margin-top:18px">CCTV 키 (국가교통정보센터 · 이 차에만 저장)</h2><div class="keyRow"><input id="itsIn" placeholder="인증키 붙여 넣기" autocomplete="off"><button id="itsSave">저장</button></div><p class="muted" id="itsState"></p></div>
-  <h2 style="font-size:20px;margin-top:22px">의견 보내기</h2><p class="muted" style="margin:2px 0 8px">불편한 점, 틀린 카메라 위치, 바라는 기능을 적어 주세요. 위치는 같이 보내지 않습니다.</p><textarea id="fbText" maxlength="1000" rows="3" style="width:100%;box-sizing:border-box;font-size:17px;padding:10px;border-radius:10px;border:1px solid #ccd2da;background:inherit;color:inherit" placeholder="예) ○○ 사거리 카메라가 없어졌어요"></textarea><div class="keyRow" style="justify-content:flex-end;margin-top:6px"><button id="fbSend" type="button">보내기</button></div><p class="muted" id="fbState"></p>
+  <h2 style="font-size:20px;margin-top:22px" id="fbH">의견 보내기</h2><div class="fbType"><button type="button" data-t="카메라 없어짐">카메라 없어짐</button><button type="button" data-t="새 카메라">새 카메라</button><button type="button" data-t="위치·속도 틀림">위치·속도 틀림</button><button type="button" data-t="길 안내 문제">길 안내 문제</button><button type="button" data-t="의견" class="on">의견</button></div><label class="fbLoc"><input type="checkbox" id="fbLoc"> 지금 위치 함께 보내기 (선택 · 이번 한 번만)</label><textarea id="fbText" maxlength="1000" rows="3" style="width:100%;box-sizing:border-box;font-size:17px;padding:10px;border-radius:10px;border:1px solid #ccd2da;background:inherit;color:inherit" placeholder="예) ○○ 사거리 카메라가 없어졌어요"></textarea><div class="keyRow" style="justify-content:flex-end;margin-top:6px"><button id="fbSend" type="button">보내기</button></div><p class="muted" id="fbState"></p>
   <h2 style="font-size:20px;margin-top:22px"><a href="about.html" style="color:inherit">정보·출처·개인정보 ›</a></h2>
   <h2 style="font-size:20px;margin-top:22px">진단 정보 표시</h2><div class="opt"><button id="diagBtn">켜짐</button></div>
 </div></div>
@@ -464,8 +476,12 @@ function renderSet(){
 function onOffRows(box,list){var TB=$(box);TB.innerHTML='';list.forEach(function(o){var row=document.createElement('div');row.className='row';row.innerHTML='<span></span><i></i>';row.querySelector('span').textContent=o[1];row.querySelector('i').textContent=CFG[o[0]]?'켬':'끔';row.querySelector('i').style.color=CFG[o[0]]?'#2b7bff':'#999';row.onclick=function(){CFG[o[0]]=!CFG[o[0]];LS.setItem(o[0],CFG[o[0]]?'1':'0');renderSet()};TB.appendChild(row)})}
 $('keySave').onclick=function(){var k=$('keyIn').value.trim();if(!k){KEY='';LS.removeItem('tmapKey');renderSet();return}if(k.length<20){$('keyState').textContent='키가 너무 짧습니다';return}KEY=k;LS.setItem('tmapKey',k);$('keyIn').value='';renderSet()};
 try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);if(LS.getItem('dev')==='1')document.body.classList.add('dev')}catch(e){}
-$('fbSend').onclick=function(){var t=$('fbText').value.trim();if(t.length<2){$('fbState').textContent='내용을 적어 주세요';return}hideKb();$('fbSend').disabled=true;$('fbState').textContent='보내는 중…';
-  fetch(RELAY+'feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,ver:(document.title||'')+' '+(LS.getItem('camsRef')||'')})}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status)})}).then(function(){$('fbText').value='';$('fbState').textContent='보냈어요. 고맙습니다!';toast('의견을 보냈어요')}).catch(function(e){$('fbState').textContent='못 보냈어요: '+e.message}).then(function(){$('fbSend').disabled=false})};
+Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(b){b.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(o){o.classList.toggle('on',o===b)});if(/카메라|위치/.test(b.dataset.t))$('fbLoc').checked=true}});
+$('mInfo').onclick=function(){location.href='about.html'};
+$('mFb').onclick=function(){try{$('mClose').onclick()}catch(e){}setTimeout(function(){try{$('mSet').onclick()}catch(e){}setTimeout(function(){var t=$('fbH');if(t){t.scrollIntoView({block:'start'})}},300)},250)};
+$('fbSend').onclick=function(){var t=$('fbText').value.trim();var ty0=(document.querySelector('.fbType button.on')||{dataset:{}}).dataset.t;if(t.length<2&&!(ty0&&ty0!=='의견'&&$('fbLoc').checked)){$('fbState').textContent='내용을 적어 주세요';return}if(t.length<2)t=ty0;hideKb();$('fbSend').disabled=true;$('fbState').textContent='보내는 중…';
+  var ty=(document.querySelector('.fbType button.on')||{}).dataset||{},loc=$('fbLoc').checked&&fix?{la:+fix.la.toFixed(4),lo:+fix.lo.toFixed(4),h:head==null?null:Math.round(head)}:null;
+  fetch(RELAY+'feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,type:ty.t||'의견',loc:loc,ver:(document.title||'')+' '+(LS.getItem('camsRef')||'')})}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status)})}).then(function(){$('fbText').value='';$('fbLoc').checked=false;$('fbState').textContent='보냈어요. 고맙습니다!';toast('의견을 보냈어요')}).catch(function(e){$('fbState').textContent='못 보냈어요: '+e.message}).then(function(){$('fbSend').disabled=false})};
 $('itsSave').onclick=function(){var k=$('itsIn').value.trim().replace(/\s/g,'');if(!k){LS.removeItem('itsKey');$('itsState').textContent='지움';return}if(!/^[0-9a-f]{32}$/i.test(k)){$('itsState').textContent='32자리 키가 아닙니다';return}LS.setItem('itsKey',k);$('itsIn').value='';$('itsState').textContent='저장됨 · 가는 길 CCTV 사용 가능'};
 try{if(LS.getItem('itsKey'))$('itsState').textContent='저장됨'}catch(e){}
 try{if(LS.getItem('agreed')!=='1')$('agree').classList.add('on')}catch(e){}
@@ -1148,6 +1164,25 @@ function limNow(la,lo,kmh,now){var v=0;
   if(NAV&&NAV.R){if(!PREV&&NAV.R!==LIMR&&now-LIMT>5000&&now-(NAV.t0||0)>1500){LIMR=NAV.R;LIMT=now;NAV.LIM=null;limRoute(NAV)}if(NAV.LIM)v=NAV.LIM[Math.max(0,Math.min(NAV.LIM.length-1,NAV.idx))]||0}
   if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&now-LIMN.t>15000&&dist(la,lo,LIMN.la,LIMN.lo)>150)limNear(la,lo);if(now-LIMN.t<60000&&dist(la,lo,LIMN.la,LIMN.lo)<300)v=LIMN.v}
   var e=$('limNow');if(v){if(e.textContent!==String(v))e.textContent=v;e.classList.add('show')}else e.classList.remove('show');document.body.classList.toggle('overLim',!!v&&kmh>v+5)}
+/* 지도 버튼: 슈퍼차저·충전소 위치를 지도에 표시. 누르면 카드(여기로 안내·집·회사·★) */
+var LAY={sc:false,ev:false,mk:[],evAt:null};
+function layCenter(){if(TMM){var c=TMM.getCenter();return{la:c.lat(),lo:c.lng()}}if(map){var m=map.getCenter();return{la:m.lat,lo:m.lng}}return fix}
+function layClear(kind){LAY.mk=LAY.mk.filter(function(m){if(m.k===kind){m.el.remove();return false}return true})}
+function layAdd(kind,la,lo,html,dd,sub){var el=document.createElement('button');el.type='button';el.className='pmk '+kind;el.innerHTML='<i>'+html+'</i><b></b>';
+  el.onclick=function(e){e.stopPropagation();layCard(dd,sub,kind)};$('poiLayer').appendChild(el);LAY.mk.push({k:kind,la:la,lo:lo,el:el})}
+function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
+function layDraw(){if(!LAY.mk.length)return;var W=innerWidth,H=innerHeight;for(var i=0;i<LAY.mk.length;i++){var m=LAY.mk[i],p=mapPx(m.la,m.lo);if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40){if(m.el.style.display!=='none')m.el.style.display='none'}else{if(m.el.style.display)m.el.style.display='';m.el.style.left=p.x+'px';m.el.style.top=p.y+'px'}}}
+var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#fff"/></svg>';
+function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC.map(function(p){return{p:p,d:dist(c.la,c.lo,p[0],p[1])}}).sort(function(x,y){return x.d-y.d});var near=a.filter(function(x){return x.d<40000}).slice(0,40);if(!near.length)near=a.slice(0,3);
+  near.forEach(function(x){layAdd('sc',x.p[0],x.p[1],SCI,{name:x.p[2],la:x.p[0],lo:x.p[1]},fmtD(x.d)+(x.p[3]?' · '+x.p[3]+'기':''))});
+  toast(near.length?'가까운 슈퍼차저 '+fmtD(near[0].d)+' · '+near.length+'곳':'슈퍼차저 정보를 못 받았어요');if(near.length){var H=($('map').clientHeight||600)*0.38,c0=layCenter(),mpp=mppNow(c0.la,c0.lo)||1,need=near[0].d/H;if(need>mpp){setFree(true);zoff=Math.max(-6,zoff-Math.log(need/mpp)/Math.LN2-0.3);manZT=Date.now()}}}
+function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={};
+    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k])return;seen[k]=1;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length;
+      layAdd('ev',l.la,l.lo,(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id},fmtD(dist(c.la,c.lo,l.la,l.lo))+(e.html?'':''));var m=LAY.mk[LAY.mk.length-1];if(tot&&!free)m.el.classList.add('full')});
+    toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · 숫자는 빈 충전기':'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
+$('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
+$('evBtn').onclick=function(){LAY.ev=!LAY.ev;this.classList.toggle('on',LAY.ev);if(LAY.ev)layShowEv();else{layClear('ev');LAY.evAt=null}};
+setInterval(function(){if(LAY.ev&&LAY.evAt){var c=layCenter();if(c&&dist(c.la,c.lo,LAY.evAt.la,LAY.evAt.lo)>2500)layShowEv()}},6000);
 function endNav(){cctvClose();try{LS.removeItem('navResume')}catch(e){}show('incChip',0);fastR=null;show('fastCard',0);show('jamChip',0);show('hwBox',0);if(TMM)tmDrawTurn(null);RWX=null;setTimeout(updWxWarn,0);favDismissed=false;setTimeout(showFav,1500);NAV=null;document.body.classList.remove('nav');setTimeout(mapResize,60);drawRoute(true)}
 function project(la,lo){
   var R=NAV.R,best=null,from=Math.max(0,NAV.idx-5),to=Math.min(R.length-2,NAV.idx+120),kx=111320*Math.cos(la*D2R),ky=111320;
@@ -1343,7 +1378,7 @@ var HID={t:0,f:0,ticks:0,last:''};
 document.addEventListener('visibilitychange',function(){if(document.hidden){HID.t=Date.now();HID.f=fixes;HID.ticks=0}else if(HID.t){HID.last=' · 가려짐 '+Math.round((Date.now()-HID.t)/1000)+'초 위치 '+(fixes-HID.f)+'회 갱신 '+HID.ticks+'회';HID.t=0}});
 setInterval(function(){if(!document.hidden)return;HID.ticks++;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}},1000);
 (function(){try{if(nightNow())$('boot').classList.add('dk')}catch(e){}var iv=setInterval(function(){var w=Date.now()-bootT0;if((mapReady||!mapOn)&&(fix||w>8000)||w>12000){clearInterval(iv);$('boot').classList.add('off');setTimeout(function(){$('boot').style.display='none'},400)}},150)})();
-function tick(){try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
+function tick(){try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
 addEventListener('error',function(e){errN++;lastErr=String(e.message).slice(0,80)});
 /* 새로고침해도 안내 이어 가기: 안내 중 목적지를 저장, 다시 열면 2시간 안이면 자동으로 경로 찾기 */
 function saveResume(){try{if(NAV)LS.setItem('navResume',JSON.stringify({d:NAV.dest,opt:NAV.opt||'0',via:NAV.via||[],t:Date.now()}));else LS.removeItem('navResume')}catch(e){}}
