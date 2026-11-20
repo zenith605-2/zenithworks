@@ -485,7 +485,7 @@ function renderSet(){
     A.appendChild(card)});
   optRow('rotOpts',[['3d','3D'],['2d','진행 방향 위 (2D)'],['n','북쪽 위']],VIEW,function(v){setView(v)});
   onOffRows('tollBand',[['tollShow','통행료 표시'],['hipass','하이패스 사용'],['evHi','전기차 감면 하이패스 단말기 사용']]);
-  onOffRows('showBand',[['bumpOn','과속방지턱 알림'],['poiOn','지도에 슈퍼차저 · 휴게소 표시'],['bigText','큰 글씨'],['fastOn','더 빠른 길 자동 확인 (7분마다, 티맵 호출 늘어남)']]);
+  onOffRows('showBand',[['bumpOn','과속방지턱 알림'],['poiOn','지도에 휴게소 표시'],['bigText','큰 글씨'],['fastOn','더 빠른 길 자동 확인 (7분마다, 티맵 호출 늘어남)']]);
   document.body.classList.toggle('big',CFG.bigText);camSrcAt=null;
   optRow('nightOpts',[['auto','자동 (19시~6시)'],['on','항상'],['off','사용 안 함']],CFG.night,function(v){CFG.night=v;LS.setItem('night',v);applyNight(true)});
   $('effIn').value=CFG.eff;$('kwhIn').value=CFG.kwh;
@@ -730,7 +730,7 @@ function updCamSrc(la,lo,h){
   for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++){var ck=(c0+a)+'_'+(c1+b),ids=GRID[ck];
     if(ids)for(var j=0;j<ids.length;j++){var c=CAMS[ids[j]];if(!camOk(ids[j],c))continue;var cp=camDraw(ids[j],c,la,lo,h);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2],o:c[3]==='R'?0:1}})}
     if(CFG.bumpOn&&Math.abs(a)<=1&&Math.abs(b)<=1&&BGRID[ck])BGRID[ck].forEach(function(i){var p=BUMPS[i];if(bumpOk(i,p))f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:'bump',o:-1}})});
-    if(CFG.poiOn&&PGRID[ck])PGRID[ck].forEach(function(t){var p=poiOf(t);f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:t[0]==='sc'?'sc':'rest'+p[3],o:2}})})}
+    if(CFG.poiOn&&PGRID[ck])PGRID[ck].forEach(function(t){if(t[0]==='sc')return; /* 슈퍼차저는 ⚡ 버튼 말풍선으로만 (11/21) */var p=poiOf(t);f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:t[0]==='sc'?'sc':'rest'+p[3],o:2}})})}
   (function(){var L=NAV&&NAV.inc?NAV.inc.filter(function(x){return x.s>NAV.s-30&&x.s-NAV.s<5000}).map(function(x){return x.q}):INC.filter(function(q){return dist(la,lo,q[0],q[1])<2000});L.forEach(function(q){f.push({type:'Feature',geometry:{type:'Point',coordinates:[q[1],q[0]]},properties:{ic:'inc',o:3}})})})();
   if(TMM)tmSetIcons(f);else map.getSource('cams').setData({type:'FeatureCollection',features:f});
 }
