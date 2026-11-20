@@ -324,7 +324,7 @@
 /* 티맵 로고(이용약관상 표시 필수)가 하단 바에 가리지 않게 */
 #map .vsm-pos-bottom-right,#map .vsm-pos-bottom-left{bottom:62px!important}
 body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!important}
-.evd{margin:2px 0 4px 60px;display:flex;flex-direction:column;gap:6px}
+.evd{margin:6px 0 8px;display:flex;flex-direction:column;gap:6px}
 .evr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .evr .op{min-width:64px;font-size:13px;font-weight:800;color:#555}
 .evr .ch{font-size:13px;border-radius:8px;padding:3px 8px;background:#eef1f5;color:#666}
@@ -1242,7 +1242,7 @@ function evDetail(p){var L=((p.evChargers||{}).evCharger)||[];if(!L.length)retur
   var fr=evAgeH(p)<EV_FRESH_H;var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op">'+evShort(k)+'</span>'+(g.f?'<span class="ch '+(fr&&g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' '+(fr?'<b>'+g.fa+'</b>/'+g.f:'<b>'+g.f+'</b>대')+'</span>':'')+(g.s?'<span class="ch '+(fr&&g.sa?'ok':'no')+'">완속 '+(fr?'<b>'+g.sa+'</b>/'+g.s:'<b>'+g.s+'</b>대')+'</span>':'')+'</div>'});
   var t='';if(up){var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12)),mn=Math.round((Date.now()-d)/60000);t=mn<1?'방금':mn<60?mn+'분 전':mn<1440?Math.round(mn/60)+'시간 전':Math.round(mn/1440)+'일 전'}
   h+='<p class="evn">'+(fr?[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',t?'상태 '+t+' 기준':''].filter(Boolean).join(' · '):'실시간 빈자리 정보가 없어 충전기 대수만 보여요'+(t?' (마지막 상태 '+t+')':''))+'</p></div>';return h}
-function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);el.appendChild(dv)}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
+function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);var tx=el.querySelector('.tx');tx.insertBefore(dv.firstChild,tx.querySelector('.ac'))}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
 function layDraw(){if(!LAY.mk.length)return;var W=innerWidth,H=innerHeight;for(var i=0;i<LAY.mk.length;i++){var m=LAY.mk[i],p=mapPx(m.la,m.lo);if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40){if(m.el.style.display!=='none')m.el.style.display='none'}else{if(m.el.style.display)m.el.style.display='';m.el.style.left=p.x+'px';m.el.style.top=p.y+'px'}}}
 var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#fff"/></svg>';
 function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC.map(function(p){return{p:p,d:dist(c.la,c.lo,p[0],p[1])}}).sort(function(x,y){return x.d-y.d});var near=a.filter(function(x){return x.d<40000}).slice(0,40);if(!near.length)near=a.slice(0,3);
