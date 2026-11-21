@@ -849,7 +849,8 @@ function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
 var camSrcT=0,camSrcH=null;
 function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>30)return false;var lat=d*Math.sin(df*D2R);return lat>=-6&&lat<=30}
 /* 카메라 아이콘은 도로 가운데에 (티맵처럼): 안내 중엔 경로 선 위로, 아니면 600m 안·옆 35m 안이면 내 진행 선 위로. 경고 판정은 원래 좌표 */
-function camDraw(id,c,la,lo,h){if(NAV&&NAV.camPos&&NAV.camPos[id])return NAV.camPos[id];if(h==null)return c;var d=dist(la,lo,c[0],c[1]);if(d>600||d<5)return c;var df=adiff(h,brg(la,lo,c[0],c[1])),lat=d*Math.sin(df*D2R),al=d*Math.cos(df*D2R);if(Math.abs(lat)>35||al<0)return c;return move(la,lo,h,al)}
+/* 카메라 그릴 자리: 안내 중엔 경로 위로 붙인 자리, 아니면 원래 좌표 그대로 (11/21: 차 방향 직선으로 끌어오면 굽은 길에서 아이콘이 공원 쪽에서 미끄러져 내려옴) */
+function camDraw(id,c){if(NAV&&NAV.camPos&&NAV.camPos[id])return NAV.camPos[id];return c}
 function updCamSrc(la,lo,h){
   if(!mapReady||!CAMS.length)return;var now=Date.now();
   if(camSrcAt&&now-camSrcT<1500&&dist(camSrcAt[0],camSrcAt[1],la,lo)<60&&(h==null||camSrcH==null||Math.abs(adiff(h,camSrcH))<15))return;camSrcAt=[la,lo];camSrcT=now;camSrcH=h;
