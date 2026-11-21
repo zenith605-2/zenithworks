@@ -971,20 +971,20 @@ function scoreOf(r){return r.hb==null?null:Math.max(0,100-4*(r.ha||0)-5*(r.hb||0
 function costOf(r){return Math.round(r.m/1000/r.eff*r.kwh/10)*10}
 function hm(ms){var m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분'}
 function tm(t){var d=new Date(t),h=d.getHours();return (h<12?'오전 ':'오후 ')+(h%12||12)+':'+String(d.getMinutes()).padStart(2,'0')}
-/* 주행 달력: 그날 주행이 모두 과속 없음이면 ✓(무결점), 하나라도 초과면 ✕, 아래 숫자는 그날 km (11/21) */
+/* 주행 달력: 주행한 날에 그날 km (11/21) */
 function calDraw(list,y,mo){var box=$('tripCal');if(!box)return;var first=new Date(y,mo,1),days=new Date(y,mo+1,0).getDate(),by={},tot={m:0,n:0,clean:0};
   list.forEach(function(r){var d=new Date(r.st);if(d.getFullYear()!==y||d.getMonth()!==mo)return;var k=d.getDate(),o=by[k]||(by[k]={m:0,over:0,n:0});o.m+=r.m;o.n++;if(r.over)o.over++;tot.m+=r.m;tot.n++});
   Object.keys(by).forEach(function(k){if(!by[k].over)tot.clean++});
   var h='<div class="calHd"><button data-d="-1">‹</button><b>'+y+'년 '+(mo+1)+'월</b><button data-d="1">›</button></div><div class="calGrid">'+['일','월','화','수','목','금','토'].map(function(w,i){return '<span class="wd'+(i===0?' sun':'')+'">'+w+'</span>'}).join('');
   for(var i=0;i<first.getDay();i++)h+='<span></span>';
-  var today=new Date();for(var d=1;d<=days;d++){var o=by[d],cls='cd'+(o?(o.over?' bad':' ok'):'')+(today.getFullYear()===y&&today.getMonth()===mo&&today.getDate()===d?' now':'');
-    h+='<span class="'+cls+'"><b>'+d+'</b>'+(o?'<i>'+(o.over?'✕':'✓')+'</i><small>'+Math.round(o.m/1000)+'</small>':'')+'</span>'}
-  h+='</div><div class="calSum"><b>'+(tot.m/1000).toFixed(1)+'</b>km · '+tot.n+'회 · 무결점 <b>'+tot.clean+'</b>일</div><div class="calLeg">✓ 과속 없음 · ✕ 초과 있음 · 숫자는 그날 km</div>';
+  var today=new Date();for(var d=1;d<=days;d++){var o=by[d],cls='cd'+(o?' ok':'')+(today.getFullYear()===y&&today.getMonth()===mo&&today.getDate()===d?' now':'');
+    h+='<span class="'+cls+'"><b>'+d+'</b>'+(o?'<small>'+Math.round(o.m/1000)+'km</small>':'')+'</span>'}
+  h+='</div><div class="calSum"><b>'+(tot.m/1000).toFixed(1)+'</b>km · 주행 '+tot.n+'회</div>';
   box.innerHTML=h;Array.prototype.forEach.call(box.querySelectorAll('.calHd button'),function(b){b.onclick=function(){var t=new Date(y,mo+(+b.dataset.d),1);calDraw(list,t.getFullYear(),t.getMonth())}})}
 function loadTrips(){try{return JSON.parse(LS.getItem('trips')||'[]')}catch(e){return[]}}
 function weekStart(d){var x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()}
 function sumOf(list,from){var o={n:0,m:0,t:0,c:0,tl:0,clean:0,sc:0,sn:0};list.forEach(function(r){if(r.st>=from){o.n++;var q=scoreOf(r);if(q!=null){o.sc+=q;o.sn++}o.m+=r.m;o.t+=r.en-r.st;o.c+=costOf(r);o.tl+=r.toll||0;if(!r.over)o.clean++}});return o}
-function sumLine(lbl,o){return '<div class="item"><span>'+lbl+' · '+o.n+'회 · '+(o.m/1000).toFixed(1)+'km · '+hm(o.t)+'</span><small>전기요금 약 '+o.c.toLocaleString()+'원'+(CFG.tollShow?' · 통행료 약 '+o.tl.toLocaleString()+'원':'')+' · 무결점 '+o.clean+'회'+(o.sn?' · 운전 점수 평균 '+Math.round(o.sc/o.sn)+'점':'')+'</small></div>'}
+function sumLine(lbl,o){return '<div class="item"><span>'+lbl+' · '+o.n+'회 · '+(o.m/1000).toFixed(1)+'km · '+hm(o.t)+'</span><small>전기요금 약 '+o.c.toLocaleString()+'원'+(CFG.tollShow?' · 통행료 약 '+o.tl.toLocaleString()+'원':'')+(o.sn?' · 운전 점수 평균 '+Math.round(o.sc/o.sn)+'점':'')+'</small></div>'}
 $('mTrips').onclick=function(){show('menuSheet',0);
   var list=loadTrips(),now=new Date(),mStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
   $('tripSum').outerHTML='<div id="tripSum"><div id="tripCal"></div>'+sumLine('이번 주',sumOf(list,weekStart(now)))+sumLine('이번 달',sumOf(list,mStart))+'<div class="acts"><button id="csvBtn">엑셀(CSV)로 내보내기</button></div></div>';
@@ -995,7 +995,7 @@ $('mTrips').onclick=function(){show('menuSheet',0);
   list.slice(0,60).forEach(function(r,i){var el=document.createElement('div');el.className='item trip';var d=new Date(r.st),dur=r.en-r.st;
     el.innerHTML='<div class="th"><span class="tt"></span><span class="score"></span><span class="badge"></span></div><div class="tbig"><b></b> km · <span class="dur"></span><span class="mx"></span></div><small class="t1"></small><small class="t2"></small>';
     el.querySelector('.tt').textContent=(d.getMonth()+1)+'/'+d.getDate()+' '+tm(r.st)+' · '+(r.from||'출발')+' → '+(r.dest||'도착');
-    var bd=el.querySelector('.badge');if(!r.over){bd.textContent='무결점 주행'+(r._streak>1?' · 연속 '+r._streak+'회':'')}else bd.style.display='none';
+    var bd=el.querySelector('.badge');bd.style.display='none';
     var scv=scoreOf(r),se=el.querySelector('.score');if(scv!=null)se.textContent='운전 점수 '+scv;else se.style.display='none';
     el.querySelector('b').textContent=(r.m/1000).toFixed(1);el.querySelector('.dur').textContent=hm(dur);el.querySelector('.mx').textContent='최고 '+r.max+'km/h';
     el.querySelector('.t1').textContent='음성 안내 '+(r.alerts||0)+' · 카메라 통과 '+(r.cams||0)+' · 속도 초과 '+(r.over||0)+(r.hb!=null?' · 급가속 '+r.ha+' · 급감속 '+r.hb:'')+' · 평균 '+Math.round(r.m/Math.max(1,dur/1000)*3.6)+'km/h';
