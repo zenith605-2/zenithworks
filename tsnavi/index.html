@@ -1371,14 +1371,14 @@ function allAus(buf){var b=new Uint8Array(buf),pmt=-1,vid=-1,cur=null,out=[];
     if(pusi){fin();cur={p:[],pts:0};if(b[p]===0&&b[p+1]===0&&b[p+2]===1){if(b[p+7]&0x80){var x=p+9;cur.pts=((b[x]>>1)&7)*1073741824+b[x+1]*4194304+(b[x+2]>>1)*32768+b[x+3]*128+(b[x+4]>>1)}p=p+9+b[p+8]}}
     if(cur)cur.p.push(b.subarray(p,o+188))}
   fin();return out}
-function mkDec(o,codec){if(o.dec&&o.codec===codec)return;if(o.dec)try{o.dec.close()}catch(e){}o.codec=codec;o.dec=new VideoDecoder({output:function(f){try{draw(o.cv,f);o.n++;if(o.onframe)o.onframe(o.n)}finally{f.close()}},error:function(e){o.err=String(e);o.dec=null}});o.dec.configure({codec:codec,optimizeForLatency:true})}
+function mkDec(o,codec){if(o.dec&&o.dec.state==='closed')o.dec=null;if(o.dec&&o.codec===codec)return;if(o.dec)try{o.dec.close()}catch(e){}o.codec=codec;o.dec=new VideoDecoder({output:function(f){try{draw(o.cv,f);o.n++;if(o.onframe)o.onframe(o.n)}finally{f.close()}},error:function(e){o.err=String(e);o.dec=null}});o.dec.configure({codec:codec,optimizeForLatency:true})}
 function codecOf(sps){return 'avc1.'+[sps[1],sps[2],sps[3]].map(function(x){return(x<16?'0':'')+x.toString(16)}).join('')}
 function fullN(){var n=0;for(var k in SN)if(SN[k].fm)n++;return n}
 async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
   try{
     if(!o.pl){var r=await fetch(o.url),t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href}
     var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),L2=lines(t2),seg=L2.pop(),dur=+((/#EXTINF:([\d.]+)/g.exec(t2.slice(t2.lastIndexOf('#EXTINF')))||[0,3])[1])||3;
-    var full=!o.once&&window.ccStill&&ccStill()&&(o.fm||fullN()<3);o.fm=full;
+    var full=!o.once&&(o.force||window.ccStill&&ccStill()&&(o.fm||fullN()<3));o.fm=full;
     if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href;
       if(full){var aus=allAus(await (await fetch(su)).arrayBuffer());if(!SN[id])return;var k0=-1;for(var i=0;i<aus.length;i++)if(aus[i].key&&aus[i].sps){k0=i;break}
         if(k0>=0){mkDec(o,codecOf(aus[k0].sps));var A=aus.slice(k0),p0=A[0].pts,st=performance.now();
@@ -1387,18 +1387,18 @@ async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
             if(!o.dec||o.dec.state!=='configured')break;o.dec.decode(new EncodedVideoChunk({type:A[j].key?'key':'delta',timestamp:Math.round(A[j].pts/0.09),data:A[j].es}))}
           wait=0}}
       else{var pes=null;
-        try{var rr=await fetch(su,{headers:{Range:'bytes=0-196607'}});if(rr.status===206)pes=idrPes(await rr.arrayBuffer())}catch(e){}
+        if(!o.noRange)try{var rr=await fetch(su,{headers:{Range:'bytes=0-196607'}});if(rr.status===206)pes=idrPes(await rr.arrayBuffer())}catch(e){}
         if(!pes){var fr=await fetch(su);pes=idrPes(await fr.arrayBuffer())}
         if(!SN[id])return;
         if(pes){mkDec(o,pes.codec);o.dec.decode(new EncodedVideoChunk({type:'key',timestamp:(o.ts+=1000),data:pes.es}));await o.dec.flush()}
         /* 보이는 칸이 많으면 차례로: 칸 수에 맞춰 간격을 늘림 */
         var n=Object.keys(SN).length;wait=n>3?2500*n/3:2500}}
     else if(full)wait=Math.max(300,dur*500);
-    o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);if(o.onerr)o.onerr(o.fail,o.err)}
+    o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);o.pl=null;o.noRange=o.fail>=2;if(o.onerr)o.onerr(o.fail,o.err)} /* 실패하면 재생 주소(세션)부터 다시 받고, 두 번째부턴 Range 없이 (11/21 실차 Failed to fetch) */
   if(o.once&&o.n>0){o.done=1;if(o.dec){try{o.dec.close()}catch(e){}o.dec=null}return} /* 해독기도 바로 닫음(차 하드웨어 해독기 자원) */ /* 작은 칸은 한 장 그리면 끝(SN 에 남겨 다시 받지 않음) */
   if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):wait)}
 window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
-window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err;o.once=cb.once}loop(id);return o};
+window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err;o.once=cb.once;o.force=cb.full}loop(id);return o};
 window.ccSnapStop=function(id){var o=SN[id];if(!o)return;delete SN[id];clearTimeout(o.t);if(o.dec)try{o.dec.close()}catch(e){}};
 window.ccSnapAll=function(){return SN};
 })();
@@ -1429,7 +1429,7 @@ function jamLook(j){setFree(true);zoff=j.z;manZT=Date.now();if(TMM){TMM.setCente
 function jamCards(row){var J=jamList();if(!J.length){var e=document.createElement('div');e.className='jc ok';e.innerHTML='<div class="a">막히는 곳 없음</div><div class="b">남은 경로 전부 원활</div>';row.appendChild(e);return 0}
   J.forEach(function(j){var e=document.createElement('div');e.className='jc'+(j.red?' red':'');e.innerHTML='<div class="a"></div><div class="b"></div><div class="c"></div>';e.querySelector('.a').textContent=j.ahead>30?fmtD(j.ahead)+' 앞':'지금';e.querySelector('.b').textContent=(j.red?'정체 ':'서행 ')+fmtD(j.L);e.querySelector('.c').before(Object.assign(document.createElement('div'),{className:'m',textContent:'약 '+j.min+'분 더'}));e.querySelector('.c').textContent=j.nm||'';e.onclick=function(){if(!row._dragged)jamLook(j)};row.appendChild(e)});return J.length}
 function cctvClose(){$('cctvBar').classList.remove('on');ccStopAll();cctvBigClose()}
-function ccBig(u){var v=$('cctvBigV'),cv=$('cctvBigC');cv.style.display='';cv.getContext('2d').clearRect(0,0,cv.width,cv.height);ccPlay(v,u,'big');if(ccSnapOk)ccSnapStart(cv,u,'bigS');var ct=-1;clearInterval(CC.bw);CC.bw=setInterval(function(){var run=!v.paused&&v.currentTime!==ct&&v.readyState>=3;ct=v.currentTime;cv.style.display=run?'none':''},2000)}
+function ccBig(u){var v=$('cctvBigV'),cv=$('cctvBigC');cv.style.display='';cv.getContext('2d').clearRect(0,0,cv.width,cv.height);ccPlay(v,u,'big');if(ccSnapOk)ccSnapStart(cv,u,'bigS',{full:1,err:function(n,e){if(n===1)lg(['cc','bigErr',e])}}); /* 크게 본 1개는 달리는 중에도 캔버스로 재생(영상 태그는 주행 중 멈춤) */var ct=-1;clearInterval(CC.bw);CC.bw=setInterval(function(){var run=!v.paused&&v.currentTime!==ct&&v.readyState>=3;ct=v.currentTime;cv.style.display=run?'none':''; /* 영상이 잘 나오면 캔버스 쪽은 쉬고(데이터 절약), 멈추면 다시 */if(run)ccSnapStop('bigS');else if(ccSnapOk&&!ccSnapAll().bigS)ccSnapStart(cv,u,'bigS',{full:1})},2000)}
 function cctvBigClose(){$('cctvBig').classList.remove('on');ccStop('big');ccSnapStop('bigS');clearInterval(CC.bw);setTimeout(ccVisible,300)}
 function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return}var bar=$('cctvBar'),row=$('cctvRow');bar.classList.add('on');row.innerHTML='';var nJ=jamCards(row);var wait=document.createElement('div');wait.className='note';wait.textContent='CCTV 찾는 중…';row.appendChild(wait);$('cctvN').textContent=nJ?'막히는 곳 '+nJ+'곳 · 누르면 지도에서 보기':'';var noteSet=function(t){wait.textContent=t};
   var R=NAV.R,S=NAV.S,i0=NAV.idx||0,a=[],x0=999,x1=-999,y0=999,y1=-999;for(var i=i0;i<R.length&&S[i]-NAV.s<40000;i++){var p=R[i];if(Math.max(x1,p[1])-Math.min(x0,p[1])>1.4||Math.max(y1,p[0])-Math.min(y0,p[0])>1.4)break;x0=Math.min(x0,p[1]);x1=Math.max(x1,p[1]);y0=Math.min(y0,p[0]);y1=Math.max(y1,p[0]);a.push(i)}
