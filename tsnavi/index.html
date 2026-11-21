@@ -333,6 +333,8 @@ body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!
 body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#aab1ba}body.night .evr .ch.ok{background:#1f3a2a;color:#6fd59a}
 /* 카메라 경고·속도: 회전 카드·안내 목록 바로 아래에 붙인다 (11/21) */
 body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 18px}
+.pmk i .evl{width:18px;height:18px;border-radius:5px;background:#fff;margin:0 5px 0 -3px;object-fit:contain;box-shadow:0 0 0 1px #ffffff66}
+.evr .op .evl{width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:5px;object-fit:contain}
 </style>
 </head>
 <body>
@@ -1241,7 +1243,7 @@ var EV_FRESH_H=3; /* 이보다 오래된 상태는 빈자리로 안 보여 줌 (
 function poiAddr(p){return [p.upperAddrName,p.middleAddrName,p.lowerAddrName,p.roadName||'',p.firstBuildNo||''].filter(Boolean).slice(1).join(' ').trim()}
 function evDetail(p){var L=((p.evChargers||{}).evCharger)||[];if(!L.length)return '<div class="evd"><p class="evn">충전기 상태 정보가 없는 곳이에요</p></div>';
   var G={},up=0,bad=0,busy=0;L.forEach(function(c){var fast=/급속/.test(c.powerType||'')||c.type!=='02',k=c.operatorName||c.operatorId||'기타',g=G[k]||(G[k]={f:0,fa:0,s:0,sa:0,kw:0});var m=/(\d+)kW/.exec(c.powerType||'');if(fast){g.f++;if(c.status==='2')g.fa++;if(m)g.kw=Math.max(g.kw,+m[1])}else{g.s++;if(c.status==='2')g.sa++}if(c.status==='3')busy++;if(/^[1459]$/.test(c.status))bad++;var u=+(c.updateDateTime||0);if(u>up)up=u});
-  var fr=evAgeH(p)<EV_FRESH_H;var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op" style="color:'+evColor(evShort(k))+'">'+evShort(k)+'</span>'+(g.f?'<span class="ch '+(fr&&g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' '+(fr?'<b>'+g.fa+'</b>/'+g.f:'<b>'+g.f+'</b>대')+'</span>':'')+(g.s?'<span class="ch '+(fr&&g.sa?'ok':'no')+'">완속 '+(fr?'<b>'+g.sa+'</b>/'+g.s:'<b>'+g.s+'</b>대')+'</span>':'')+'</div>'});
+  var fr=evAgeH(p)<EV_FRESH_H;var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op" style="color:'+evColor(evShort(k))+'">'+(EV_LOGO_ON&&EVLOGO[evShort(k)]?'<img class="evl" src="evlogo/'+EVLOGO[evShort(k)]+'" alt="">':'')+evShort(k)+'</span>'+(g.f?'<span class="ch '+(fr&&g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' '+(fr?'<b>'+g.fa+'</b>/'+g.f:'<b>'+g.f+'</b>대')+'</span>':'')+(g.s?'<span class="ch '+(fr&&g.sa?'ok':'no')+'">완속 '+(fr?'<b>'+g.sa+'</b>/'+g.s:'<b>'+g.s+'</b>대')+'</span>':'')+'</div>'});
   var t='';if(up){var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12)),mn=Math.round((Date.now()-d)/60000);t=mn<1?'방금':mn<60?mn+'분 전':mn<1440?Math.round(mn/60)+'시간 전':Math.round(mn/1440)+'일 전'}
   h+='<p class="evn">'+(fr?[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',p._live?'환경부 실시간':(t?'상태 '+t+' 기준':'')].filter(Boolean).join(' · '):'실시간 빈자리 정보를 못 받아 충전기 대수만 보여요')+'</p></div>';return h}
 function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);var tx=el.querySelector('.tx');tx.insertBefore(dv.firstChild,tx.querySelector('.ac'))}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
@@ -1259,8 +1261,11 @@ function evShort(n){if(EVSHORT[n])return EVSHORT[n];for(var k in EVSHORT)if(n.in
 var EVCOL={'환경부':'#0b6e4f','기후부':'#0b6e4f','한전':'#e8501c','GS':'#00838f','SK':'#d50032','에버온':'#0277bd','휴맥스':'#6a1b9a','나이스':'#3949ab','파워큐브':'#c77700','이카플러그':'#00695c','플러그링크':'#4527a0','스타코프':'#d84315','채비':'#1565c0','LGU+':'#ad1457','테슬라':'#b71c1c','E-pit':'#283593','현대':'#002c5f','기아':'#05141f','KT':'#c62828'};
 var EVPAL=['#5d4037','#455a64','#7b1fa2','#00796b','#c2185b','#303f9f','#f57c00','#0097a7'];
 function evColor(n){if(EVCOL[n])return EVCOL[n];var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return EVPAL[h%EVPAL.length]}
+/* 사업자 로고 (각 사 홈페이지 사이트 아이콘, 운영사 표시용). 빼려면 EV_LOGO_ON=false */
+var EV_LOGO_ON=true,EVLOGO={'에버온':'everon.png','GS':'gs.png','채비':'chaevi.png','휴맥스':'humax.png','나이스':'nice.png','플러그링크':'pluglink.png','파워큐브':'powercube.png','스타코프':'starkoff.png','LGU+':'voltup.svg'};
+function evBadge(n){var f=EV_LOGO_ON&&EVLOGO[n];return f?'<img class="evl" src="evlogo/'+f+'" alt="'+n+'">':'<u style="background:'+evColor(n)+'">'+n+'</u>'}
 function evLabel(p){var e=evSum(p),tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p),fresh=evAgeH(p)<EV_FRESH_H;
-  return {fresh:fresh,full:fresh&&tot&&!e.free,html:(op.length?'<u style="background:'+evColor(evShort(op[0]))+'">'+evShort(op[0])+'</u>':'')+(fresh?(e.fa?'⚡':'')+(tot?e.free+'/'+tot:'?'):(tot?tot+'대':'?'))}}
+  return {fresh:fresh,full:fresh&&tot&&!e.free,html:(op.length?evBadge(evShort(op[0])):'')+(fresh?(e.fa?'⚡':'')+(tot?e.free+'/'+tot:'?'):(tot?tot+'대':'?'))}}
 /* 환경부 실시간 상태로 티맵 충전기 목록을 덮어씀 (충전소 번호 statId 가 같은 형식) */
 var EVSLOW={'02':1,'08':1};
 function evMerge(p,live){var L=((p.evChargers||{}).evCharger)||[],sid={},any=0;L.forEach(function(c){if(c.stationId)sid[c.stationId]=c.operatorName||c.operatorId||''});var out=[];
