@@ -848,6 +848,9 @@ function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
   N.cams=cam;N.bumps=bmp;N.camPos=cpos}
 var camSrcT=0,camSrcH=null;
 /* 지도에 그릴 '앞쪽' 판정: 멀수록 옆으로 넓게 봄 (11/21: 굽은 길에서 경고는 320m 부터인데 아이콘은 늦게 나오던 것) */
+/* 한 번 보인 카메라는 지나칠 때(뒤로 100° 넘게 돌거나 멀어질 때)까지 유지 → 방향이 흔들려도 깜빡이지 않음 (11/21) */
+var SHOWN={};
+function stillAhead(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<25)return true;return Math.abs(adiff(h,brg(la,lo,p[0],p[1])))<100}
 function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>40)return false;var lat=d*Math.sin(df*D2R),w=Math.max(30,d*0.15);return lat>=-Math.max(10,w*0.5)&&lat<=w}
 /* 카메라 아이콘은 도로 가운데에 (티맵처럼): 안내 중엔 경로 선 위로, 아니면 600m 안·옆 35m 안이면 내 진행 선 위로. 경고 판정은 원래 좌표 */
 /* 카메라 그릴 자리: 안내 중엔 경로 위로 붙인 자리, 아니면 원래 좌표 그대로 (11/21: 차 방향 직선으로 끌어오면 굽은 길에서 아이콘이 공원 쪽에서 미끄러져 내려옴) */
@@ -856,8 +859,8 @@ function updCamSrc(la,lo,h){
   if(!mapReady||!CAMS.length)return;var now=Date.now();
   if(camSrcAt&&now-camSrcT<1500&&dist(camSrcAt[0],camSrcAt[1],la,lo)<60&&(h==null||camSrcH==null||Math.abs(adiff(h,camSrcH))<15))return;camSrcAt=[la,lo];camSrcT=now;camSrcH=h;
   var f=[],c0=Math.floor(la*100),c1=Math.floor(lo*100),nav=NAV&&NAV.cams,s0=nav?NAV.s:0;
-  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return false;return aheadOk(la,lo,h,c,2500)};
-  var bumpOk=function(id,p){if(nav){var bs=NAV.bumps[id];return bs!=null&&bs>s0-20&&bs<s0+800}if(h==null)return false;return aheadOk(la,lo,h,p,600)};
+  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return !!SHOWN[id];var ok=SHOWN[id]?stillAhead(la,lo,h,c,2800):aheadOk(la,lo,h,c,2500);if(ok)SHOWN[id]=now;else delete SHOWN[id];return ok};
+  var bumpOk=function(id,p){if(nav){var bs=NAV.bumps[id];return bs!=null&&bs>s0-20&&bs<s0+800}var k='b'+id;if(h==null)return !!SHOWN[k];var ok=SHOWN[k]?stillAhead(la,lo,h,p,700):aheadOk(la,lo,h,p,600);if(ok)SHOWN[k]=now;else delete SHOWN[k];return ok};
   for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++){var ck=(c0+a)+'_'+(c1+b),ids=GRID[ck];
     if(ids)for(var j=0;j<ids.length;j++){var c=CAMS[ids[j]];if(!camOk(ids[j],c))continue;var cp=camDraw(ids[j],c,la,lo,h);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2],o:c[3]==='R'?0:1}})}
     if(CFG.bumpOn&&Math.abs(a)<=1&&Math.abs(b)<=1&&BGRID[ck])BGRID[ck].forEach(function(i){var p=BUMPS[i];if(bumpOk(i,p))f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:'bump',o:-1}})});
