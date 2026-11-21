@@ -843,7 +843,7 @@ function projSeg(la,lo,A,B){var kx=111320*Math.cos(la*D2R),ky=111320,ax=(A[1]-lo
 function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
   for(var i=0;i<R.length-1;i++){if(S[i]-last<20)continue;last=S[i];var h=brg(R[i][0],R[i][1],R[i+1][0],R[i+1][1]),c0=Math.floor(R[i][0]*100),c1=Math.floor(R[i][1]*100);
     for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var k=(c0+a)+'_'+(c1+b),ids=GRID[k];
-      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id],d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<35&&sideOk(h,R[i][0],R[i][1],c)&&(!N.RN||camRoadOk(N.RN[i],c))){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
+      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id],d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<35&&sideOk(h,R[i][0],R[i][1],c)&&(!N.RN||camRoadOk(N.RN[i],c,N.T&&N.T[i]>=0&&N.T[i]<=2))){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
       var bs=BGRID[k];if(bs)bs.forEach(function(id){if(bmp[id]!=null)return;var p=BUMPS[id];if(dist(R[i][0],R[i][1],p[0],p[1])<18)bmp[id]=S[i]})}}
   N.cams=cam;N.bumps=bmp;N.camPos=cpos}
 var camSrcT=0,camSrcH=null;
@@ -851,10 +851,11 @@ var camSrcT=0,camSrcH=null;
 /* 한 번 보인 카메라는 지나칠 때(뒤로 100° 넘게 돌거나 멀어질 때)까지 유지 → 방향이 흔들려도 깜빡이지 않음 (11/21) */
 var SHOWN={};
 /* 카메라가 단속하는 도로(자료 7번째)와 지금 도로가 다르면 옆길 카메라로 보고 뺌 (11/21: 교차로 한가운데 옆길 카메라가 우리 쪽으로 뜸) */
-function rnorm(x){return String(x||'').replace(/\s|\(.*?\)/g,'')}
-function roadMatch(a,b){a=rnorm(a);b=rnorm(b);if(!a||!b)return true;return a===b||a.indexOf(b)>=0||b.indexOf(a)>=0}
-/* 이름 비교는 교차로 카메라(신호·신호과속)만: 고속도로 과속 카메라는 자료 이름이 티맵과 달라도 놓치면 안 되니 그대로 */
-function camRoadOk(rn,c){return c[3]==='S'||roadMatch(rn,c[6])}
+function rnorm(x){var y=String(x||'').replace(/\s|\(.*?\)/g,'').replace(/호선$/,'');return /^(일반도로|도로|이름없는도로)$/.test(y)?'':y /* 이름 모르는 길은 비교 안 함 */}
+function roadMatch(a,b){a=rnorm(a);b=rnorm(b);if(!a||!b)return true;return a===b /* 정확히 같아야: '성남대로' 와 '성남대로407번길' 은 다른 길 */}
+/* 고속·도시고속·국도(티맵 도로 분류 0~2)의 과속 카메라는 자료 이름이 티맵과 달라도 놓치면 안 되니 이름 비교를 안 함. 그 밖은 모두 이름이 같아야 */
+function camRoadOk(rn,c,hw){return (c[3]==='S'&&hw)||roadMatch(rn,c[6])}
+function roadNowHw(){return LIMN.cat!=null&&LIMN.cat<=2}
 function roadNowName(la,lo){return LIMN.road&&Date.now()-LIMN.rt<90000&&dist(la,lo,LIMN.rla,LIMN.rlo)<400?LIMN.road:''}
 function stillAhead(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<25)return true;return Math.abs(adiff(h,brg(la,lo,p[0],p[1])))<100}
 function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>40)return false;var lat=d*Math.sin(df*D2R),w=Math.max(30,d*0.15);return lat>=-Math.max(10,w*0.5)&&lat<=w}
@@ -865,7 +866,7 @@ function updCamSrc(la,lo,h){
   if(!mapReady||!CAMS.length)return;var now=Date.now();
   if(camSrcAt&&now-camSrcT<1500&&dist(camSrcAt[0],camSrcAt[1],la,lo)<60&&(h==null||camSrcH==null||Math.abs(adiff(h,camSrcH))<15))return;camSrcAt=[la,lo];camSrcT=now;camSrcH=h;
   var f=[],c0=Math.floor(la*100),c1=Math.floor(lo*100),nav=NAV&&NAV.cams,s0=nav?NAV.s:0;
-  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return !!SHOWN[id];var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c)){delete SHOWN[id];return false}var ok=SHOWN[id]?stillAhead(la,lo,h,c,2800):aheadOk(la,lo,h,c,2500);if(ok)SHOWN[id]=now;else delete SHOWN[id];return ok};
+  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return !!SHOWN[id];var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c,roadNowHw())){delete SHOWN[id];return false}var ok=SHOWN[id]?stillAhead(la,lo,h,c,2800):aheadOk(la,lo,h,c,2500);if(ok)SHOWN[id]=now;else delete SHOWN[id];return ok};
   var bumpOk=function(id,p){if(nav){var bs=NAV.bumps[id];return bs!=null&&bs>s0-20&&bs<s0+800}var k='b'+id;if(h==null)return !!SHOWN[k];var ok=SHOWN[k]?stillAhead(la,lo,h,p,700):aheadOk(la,lo,h,p,600);if(ok)SHOWN[k]=now;else delete SHOWN[k];return ok};
   for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++){var ck=(c0+a)+'_'+(c1+b),ids=GRID[ck];
     if(ids)for(var j=0;j<ids.length;j++){var c=CAMS[ids[j]];if(!camOk(ids[j],c))continue;var cp=camDraw(ids[j],c,la,lo,h);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2],o:c[3]==='R'?0:1}})}
@@ -1366,7 +1367,7 @@ function limRoute(N){var R=N.R,n=R.length,step=Math.max(1,Math.ceil(n/480)),idx=
     var M=((d||{}).resultData||{}).matchedPoints||[],at={};M.forEach(function(m){if(m.sourceIndex!=null){var v=+m.speed||0;at[m.sourceIndex]=(m.roadCategory>=11||v<20)?0:v}});
     var L=new Array(n),cur=at[0]||0,k=0;for(var i=0;i<n;i++){while(k<idx.length-1&&idx[k+1]<=i){k++;if(at[k]!=null)cur=at[k]}L[i]=cur}
     NAV.LIM=L}).catch(function(){if(NAV&&NAV.R===R)NAV.LIMFAIL=1})}
-function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.road=h.roadName&&!/^(일반도로|도로)$/.test(h.roadName)?h.roadName:'';LIMN.rt=Date.now();LIMN.rla=la;LIMN.rlo=lo;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
+function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.road=h.roadName&&!/^(일반도로|도로)$/.test(h.roadName)?h.roadName:'';LIMN.cat=h.roadCategory==null?99:+h.roadCategory;LIMN.rt=Date.now();LIMN.rla=la;LIMN.rlo=lo;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
 function limNow(la,lo,kmh,now){var v=0;
   if(NAV&&NAV.R){if(!PREV&&NAV.R!==LIMR&&now-LIMT>5000&&now-(NAV.t0||0)>1500){LIMR=NAV.R;LIMT=now;NAV.LIM=null;limRoute(NAV)}if(NAV.LIM)v=NAV.LIM[Math.max(0,Math.min(NAV.LIM.length-1,NAV.idx))]||0}
   if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&((now-LIMN.t>90000&&dist(la,lo,LIMN.la,LIMN.lo)>500)||(!NAV&&now-LIMN.t>10000&&(dist(la,lo,LIMN.la,LIMN.lo)>250||(head!=null&&LIMN.h!=null&&Math.abs(adiff(head,LIMN.h))>50)))))limNear(la,lo);if(now-LIMN.t<150000&&dist(la,lo,LIMN.la,LIMN.lo)<1200)v=LIMN.v}
@@ -1489,7 +1490,7 @@ function findAhead(la,lo,h){
       if(NAV&&NAV.cams){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
       var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:20))continue;
       var lat=d*Math.sin(df*D2R);if(!(NAV&&NAV.cams)&&(lat<-6||lat>28))continue;
-      if(!(NAV&&NAV.cams)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c))continue}
+      if(!(NAV&&NAV.cams)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c,roadNowHw()))continue}
       if(!best||d<best.d)best={id:id,c:c,d:d}}}
   return best;
 }
