@@ -269,7 +269,7 @@
   #boot .sp{width:38px;height:38px;border-radius:50%;border:4px solid #2b7bff33;border-top-color:#2b7bff;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   #lp{position:fixed;left:50%;top:64px;transform:translateX(-50%);width:440px;max-width:calc(100% - 32px);z-index:22;background:#fff;border-radius:14px;box-shadow:0 6px 24px #0004;padding:4px 6px;display:none}
   #lp.on{display:block;animation:lpIn .18s ease-out}@keyframes lpIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}}
-  #lp .go{background:#2b7bff!important;color:#fff!important}#lp .crow{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-top:1px solid #0001;margin-top:2px}#lp .crow span{flex:1;font-size:14px;color:#667085;white-space:nowrap}#lp .crow button{height:40px;padding:0 14px;border:0;border-radius:10px;background:#eef1f5;color:#111;font-size:15px;font-weight:700;white-space:nowrap}#lp .crow button.bad{background:#fde8e8;color:#c81e1e}body.night #lp .crow button{background:#2a2e35;color:#e8eaed}body.night #lp .crow button.bad{background:#3a2326;color:#ff8a8a}body.night #lp .crow{border-color:#ffffff14}
+  #lp .go{background:#2b7bff!important;color:#fff!important}#lp .crow{padding:8px 10px 8px;border-top:1px solid #0001;margin-top:2px}#lp .ct{font-size:13px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}#lp .cg{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}#lp .cg button{height:42px;border:0;border-radius:10px;background:#eef1f5;color:#111;font-size:16px;font-weight:800;padding:0}#lp .cg button.bad{background:#fde8e8;color:#c81e1e;font-size:15px}#lp .cg button.on{background:#2b7bff;color:#fff}#lp .cok{display:block;width:100%;height:46px;margin-top:8px;border:0;border-radius:11px;background:#2b7bff;color:#fff;font-size:16px;font-weight:800}#lp .cok:disabled{background:#c9d3e0;color:#fff}body.night #lp .cg button{background:#2a2e35;color:#e8eaed}body.night #lp .cg button.bad{background:#3a2326;color:#ff8a8a}body.night #lp .cg button.on{background:#2b7bff;color:#fff}body.night #lp .cok:disabled{background:#3a3f47;color:#8b929b}body.night #lp .crow{border-color:#ffffff14}
   #lp .x{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;border-radius:50%;background:#0000;font-size:18px;color:#888;z-index:1}
   body.night #lp{background:#1c1f24;color:#eee}
   #lpPin{position:fixed;z-index:5;width:30px;height:40px;margin:-40px 0 0 -15px;pointer-events:none;display:none}
@@ -735,16 +735,26 @@ function lpShow(px,py){var ll=scrToLL(px,py);if(!ll)return;lpAt=ll;if(navigator.
     dd.name=bld||road||jib||'지도에서 고른 곳';el.querySelector('.nm').textContent=dd.name;el.querySelector('.sb').textContent=[bld?road:'',jib,fix?fmtD(dist(fix.la,fix.lo,ll.la,ll.lo)):''].filter(Boolean).join(' · ')}).catch(function(){el.querySelector('.sb').textContent=''})}
 /* 카메라 신고(11/21): 꾹 누른 곳에 [카메라 있음] / 가까운 카메라가 있으면 [카메라 없음]. 서버(camfix)로 보내고, '없음'은 이 차에서 바로 숨김 */
 function camNear(la,lo,R){var best=null,bd=R,c0=Math.floor(la*100),c1=Math.floor(lo*100);for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){(GRID[(c0+a)+'_'+(c1+b)]||[]).forEach(function(id){var c=CAMS[id],d=dist(la,lo,c[0],c[1]);if(d<bd){bd=d;best=id}})}return best}
-function camReport(kind,ll,id){var c=id!=null?CAMS[id]:null;var body={kind:kind,la:ll.la,lo:ll.lo,h:head,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
+/* 차 진행 방향: 지금 달리는 중이면 그 방향, 멈춰 있으면 2분 안에 마지막으로 달리던 방향(신호 대기 등). 카메라가 어느 쪽 차를 찍는지 알려면 필요 */
+var MOVH=null,MOVHT=0;
+function carHeading(){var n=Date.now();if(head!=null&&v>2.5){MOVH=head;MOVHT=n}return MOVH!=null&&n-MOVHT<120000?{h:MOVH,ok:true}:{h:head,ok:false}}
+setInterval(carHeading,1000);
+function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(r.ok?'신고했어요. 데이터 고칠 때 반영할게요':'지금은 보낼 수 없어요')}).catch(function(){toast('보내지 못했어요')});
-  lg(['camfix',Date.now(),kind,id]);
-  if(kind==='wrong'&&c){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[c._k]='x';LS.setItem('camfix4',JSON.stringify(fx));indexCams(CAMS);if(NAV)routeHits(NAV);if(target&&target.id===id)target=null;try{camSrcAt=null}catch(e){}}
+  lg(['camfix',Date.now(),kind,id,lim]);
+  if(kind==='wrong'&&c){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[c._k]='x';LS.setItem('camfix4',JSON.stringify(fx));indexCams(CAMS);if(NAV)routeHits(NAV);if(target&&target.id===id)target=null}
   lpClose()}
-function camReportRow(b,ll){var id=camNear(ll.la,ll.lo,80),row=document.createElement('div');row.className='crow';
-  var t=document.createElement('span');t.textContent=id!=null?'카메라 '+(CAMS[id][2]||'신호')+' · '+Math.round(dist(ll.la,ll.lo,CAMS[id][0],CAMS[id][1]))+'m':'카메라 신고';row.appendChild(t);
-  var a=document.createElement('button');a.type='button';a.textContent='카메라 있음';a.onclick=function(e){e.stopPropagation();camReport('add',ll,id)};row.appendChild(a);
-  if(id!=null){var w=document.createElement('button');w.type='button';w.className='bad';w.textContent='카메라 없음';w.onclick=function(e){e.stopPropagation();camReport('wrong',ll,id)};row.appendChild(w)}
-  b.appendChild(row)}
+/* 카메라 신고 3번 안에: ① 지도 꾹 누르기 → ② 제한속도(또는 '신호'·'없음') → ③ 신고 (11/21 사용자) */
+function camReportRow(b,ll){var id=camNear(ll.la,ll.lo,80),row=document.createElement('div'),sel=null;row.className='crow';
+  var ch=carHeading(),dn=ch.h==null?'':['북','북동','동','남동','남','남서','서','북서'][Math.round(((ch.h%360)+360)%360/45)%8]+'쪽으로 가는 차 기준';
+  var t=document.createElement('div');t.className='ct';t.textContent='카메라 신고'+(id!=null?' · 근처 카메라 '+(CAMS[id][2]||'신호')+' ('+Math.round(dist(ll.la,ll.lo,CAMS[id][0],CAMS[id][1]))+'m)':'')+(dn?' · '+dn:'');row.appendChild(t);
+  var g=document.createElement('div');g.className='cg';row.appendChild(g);
+  var ok=document.createElement('button');ok.type='button';ok.className='cok';ok.textContent='신고';ok.disabled=true;
+  var opts=[30,40,50,60,70,80,90,100,110,'신호'];if(id!=null)opts.push('없음');
+  opts.forEach(function(o){var k=document.createElement('button');k.type='button';k.textContent=o;if(o==='없음')k.className='bad';
+    k.onclick=function(e){e.stopPropagation();Array.prototype.forEach.call(g.children,function(x){x.classList.remove('on')});k.classList.add('on');sel=o;ok.disabled=false;ok.textContent=o==='없음'?'카메라 없음 신고':(o==='신호'?'신호 카메라 신고':o+' 카메라 신고')};g.appendChild(k)});
+  ok.onclick=function(e){e.stopPropagation();if(sel==null)return;if(sel==='없음')camReport('wrong',ll,id,null);else camReport('add',ll,id,sel==='신호'?0:sel)};
+  row.appendChild(ok);b.appendChild(row)}
 $('lp').querySelector('.x').onclick=function(e){e.stopPropagation();lpClose()};
 $('map').addEventListener('pointerdown',function(e){clearTimeout(lpT);if(PREV)return;var x=e.clientX,y=e.clientY;lpT=setTimeout(function(){if(Object.keys(PT).length===1&&(!drag||!drag.moved))lpShow(x,y)},600)},true);
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,function(){clearTimeout(lpT)},true)});
