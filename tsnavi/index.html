@@ -1486,7 +1486,7 @@ function fixCam(b){var id=target?target.id:lastPassed;if(id==null||!fix){b.textC
 function findAhead(la,lo,h){
   var c0=Math.floor(la*100),c1=Math.floor(lo*100),best=null;
   for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=GRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;
-    for(var j=0;j<ids.length;j++){var id=ids[j],c=CAMS[id];if(passed[id])continue;var d=dist(la,lo,c[0],c[1]);if(d>2100||d<5)continue;
+    for(var j=0;j<ids.length;j++){var id=ids[j],c=CAMS[id];if(passed[id])continue;var d=dist(la,lo,c[0],c[1]);if(d>(NAV&&NAV.cams?2100:1000)||d<5)continue; /* 안내 없을 땐 1km 까지만: 직선 앞 먼 카메라는 다른 길일 때가 많음 */
       if(NAV&&NAV.cams){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
       var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:20))continue;
       var lat=d*Math.sin(df*D2R);if(!(NAV&&NAV.cams)&&(lat<-6||lat>28))continue;
