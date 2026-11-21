@@ -854,10 +854,8 @@ var SHOWN={};
 function rnorm(x){var y=String(x||'').replace(/\s|\(.*?\)/g,'').replace(/호선$/,'');return /^(일반도로|도로|이름없는도로)$/.test(y)?'':y /* 이름 모르는 길은 비교 안 함 */}
 function roadMatch(a,b){a=rnorm(a);b=rnorm(b);if(!a||!b)return true;return a===b /* 정확히 같아야: '성남대로' 와 '성남대로407번길' 은 다른 길 */}
 /* 고속·도시고속·국도(티맵 도로 분류 0~2)에선 이름 비교 안 함 */
-function camRoadOk(rn,c,hw){if(hw)return true;var x=rnorm(rn),y=rnorm(c[6]);if(!x||!y)return true;
-  /* 경찰청 이름은 설치 주소 기준이라 '내정로174번길' 처럼 골목 이름이 붙은 카메라가 큰길(수내로) 위에 있기도 함 (11/21 실차: 30 어린이 카메라 놓침).
-     그래서 둘 다 큰길 이름일 때만 다르면 뺌. 놓치는 것보다 하나 더 보이는 게 낫다 */
-  if(/\d+(번)?길$/.test(x)||/\d+(번)?길$/.test(y))return true;return x===y}
+/* 도로 이름 비교는 끔 (11/21 실차 두 번: 경찰청 자료 이름이 설치 주소·옆길 이름이라 진짜 카메라를 놓침). 놓치는 것보다 옆길 카메라 하나 더 보이는 게 낫다 */
+function camRoadOk(){return true}
 function roadNowHw(){return LIMN.cat!=null&&LIMN.cat<=2}
 function roadNowName(la,lo){return LIMN.road&&Date.now()-LIMN.rt<90000&&dist(la,lo,LIMN.rla,LIMN.rlo)<400?LIMN.road:''}
 function stillAhead(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<25)return true;return Math.abs(adiff(h,brg(la,lo,p[0],p[1])))<100}
@@ -1444,7 +1442,7 @@ function navTick(la,lo,kmh,now){
   var pr=project(la,lo);if(!pr)return null;
   NAV.idx=pr.i;NAV.s=NAV.S[pr.i]+pr.t*(NAV.S[pr.i+1]-NAV.S[pr.i]);
   if(Math.abs(NAV.idx-lastDrawIdx)>=3){lastDrawIdx=NAV.idx;drawRoute()}
-  if(pr.d>50&&v>3){if(!NAV.offT)NAV.offT=now;if(now-NAV.offT>4000&&now-NAV.lastRoute>30000){NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
+  if(pr.d>50&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션) */if(now-NAV.offT>4000&&now-NAV.lastRoute>30000){NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
   var remain=NAV.total-NAV.s;
   if(remain<30||dist(la,lo,NAV.dest.la,NAV.dest.lo)<30){sayParts(['arrive'],true,'목적지에 도착했습니다',660,3);var AN=NAV;endNav();showArrive(AN);return null}
   NAV.G.forEach(function(g){if(g.t===185&&!g.done&&g.s<NAV.s-5){g.done=1;if(NAV.via&&NAV.via.length)NAV.via.shift();sayParts(['via_arrive'],true,'경유지에 도착했습니다',660,2);drawRoute()}});
@@ -1556,7 +1554,7 @@ function tickBody(){
   var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=linkOk()?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12;
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
   DR.d=(DR.d||0)+(age>(inTun?1.2:2.5)&&tv?tv:v)*drDt;
-  if(age>(inTun?1.2:2.5)&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
+  if(age>(inTun?1.2:2.5)&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
   else if(age>2.5&&v>4&&head!=null&&age<40){var p=move(la,lo,head,v*age);la=p[0];lo=p[1];drOn=true}
   else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(2,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
