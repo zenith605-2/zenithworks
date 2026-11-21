@@ -875,7 +875,7 @@ function updCamSrc(la,lo,h){
     if(CFG.bumpOn&&Math.abs(a)<=1&&Math.abs(b)<=1&&BGRID[ck])BGRID[ck].forEach(function(i){var p=BUMPS[i];if(bumpOk(i,p))f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:'bump',o:-1}})});
     if(CFG.poiOn&&PGRID[ck])PGRID[ck].forEach(function(t){if(t[0]==='sc')return; /* 슈퍼차저는 ⚡ 버튼 말풍선으로만 (11/21) */var p=poiOf(t);f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:t[0]==='sc'?'sc':'rest'+p[3],o:2}})})}
   (function(){var L=NAV&&NAV.inc?NAV.inc.filter(function(x){return x.s>NAV.s-30&&x.s-NAV.s<5000}).map(function(x){return x.q}):INC.filter(function(q){return dist(la,lo,q[0],q[1])<2000});L.forEach(function(q){f.push({type:'Feature',geometry:{type:'Point',coordinates:[q[1],q[0]]},properties:{ic:'inc',o:3}})})})();
-  f=f.filter(function(a,i){for(var k=0;k<i;k++){var b=f[k];if(b.properties.ic===a.properties.ic&&dist(a.geometry.coordinates[1],a.geometry.coordinates[0],b.geometry.coordinates[1],b.geometry.coordinates[0])<20)return false}return true}); /* 같은 자리 겹친 카메라는 하나만 (11/21) */
+  f=f.filter(function(a,i){for(var k=0;k<i;k++){var b=f[k];if(b.properties.ic===a.properties.ic&&dist(a.geometry.coordinates[1],a.geometry.coordinates[0],b.geometry.coordinates[1],b.geometry.coordinates[0])<60)return false}return true}); /* 같은 자리 겹친 카메라는 하나만 (11/21) */
   if(TMM)tmSetIcons(f);else map.getSource('cams').setData({type:'FeatureCollection',features:f});
 }
 
@@ -1483,7 +1483,8 @@ setInterval(function(){if(!demo)return;var now=Date.now(),dt=(now-demo.t)/1000;d
 function secEnd(){if(!NAV||!NAV.cams)return null;var best=null;for(var id in NAV.cams){var cs=NAV.cams[id],c=CAMS[id];if(c&&c[4]===2&&cs>NAV.s+50&&(best==null||cs<best))best=cs}return best}
 function secDraw(){var b=$('secBar');if(!b)return;var sc=section;if(!sc){if(b.style.display!=='none')b.style.display='none';return}
   var avg=Math.round(sc.m/Math.max(1,(Date.now()-sc.t)/1000)*3.6),txt,pct=null;
-  if(sc.end!=null&&NAV&&sc.s0!=null){var tot=Math.max(1,sc.end-sc.s0),rem=Math.max(0,sc.end-NAV.s);pct=Math.min(100,Math.max(0,100*(1-rem/tot)));txt='남은 <b>'+(rem>=1000?(rem/1000).toFixed(1)+'</b>km':Math.round(rem)+'</b>m')}else txt='지난 <b>'+(sc.m/1000).toFixed(1)+'</b>km';
+  if(sc.end!=null&&NAV&&sc.s0!=null){var tot=Math.max(1,sc.end-sc.s0),rem=Math.max(0,sc.end-NAV.s);pct=Math.min(100,Math.max(0,100*(1-rem/tot)));txt='남은 <b>'+(rem>=1000?(rem/1000).toFixed(1)+'</b>km':Math.round(rem)+'</b>m');
+    /* 평균이 제한을 넘지 않으려면 끝까지 최소 이만큼 더 걸려야 함 */var need=Math.round(tot/(sc.lim/3.6)-(Date.now()-sc.t)/1000);txt+=need>0?' · 최소 <b>'+Math.floor(need/60)+':'+String(need%60).padStart(2,'0')+'</b>':' · 여유'}else txt='지난 <b>'+(sc.m/1000).toFixed(1)+'</b>km';
   b.querySelector('span').innerHTML='구간단속 · '+txt+' · 평균 <b class="'+(avg>sc.lim?'ov':'')+'">'+avg+'</b>/'+sc.lim;
   var u=b.querySelector('u');u.style.width=(pct==null?0:pct)+'%';b.querySelector('i').style.display=pct==null?'none':'';b.style.display=''}
 var lastPassed=null,target=null,passed={},announced={},lastBeep=0,section=null;
