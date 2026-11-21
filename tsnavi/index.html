@@ -964,7 +964,8 @@ function tripTick(la,lo,kmh,now,over){
   if(demo)return;
   if(over&&!wasOver&&TRIP)TRIP.over++;wasOver=over;
   if(!TRIP){if(kmh>12){TRIP={st:now,m:0,max:0,over:0,alerts:0,cams:0,fare:0,ha:0,hb:0,av:{t:now,v:kmh/3.6},hat:0,from:'',sla:la,slo:lo,la:la,lo:lo,path:[[+la.toFixed(5),+lo.toFixed(5)]],pl:[la,lo],dest:NAV?NAV.dest.name:''};stillSince=0;var T0=TRIP;revName(la,lo,function(n){T0.from=n})}return}
-  var d=dist(TRIP.la,TRIP.lo,la,lo);if(d<200){TRIP.m+=d}TRIP.la=la;TRIP.lo=lo;
+  /* 거리 = 속도 × 시간 (11/21: 위치 흔들림을 더해서 3.5km 를 4.8km 로 세던 것) */
+  var tdt=TRIP.lt?Math.min(3,Math.max(0,(now-TRIP.lt)/1000)):0;TRIP.lt=now;TRIP.m+=kmh/3.6*tdt;TRIP.la=la;TRIP.lo=lo;
   if(kmh>TRIP.max)TRIP.max=kmh;
   var adt=(now-TRIP.av.t)/1000;if(adt>=1){if(adt<=2.5){var acc=(kmh/3.6-TRIP.av.v)/adt;if(now-TRIP.hat>4000){if(acc>3.0){TRIP.ha++;TRIP.hat=now}else if(acc<-3.4){TRIP.hb++;TRIP.hat=now}}}TRIP.av={t:now,v:kmh/3.6}}if(NAV){if(!TRIP.dest)TRIP.dest=NAV.dest.name;if(NAV.fare)TRIP.fare=NAV.fare}
   if(dist(TRIP.pl[0],TRIP.pl[1],la,lo)>60&&TRIP.path.length<3000){TRIP.path.push([+la.toFixed(5),+lo.toFixed(5)]);TRIP.pl=[la,lo]}
