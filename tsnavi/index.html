@@ -333,6 +333,7 @@ body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!
 body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#aab1ba}body.night .evr .ch.ok{background:#1f3a2a;color:#6fd59a}
 /* 카메라 경고·속도: 회전 카드·안내 목록 바로 아래에 붙인다 (11/21) */
 body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 18px}
+body:not(.nomap) #left #bumpBox{position:static;margin:10px 0 0 18px}
 .pmk i .evl{width:18px;height:18px;border-radius:5px;background:#fff;margin:0 5px 0 -3px;object-fit:contain;box-shadow:0 0 0 1px #ffffff66}
 .evr .op .evl{width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:5px;object-fit:contain}
 /* 차량 연동 상태 칩 (날씨 아래) */
@@ -358,6 +359,12 @@ body.dev .grid.mg #mLink{display:flex!important}
 .devTools{margin:12px 2px 0;font-size:13px;color:#8a919c}
 .devTools button{border:0;background:none;color:#2b7bff;font-size:13px;padding:4px 6px;margin-left:2px}
 .nowrap2{font-size:13px;margin:12px 2px 0;line-height:1.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 이번 주행 통계 (주행 중에만, 왼쪽 아래) */
+#tripStat{position:fixed;left:12px;bottom:96px;z-index:5;display:none;gap:14px;align-items:baseline;background:#ffffffe8;color:#111;border-radius:14px;padding:7px 13px;box-shadow:0 2px 8px #0003;font-size:12px;color:#667085;white-space:nowrap}
+#tripStat.show{display:flex}#tripStat b{font-size:17px;font-weight:800;color:#111;margin-right:2px}
+body.nav #tripStat{bottom:106px}
+body.night #tripStat{background:#2a2e35e8;color:#8b929b}body.night #tripStat b{color:#e8eaed}
+@media (max-width:600px){#tripStat{bottom:118px;gap:10px;padding:6px 10px}#tripStat b{font-size:15px}}
 </style>
 </head>
 <body>
@@ -394,6 +401,7 @@ body.dev .grid.mg #mLink{display:flex!important}
   <div id="tag"></div>
 </div>
 
+<div id="tripStat"></div>
 <button id="linkChip" type="button"><i></i><span></span></button>
 <button id="wx" class="wxc"><span id="wxIc"></span><b id="wxT">-</b><span id="wxA"></span><span id="wxW" class="aq" style="display:none;background:#e3151a"></span></button>
 <div id="viewPill"><button data-v="3d"><b>3D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="2d"><b>2D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="n"><b>N</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button class="vx" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
@@ -553,6 +561,11 @@ $('keySave').onclick=function(){var k=$('keyIn').value.trim();if(!k){KEY='';LS.r
 try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);if(LS.getItem('dev')==='1')document.body.classList.add('dev')}catch(e){}
 Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(b){b.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(o){o.classList.toggle('on',o===b)});if(/카메라|위치/.test(b.dataset.t))$('fbLoc').checked=true}});
 $('mInfo').onclick=function(){location.href='about.html'};
+/* 이번 주행: 거리·시간·평균·최고 (TRIP 이 있을 때만) */
+setInterval(function(){var e=$('tripStat');if(!e)return;var t=TRIP;if(!t||t.m<50){e.classList.remove('show');return}
+  var sec=Math.max(1,(Date.now()-t.st)/1000),km=t.m/1000,mm=Math.floor(sec/60),hh=Math.floor(mm/60);
+  e.innerHTML='<span><b>'+(km<10?km.toFixed(1):Math.round(km))+'</b>km</span><span><b>'+(hh?hh+':'+String(mm%60).padStart(2,'0'):mm+':'+String(Math.floor(sec%60)).padStart(2,'0'))+'</b>'+(hh?'':'')+'</span><span>평균 <b>'+Math.round(km/(sec/3600))+'</b></span><span>최고 <b>'+Math.round(t.max)+'</b></span>';e.classList.add('show')},1000);
+
 /* 운전자 고르기: 바꾸면 그 운전자 저장값으로 다시 불러옴 */
 var PCOL=['#2b7bff','#e3151a','#16a34a','#a855f7'];
 function profIcon(p,i){return '<i style="background:'+PCOL[i%4]+'">'+(p.name||'?').trim().charAt(0)+'</i>'}
@@ -1587,6 +1600,6 @@ setMap(mapOn);
 requestAnimationFrame(tick);
 if(/autodemo/.test(location.search)){var iv=setInterval(function(){if(CAMS.length){clearInterval(iv);if(/navdemo/.test(location.search)){startNav(/far/.test(location.search)?{name:'대전역',la:36.3324,lo:127.4342}:{name:'양재역',la:37.4842,lo:127.0346});var iv2=setInterval(function(){var f=document.querySelector('#rtList .rt');if(f&&!/shot/.test(location.search)){clearInterval(iv2);f.click();setTimeout(toggleDemo,300)}},300)}else toggleDemo()}},200)}
 </script>
-<script>(function(){var l=document.getElementById('left'),a=document.getElementById('alertBox');if(l&&a)l.appendChild(a)})()</script>
+<script>(function(){var l=document.getElementById('left'),a=document.getElementById('alertBox'),b=document.getElementById('bumpBox');if(l&&a)l.appendChild(a);if(l&&b)l.appendChild(b)})()</script>
 </body>
 </html>
