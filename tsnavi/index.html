@@ -853,8 +853,11 @@ var SHOWN={};
 /* 카메라가 단속하는 도로(자료 7번째)와 지금 도로가 다르면 옆길 카메라로 보고 뺌 (11/21: 교차로 한가운데 옆길 카메라가 우리 쪽으로 뜸) */
 function rnorm(x){var y=String(x||'').replace(/\s|\(.*?\)/g,'').replace(/호선$/,'');return /^(일반도로|도로|이름없는도로)$/.test(y)?'':y /* 이름 모르는 길은 비교 안 함 */}
 function roadMatch(a,b){a=rnorm(a);b=rnorm(b);if(!a||!b)return true;return a===b /* 정확히 같아야: '성남대로' 와 '성남대로407번길' 은 다른 길 */}
-/* 고속·도시고속·국도(티맵 도로 분류 0~2)의 과속 카메라는 자료 이름이 티맵과 달라도 놓치면 안 되니 이름 비교를 안 함. 그 밖은 모두 이름이 같아야 */
-function camRoadOk(rn,c,hw){return (c[3]==='S'&&hw)||roadMatch(rn,c[6])}
+/* 고속·도시고속·국도(티맵 도로 분류 0~2)에선 이름 비교 안 함 */
+function camRoadOk(rn,c,hw){if(hw)return true;var x=rnorm(rn),y=rnorm(c[6]);if(!x||!y)return true;
+  /* 경찰청 이름은 설치 주소 기준이라 '내정로174번길' 처럼 골목 이름이 붙은 카메라가 큰길(수내로) 위에 있기도 함 (11/21 실차: 30 어린이 카메라 놓침).
+     그래서 둘 다 큰길 이름일 때만 다르면 뺌. 놓치는 것보다 하나 더 보이는 게 낫다 */
+  if(/\d+(번)?길$/.test(x)||/\d+(번)?길$/.test(y))return true;return x===y}
 function roadNowHw(){return LIMN.cat!=null&&LIMN.cat<=2}
 function roadNowName(la,lo){return LIMN.road&&Date.now()-LIMN.rt<90000&&dist(la,lo,LIMN.rla,LIMN.rlo)<400?LIMN.road:''}
 function stillAhead(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<25)return true;return Math.abs(adiff(h,brg(la,lo,p[0],p[1])))<100}
