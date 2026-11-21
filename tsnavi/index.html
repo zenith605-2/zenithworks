@@ -357,6 +357,7 @@ body.night #profBtn,body.night .prow button{background:#2a2e35;color:#e8eaed}bod
 body.dev .grid.mg #mLink{display:flex!important}
 .devTools{margin:12px 2px 0;font-size:13px;color:#8a919c}
 .devTools button{border:0;background:none;color:#2b7bff;font-size:13px;padding:4px 6px;margin-left:2px}
+.nowrap2{font-size:13px;margin:12px 2px 0;line-height:1.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -451,7 +452,7 @@ body.dev .grid.mg #mLink{display:flex!important}
   <h2 style="margin-top:22px">메뉴</h2>
   <div class="grid mg"><button id="mTrips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 2"/></svg><span>주행 기록</span></button><button id="mFb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span>의견 보내기</span></button><button id="mSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>설정</span></button><button id="mInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><span>정보</span></button><button id="mLink" class="devOnly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M3 9.5a6 6 0 0 0 0 5M21 9.5a6 6 0 0 1 0 5"/></svg><span>차량 연동</span></button><button id="mClose" style="display:none">닫기</button></div>
   <div class="devOnly devTools">개발 · <button id="mDemo">시연</button><button id="mFix">카메라 여기</button><button id="mMap">지도 끄기</button></div>
-  <p class="muted" style="font-size:13px;margin:10px 2px 0;line-height:1.6">내 기록·즐겨찾기·설정은 이 차 브라우저에만 저장되고 서버로 보내지 않아요.<br>브라우저 데이터(캐시)를 지우면 모두 사라지고 되돌릴 수 없어요.</p>
+  <p class="muted nowrap2">기록·즐겨찾기·설정은 이 차에만 저장돼요<br>캐시를 지우면 모두 사라져요</p>
   <button class="wide" id="clearVia" style="display:none;background:#eceff3;color:#111">경유지 빼기</button>
   <button class="wide" id="stopNav" style="display:none">안내 종료</button>
 </div></div>
