@@ -285,7 +285,7 @@
   .jc .a{font-size:24px;font-weight:900}.jc .b{font-size:15px;font-weight:700;color:#ffb070}.jc.red .b{color:#ff7070}.jc.ok .b{color:#7ddc95}.jc .m{font-size:15px;font-weight:700;color:#fff}.jc .b,.jc .a{white-space:nowrap}.jc .c{font-size:13px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #cctvRow .note{color:#aaa;font-size:14px;padding:30px 4px}
   #cctvBig{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,90vw);z-index:41;background:#000;border-radius:14px;overflow:hidden;display:none;box-shadow:0 10px 40px #000a}
-  #cctvBig.on{display:block}#cctvBig video{width:100%;aspect-ratio:16/9;display:block;background:#000}#cctvBig .nm{color:#fff;font-size:16px;font-weight:700;padding:10px 14px}
+  #cctvBig.on{display:block}#cctvBigC{position:absolute;left:0;top:0;width:100%;aspect-ratio:16/9;background:#000}.cc canvas{width:100%;height:100%;display:block;pointer-events:none}#cctvBig video{width:100%;aspect-ratio:16/9;display:block;background:#000}#cctvBig .nm{color:#fff;font-size:16px;font-weight:700;padding:10px 14px}
   #cctvBig button{position:absolute;right:10px;top:10px;width:42px;height:42px;border:0;border-radius:50%;background:#0009;color:#fff;font-size:20px}
   #drChip{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:12;background:#333d;color:#fff;font-size:14px;font-weight:700;border-radius:16px;padding:6px 14px;display:none}#drChip.show{display:block}
   #tSub{font-size:13px;opacity:.8;margin-top:1px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tSub:empty{display:none}
@@ -432,7 +432,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <button class="rb lay" id="evBtn" title="충전소"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 6.5 8 12h3l-1 5 3.5-6.5h-3z" fill="currentColor"/><path d="M15 9h2a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V8l-2-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
 </div>
 <div id="cctvBar"><div class="hd"><b>가는 길 상황</b><span id="cctvN"></span><button type="button" id="cctvX" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div><div id="cctvRow"></div></div>
-<div id="cctvBig"><video id="cctvBigV" muted playsinline autoplay></video><div class="nm" id="cctvBigN"></div><button type="button" id="cctvBigX" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+<div id="cctvBig"><video id="cctvBigV" muted playsinline autoplay></video><canvas id="cctvBigC" width="960" height="540"></canvas><div class="nm" id="cctvBigN"></div><button type="button" id="cctvBigX" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
 <div id="prog"><div id="progFill"></div><div id="progDot"></div></div>
 <div id="diag"></div>
 
@@ -1330,6 +1330,45 @@ $('arrGo').onclick=function(){if(!ARR)return;var d=ARR.dest,o=ARR.opt||'0',c=fix
   fetchRoute(c,d,o).then(function(r){r.opt=[o,''];b.textContent='목적지로 계속 안내';applyRoute(d,r)}).catch(function(e){b.textContent='경로 실패'})};
 /* 가는 길 CCTV: 경로 앞 40km 안 국가교통정보센터 CCTV를 순서대로 썸네일(실시간 영상)로. 보이는 카드만 재생, 끌어서 넘김 */
 var CC={list:[],hls:{},loading:0};
+/* CCTV 스냅샷: 테슬라는 주행 중 <video>(hls.js·MSE 포함)를 멈춘다. 그래서 HLS 조각(.ts)에서 키프레임 한 장만 꺼내
+   WebCodecs 로 풀어 <canvas> 에 그린다. 조각마다(약 3초) 한 장 = 동영상이 아니라 계속 바뀌는 사진.
+   ccSnapStart(canvas, m3u8주소, 이름) → 멈출 때 ccSnapStop(이름). 11/21 실차에서 작은 화면이 첫 장면에 멈춘 문제 */
+(function(){
+var SN={};
+function nals(es){var out=[],n=es.length,i=0,st=-1;while(i+3<n){if(es[i]===0&&es[i+1]===0&&(es[i+2]===1||(es[i+2]===0&&es[i+3]===1))){var sc=es[i+2]===1?3:4;if(st>=0)out.push([st,i]);i+=sc;st=i}else i++}if(st>=0)out.push([st,n]);return out}
+/* TS 에서 첫 키프레임(IDR)이 든 영상 PES 하나를 꺼냄. 못 찾으면 null */
+function idrPes(buf){var b=new Uint8Array(buf),pmt=-1,vid=-1,cur=null,list=[];
+  for(var o=0;o+188<=b.length;o+=188){if(b[o]!==0x47){var k=b.indexOf(0x47,o+1);if(k<0)break;o=k-188;continue}
+    var pid=((b[o+1]&0x1f)<<8)|b[o+2],pusi=b[o+1]&0x40,afc=(b[o+3]>>4)&3,p=o+4;if(afc&2)p+=1+b[o+4];if(!(afc&1)||p>=o+188)continue;
+    if(pid===0&&pusi){var q=p+1+b[p];var sl=((b[q+1]&0xf)<<8)|b[q+2];for(var e=q+8;e<q+3+sl-4;e+=4){var pn=(b[e]<<8)|b[e+1];if(pn){pmt=((b[e+2]&0x1f)<<8)|b[e+3];break}}continue}
+    if(pid===pmt&&pusi&&vid<0){var q2=p+1+b[p];var sl2=((b[q2+1]&0xf)<<8)|b[q2+2],pil=((b[q2+10]&0xf)<<8)|b[q2+11];for(var e2=q2+12+pil;e2<q2+3+sl2-4;){var stp=b[e2],ep=((b[e2+1]&0x1f)<<8)|b[e2+2],eil=((b[e2+3]&0xf)<<8)|b[e2+4];if(stp===0x1b){vid=ep;break}e2+=5+eil}continue}
+    if(pid!==vid)continue;
+    if(pusi){if(cur){list.push(cur);var got=chk(cur);if(got)return got}cur=[];if(b[p]===0&&b[p+1]===0&&b[p+2]===1)p=p+9+b[p+8]}
+    if(cur)cur.push(b.subarray(p,o+188))}
+  return cur?chk(cur):null;
+  function chk(parts){var L=0;parts.forEach(function(x){L+=x.length});var es=new Uint8Array(L),w=0;parts.forEach(function(x){es.set(x,w);w+=x.length});
+    var N=nals(es),sps=null,idr=false;N.forEach(function(r){var t=es[r[0]]&0x1f;if(t===7)sps=es.subarray(r[0],r[1]);if(t===5)idr=true});
+    return idr&&sps?{es:es,codec:'avc1.'+[sps[1],sps[2],sps[3]].map(function(x){return(x<16?'0':'')+x.toString(16)}).join('')}:null}}
+function lines(t){return t.split('\n').map(function(l){return l.trim()}).filter(function(l){return l&&l[0]!=='#'})}
+function draw(cv,f){var c=cv.getContext('2d'),W=cv.width,H=cv.height,fw=f.displayWidth,fh=f.displayHeight,s=Math.max(W/fw,H/fh),dw=fw*s,dh=fh*s;c.drawImage(f,(W-dw)/2,(H-dh)/2,dw,dh)}
+async function loop(id){var o=SN[id];if(!o)return;
+  try{
+    if(!o.pl){var r=await fetch(o.url),t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href}
+    var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),seg=lines(t2).pop();
+    if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href,pes=null;
+      /* 앞 192KB 만 받아 보고(조각은 키프레임으로 시작), 없으면 전부 */
+      try{var rr=await fetch(su,{headers:{Range:'bytes=0-196607'}});if(rr.status===206)pes=idrPes(await rr.arrayBuffer())}catch(e){}
+      if(!pes){var fr=await fetch(su);pes=idrPes(await fr.arrayBuffer())}
+      if(!SN[id])return;
+      if(pes){if(!o.dec||o.codec!==pes.codec){if(o.dec)try{o.dec.close()}catch(e){}o.codec=pes.codec;o.dec=new VideoDecoder({output:function(f){try{draw(o.cv,f);o.n++;if(o.onframe)o.onframe(o.n)}finally{f.close()}},error:function(e){o.err=String(e);o.dec=null}});o.dec.configure({codec:pes.codec,optimizeForLatency:true})}
+        o.dec.decode(new EncodedVideoChunk({type:'key',timestamp:(o.ts+=1000),data:pes.es}));await o.dec.flush()}}
+    o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);if(o.onerr)o.onerr(o.fail,o.err)}
+  if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):2500)}
+window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
+window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err}loop(id);return o};
+window.ccSnapStop=function(id){var o=SN[id];if(!o)return;delete SN[id];clearTimeout(o.t);if(o.dec)try{o.dec.close()}catch(e){}};
+window.ccSnapAll=function(){return SN};
+})();
 function hlsLoad(cb){if(window.Hls)return cb();var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js';sc.onload=cb;sc.onerror=cb;document.head.appendChild(sc)}
 /* 작은 CCTV 가 첫 장면만 보이고 멈추던 문제(11/21 실차): 자동 재생 거부·버퍼 멈춤을 4초마다 살펴 다시 틀고, 12초 넘게 그대로면 스트림을 새로 연다(두 번까지). 원인은 주행 기록에 남김 */
 function ccTxt(v,t){var i=v.parentNode&&v.parentNode.querySelector('i');if(i){i.textContent=t;i.style.display=t?'':'none'}}
@@ -1342,9 +1381,12 @@ function ccPlay(v,url,id,tries){if(CC.hls[id])return;tries=tries||0;v.muted=true
   o.w=setInterval(function(){if(!CC.hls[id]){clearInterval(o.w);return}if(v.paused)go();if(v.currentTime===o.ct)o.same+=4;else{o.same=0;o.ct=v.currentTime}
     if(o.same>=12){lg(['cc','stall',id,tries,v.readyState]);ccStop(id);if(tries<2)ccPlay(v,url,id,tries+1);else ccTxt(v,'영상 없음')}},4000);
   o.destroy=function(){clearInterval(o.w);if(o.h)o.h.destroy();else{v.removeAttribute('src');v.load()}};CC.hls[id]=o;go()}
-function ccStop(id){var h=CC.hls[id];if(h){try{h.destroy()}catch(e){}delete CC.hls[id]}}
-function ccStopAll(){Object.keys(CC.hls).forEach(ccStop)}
-function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length<2)ccPlay(c.querySelector('video'),CC.list[id].u,id);else if(!on)ccStop(id)})}
+function ccStop(id){ccSnapStop(id);var h=CC.hls[id];if(h){try{h.destroy()}catch(e){}delete CC.hls[id]}}
+function ccStopAll2(){Object.keys(ccSnapAll()).forEach(ccSnapStop)}
+/* 작은 화면 = 캔버스 스냅샷(주행 중에도 바뀜). 못 쓰는 브라우저면 예전 영상 */
+function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id];if(!o)ccSnapStart(cv,CC.list[id].u,id,{frame:function(){var i=c.querySelector('i');if(i)i.style.display='none'},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
+function ccStopAll(){Object.keys(CC.hls).forEach(ccStop);ccStopAll2()}
+function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).length<3)ccTile(c,id);else if(!on)ccStop(id)})}
 function jamList(){if(!NAV||!NAV.C||!NAV.S)return[];var C=NAV.C,S=NAV.S,R=NAV.R,G=NAV.G||[],out=[],i=Math.max(0,NAV.idx);
   while(i<S.length-1){if((C[i]||0)<3){i++;continue}var st=i,en=i,gap=0,bad=0,j=i;for(;j<S.length-1;j++){if((C[j]||0)>=3){en=j;gap=0;if(C[j]===4)bad+=S[j+1]-S[j]}else{gap+=S[j+1]-S[j];if(gap>80)break}}
     var a=Math.max(S[st],NAV.s),L=S[en+1]-a;if(L>=150){var slow=L-bad,sec=bad/(8/3.6)+slow/(18/3.6),nm='';for(var g=G.length-1;g>=0;g--)if(G[g].s<=S[st]+30&&G[g].name){nm=G[g].name;break}
@@ -1354,7 +1396,8 @@ function jamLook(j){setFree(true);zoff=j.z;manZT=Date.now();if(TMM){TMM.setCente
 function jamCards(row){var J=jamList();if(!J.length){var e=document.createElement('div');e.className='jc ok';e.innerHTML='<div class="a">막히는 곳 없음</div><div class="b">남은 경로 전부 원활</div>';row.appendChild(e);return 0}
   J.forEach(function(j){var e=document.createElement('div');e.className='jc'+(j.red?' red':'');e.innerHTML='<div class="a"></div><div class="b"></div><div class="c"></div>';e.querySelector('.a').textContent=j.ahead>30?fmtD(j.ahead)+' 앞':'지금';e.querySelector('.b').textContent=(j.red?'정체 ':'서행 ')+fmtD(j.L);e.querySelector('.c').before(Object.assign(document.createElement('div'),{className:'m',textContent:'약 '+j.min+'분 더'}));e.querySelector('.c').textContent=j.nm||'';e.onclick=function(){if(!row._dragged)jamLook(j)};row.appendChild(e)});return J.length}
 function cctvClose(){$('cctvBar').classList.remove('on');ccStopAll();cctvBigClose()}
-function cctvBigClose(){$('cctvBig').classList.remove('on');ccStop('big');setTimeout(ccVisible,300)}
+function ccBig(u){var v=$('cctvBigV'),cv=$('cctvBigC');cv.style.display='';cv.getContext('2d').clearRect(0,0,cv.width,cv.height);ccPlay(v,u,'big');if(ccSnapOk)ccSnapStart(cv,u,'bigS');var ct=-1;clearInterval(CC.bw);CC.bw=setInterval(function(){var run=!v.paused&&v.currentTime!==ct&&v.readyState>=3;ct=v.currentTime;cv.style.display=run?'none':''},2000)}
+function cctvBigClose(){$('cctvBig').classList.remove('on');ccStop('big');ccSnapStop('bigS');clearInterval(CC.bw);setTimeout(ccVisible,300)}
 function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return}var bar=$('cctvBar'),row=$('cctvRow');bar.classList.add('on');row.innerHTML='';var nJ=jamCards(row);var wait=document.createElement('div');wait.className='note';wait.textContent='CCTV 찾는 중…';row.appendChild(wait);$('cctvN').textContent=nJ?'막히는 곳 '+nJ+'곳 · 누르면 지도에서 보기':'';var noteSet=function(t){wait.textContent=t};
   var R=NAV.R,S=NAV.S,i0=NAV.idx||0,a=[],x0=999,x1=-999,y0=999,y1=-999;for(var i=i0;i<R.length&&S[i]-NAV.s<40000;i++){var p=R[i];if(Math.max(x1,p[1])-Math.min(x0,p[1])>1.4||Math.max(y1,p[0])-Math.min(y0,p[0])>1.4)break;x0=Math.min(x0,p[1]);x1=Math.max(x1,p[1]);y0=Math.min(y0,p[0]);y1=Math.max(y1,p[0]);a.push(i)}
   if(a.length<2){noteSet('');return}
@@ -1370,8 +1413,8 @@ function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return
     out.sort(function(x,y){return x.s-y.s});var seen={};out=out.filter(function(c){var k=Math.round(c.s/150);if(seen[k])return false;seen[k]=1;return true});CC.list=out;
     if(!out.length){noteSet('앞쪽 40km 경로에 CCTV가 없습니다');return}
     wait.remove();$('cctvN').textContent=(nJ?'막히는 곳 '+nJ+' · ':'')+'CCTV '+out.length+'곳 · 끌어서 넘기기';
-    out.forEach(function(c,i){var el=document.createElement('div');el.className='cc';el.dataset.i=i;el.innerHTML='<div class="vw"><video muted playsinline autoplay></video><i>불러오는 중</i><span class="dd"></span></div><div class="nm"></div>';el.querySelector('.dd').textContent=fmtD(Math.max(0,c.s-NAV.s));var ci=0;while(ci<NAV.S.length-2&&NAV.S[ci+1]<c.s)ci++;var lv=(NAV.C||[])[ci]||0;if(lv>=2)el.querySelector('.dd').style.background=lv>=4?'#e3151a':lv>=3?'#ff7a00':'#d99a00';el.querySelector('.nm').textContent=c.n;
-      el.onclick=function(){if(row._dragged)return;$('cctvBigN').textContent=c.n+' · '+fmtD(Math.max(0,c.s-NAV.s))+' 앞';$('cctvBig').classList.add('on');ccStopAll();ccPlay($('cctvBigV'),c.u,'big')}; /* 크게 볼 땐 작은 영상 모두 멈춤: 차 LTE·브라우저가 여러 개 동시 재생을 못 버팀 (11/21 실차) */row.appendChild(el)});
+    out.forEach(function(c,i){var el=document.createElement('div');el.className='cc';el.dataset.i=i;el.innerHTML='<div class="vw">'+(ccSnapOk?'<canvas width="424" height="240"></canvas>':'<video muted playsinline autoplay></video>')+'<i>불러오는 중</i><span class="dd"></span></div><div class="nm"></div>';el.querySelector('.dd').textContent=fmtD(Math.max(0,c.s-NAV.s));var ci=0;while(ci<NAV.S.length-2&&NAV.S[ci+1]<c.s)ci++;var lv=(NAV.C||[])[ci]||0;if(lv>=2)el.querySelector('.dd').style.background=lv>=4?'#e3151a':lv>=3?'#ff7a00':'#d99a00';el.querySelector('.nm').textContent=c.n;
+      el.onclick=function(){if(row._dragged)return;$('cctvBigN').textContent=c.n+' · '+fmtD(Math.max(0,c.s-NAV.s))+' 앞';$('cctvBig').classList.add('on');ccStopAll();ccBig(c.u)}; /* 크게 볼 땐 작은 영상 모두 멈춤: 차 LTE·브라우저가 여러 개 동시 재생을 못 버팀 (11/21 실차) */row.appendChild(el)});
     hlsLoad(ccVisible)}).catch(function(e){noteSet('CCTV를 불러오지 못했습니다')})}
 $('tbar').addEventListener('click',function(){if(NAV)cctvOpen()});$('jamChip').addEventListener('click',function(){if(NAV)cctvOpen()});
 $('cctvBtn').onclick=function(){if($('cctvBar').classList.contains('on'))cctvClose();else cctvOpen()};$('cctvX').onclick=cctvClose;$('cctvBigX').onclick=cctvBigClose;
