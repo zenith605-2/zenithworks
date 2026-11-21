@@ -335,6 +335,12 @@ body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#
 body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 18px}
 .pmk i .evl{width:18px;height:18px;border-radius:5px;background:#fff;margin:0 5px 0 -3px;object-fit:contain;box-shadow:0 0 0 1px #ffffff66}
 .evr .op .evl{width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:5px;object-fit:contain}
+/* 차량 연동 상태 칩 (날씨 아래) */
+#linkChip{position:fixed;right:12px;top:52px;z-index:6;display:none;align-items:center;gap:6px;border:0;border-radius:16px;padding:5px 11px;font-size:13px;font-weight:700;background:#fff;color:#555;box-shadow:0 2px 8px #0003}
+#linkChip.show{display:flex}#linkChip i{width:8px;height:8px;border-radius:50%;background:#aab1ba}
+#linkChip.on i{background:#16a34a;box-shadow:0 0 0 3px #16a34a33}#linkChip.on{color:#111}
+#linkChip.wait i{background:#f5a400}
+body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{color:#e8eaed}
 </style>
 </head>
 <body>
@@ -371,6 +377,7 @@ body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 
   <div id="tag"></div>
 </div>
 
+<button id="linkChip" type="button"><i></i><span></span></button>
 <button id="wx" class="wxc"><span id="wxIc"></span><b id="wxT">-</b><span id="wxA"></span><span id="wxW" class="aq" style="display:none;background:#e3151a"></span></button>
 <div id="viewPill"><button data-v="3d"><b>3D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="2d"><b>2D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="n"><b>N</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button class="vx" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
 <div id="rightBtns">
@@ -519,7 +526,9 @@ $('mInfo').onclick=function(){location.href='about.html'};
 var LINK={at:0,v:0,g:'',b:null,ws:null,phone:0,retry:null};
 function linkOk(){return LINK.at&&Date.now()-LINK.at<3000}
 function linkId(make){var id=LS.getItem('linkId');if(!id&&make){var a=new Uint8Array(24);crypto.getRandomValues(a);id=Array.from(a,function(x){return 'abcdefghijkmnpqrstuvwxyz23456789'[x%32]}).join('');LS.setItem('linkId',id)}return id}
-function linkStatus(){var e=$('linkSt');if(!e)return;e.textContent=linkOk()?'연결됨 · 차 속도 '+Math.round(LINK.v*3.6)+'km/h · 기어 '+(LINK.g||'-')+(LINK.b!=null?' · 배터리 '+LINK.b+'%':''):LINK.phone?'폰 앱 연결됨 · 차 정보 기다리는 중':LINK.ws&&LINK.ws.readyState===1?'폰 앱을 기다리는 중':'연결 준비 중'}
+function linkChip(){var c=$('linkChip');if(!c)return;var id=linkId(false);c.classList.toggle('show',!!id);if(!id)return;var ok=linkOk(),open=LINK.ws&&LINK.ws.readyState===1;
+  c.className='show '+(ok?'on':LINK.phone?'wait':'');c.querySelector('span').textContent=ok?'차량 연동 · '+Math.round(LINK.v*3.6)+'km/h '+(LINK.g||''):LINK.phone?'차량 연동 · 차 정보 대기':open?'차량 연동 · 폰 앱 꺼짐':'차량 연동 · 서버 연결 중'}
+function linkStatus(){linkChip();var e=$('linkSt');if(!e)return;e.textContent=linkOk()?'연결됨 · 차 속도 '+Math.round(LINK.v*3.6)+'km/h · 기어 '+(LINK.g||'-')+(LINK.b!=null?' · 배터리 '+LINK.b+'%':''):LINK.phone?'폰 앱 연결됨 · 차 정보 기다리는 중':LINK.ws&&LINK.ws.readyState===1?'폰 앱을 기다리는 중':'연결 준비 중'}
 function linkConnect(){var id=linkId(false);if(!id||LINK.ws)return;clearTimeout(LINK.retry);var ws;try{ws=new WebSocket(RELAY.replace(/^http/,'ws')+'link/ws?c='+id+'&r=car')}catch(e){return}LINK.ws=ws;
   ws.onmessage=function(ev){var d;try{d=JSON.parse(ev.data)}catch(e){return}if(d.hub){LINK.phone=d.phone;linkStatus();return}if(typeof d.s==='number'){LINK.v=Math.max(0,d.s)/3.6;LINK.g=d.g||'';LINK.b=d.b==null?null:d.b;LINK.at=Date.now();if(!LINK.lg||Date.now()-LINK.lg>5000){LINK.lg=Date.now();lg(['link',LINK.at,d.s,d.g])}linkStatus()}};
   ws.onclose=function(){LINK.ws=null;LINK.phone=0;linkStatus();if(linkId(false))LINK.retry=setTimeout(linkConnect,5000)};ws.onopen=linkStatus}
@@ -527,6 +536,7 @@ function linkQr(){var id=linkId(true),box=$('linkQr');box.textContent='QR 만드
   if(window.qrcode)draw();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';sc.onload=draw;sc.onerror=function(){box.textContent='QR 을 못 불러왔어요'};document.head.appendChild(sc)}}
 $('mLink').onclick=function(){show('menuSheet',0);linkQr();linkConnect();linkStatus();show('linkSheet',1)};
 $('linkClose').onclick=function(){show('linkSheet',0)};
+$('linkChip').onclick=function(){linkQr();linkConnect();linkStatus();show('linkSheet',1)};
 $('linkOff').onclick=function(){LS.removeItem('linkId');var w=LINK.ws;LINK.ws=null;if(w)try{w.close()}catch(e){}LINK.at=0;linkQr();linkConnect();linkStatus()};
 setInterval(linkStatus,1000);setTimeout(linkConnect,1500);
 
