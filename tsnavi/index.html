@@ -894,7 +894,7 @@ function onFix(la,lo,acc,h,spd,t){
   if(h!=null&&!isNaN(h)&&v>1.5)head=h;
   if(!wxAt)setTimeout(loadWx,0);
 }
-if(navigator.geolocation){navigator.geolocation.watchPosition(function(p){if(demo)return;var c=p.coords;onFix(c.latitude,c.longitude,c.accuracy,c.heading,c.speed,Date.now())},function(e){$('diag').textContent='위치 오류: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:30000})}
+if(navigator.geolocation){navigator.geolocation.watchPosition(function(p){if(demo)return;var c=p.coords;onFix(c.latitude,c.longitude,c.accuracy,c.heading,c.speed,Date.now());if(window.keepAlive)keepAlive('gps')},function(e){$('diag').textContent='위치 오류: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:30000})}
 
 /* 소리 */
 var ac=null,muted=false,KO=false;
@@ -1693,9 +1693,12 @@ var TL={on:false},tunNear=false,LIMR=null,LIMT=0,LIMN={v:0,la:0,lo:0,t:0,busy:0}
 /* 후진 카메라 등으로 브라우저가 가려지면 requestAnimationFrame 이 멈출 수 있어, 가려진 동안은 1초마다 직접 돌려 경고를 이어 간다. 가려진 시간·그동안 받은 위치 수는 진단 줄에 */
 var HID={t:0,f:0,ticks:0,last:''};
 document.addEventListener('visibilitychange',function(){if(document.hidden){HID.t=Date.now();HID.f=fixes;HID.ticks=0}else if(HID.t){HID.last=' · 가려짐 '+Math.round((Date.now()-HID.t)/1000)+'초 위치 '+(fixes-HID.f)+'회 갱신 '+HID.ticks+'회';HID.t=0}});
-setInterval(function(){if(!document.hidden)return;HID.ticks++;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}},1000);
+/* 화면 갱신(rAF)이 멈춰도 경고·기록은 계속: 11/21 16:09 차 화면이 켜진 채로 rAF 가 8분 멈추고 GPS 만 들어옴(가려짐 이벤트 없음) → 마지막 갱신이 1.5초 넘게 지났으면 GPS·1초 타이머에서 직접 돌린다. 기록 전송도 여기서 챙김 */
+var TKT=Date.now(),STALL=0;
+function keepAlive(src){var n=Date.now();if(n-TKT>1500){if(!STALL){STALL=n;lg(['stall',n,src,document.hidden?1:0])}HID.ticks++;TKT=n-1000;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}}else if(STALL&&n-TKT<500){lg(['stallEnd',n,n-STALL]);STALL=0}if(LOGON&&n-LOGT>65000)logFlush(false)}
+setInterval(function(){keepAlive('iv')},1000);
 (function(){try{if(nightNow())$('boot').classList.add('dk')}catch(e){}var iv=setInterval(function(){var w=Date.now()-bootT0;if((mapReady||!mapOn)&&(fix||w>8000)||w>12000){clearInterval(iv);$('boot').classList.add('off');setTimeout(function(){$('boot').style.display='none'},400)}},150)})();
-function tick(){try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
+function tick(){TKT=Date.now();try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
 addEventListener('error',function(e){errN++;lastErr=String(e.message).slice(0,80)});
 /* 새로고침해도 안내 이어 가기: 안내 중 목적지를 저장, 다시 열면 2시간 안이면 자동으로 경로 찾기 */
 function saveResume(){try{if(NAV)LS.setItem('navResume',JSON.stringify({d:NAV.dest,opt:NAV.opt||'0',via:NAV.via||[],t:Date.now()}));else LS.removeItem('navResume')}catch(e){}}
