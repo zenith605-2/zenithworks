@@ -847,7 +847,8 @@ function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
       var bs=BGRID[k];if(bs)bs.forEach(function(id){if(bmp[id]!=null)return;var p=BUMPS[id];if(dist(R[i][0],R[i][1],p[0],p[1])<18)bmp[id]=S[i]})}}
   N.cams=cam;N.bumps=bmp;N.camPos=cpos}
 var camSrcT=0,camSrcH=null;
-function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>30)return false;var lat=d*Math.sin(df*D2R);return lat>=-6&&lat<=30}
+/* 지도에 그릴 '앞쪽' 판정: 멀수록 옆으로 넓게 봄 (11/21: 굽은 길에서 경고는 320m 부터인데 아이콘은 늦게 나오던 것) */
+function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>40)return false;var lat=d*Math.sin(df*D2R),w=Math.max(30,d*0.15);return lat>=-Math.max(10,w*0.5)&&lat<=w}
 /* 카메라 아이콘은 도로 가운데에 (티맵처럼): 안내 중엔 경로 선 위로, 아니면 600m 안·옆 35m 안이면 내 진행 선 위로. 경고 판정은 원래 좌표 */
 /* 카메라 그릴 자리: 안내 중엔 경로 위로 붙인 자리, 아니면 원래 좌표 그대로 (11/21: 차 방향 직선으로 끌어오면 굽은 길에서 아이콘이 공원 쪽에서 미끄러져 내려옴) */
 function camDraw(id,c){if(NAV&&NAV.camPos&&NAV.camPos[id])return NAV.camPos[id];return c}
