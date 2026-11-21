@@ -1206,7 +1206,8 @@ function fetchOpts(list,first){var S0=RTS,d=S0.d,c=S0.c;var mb=$('rtMore');if(mb
       el.innerHTML='<div class="rk"></div><div class="rm"><b>'+(mins>=60?Math.floor(mins/60)+'시간 '+(mins%60)+'분':mins+'분')+'</b> · '+fmtD(r.dist)+'</div><div class="rs">'+(h<12?'오전 ':'오후 ')+(h%12||12)+':'+String(eta.getMinutes()).padStart(2,'0')+' 도착'+(CFG.tollShow?'<br>통행료 '+tollOf(r.fare).toLocaleString()+'원':'')+' · 전기 약 '+(Math.round(r.dist/1000/CFG.eff*CFG.kwh/100)*100).toLocaleString()+'원</div><div class="tb"></div>';
       var lab=seen[key];el.querySelector('.rk').textContent=lab[0];el._lab=lab;
       var tb=el.querySelector('.tb'),col={1:'#22b14c',2:'#f5b400',3:'#ff7a00',4:'#e3151a'},st=0,cur=r.C[0]||0;for(var i=1;i<=r.S.length-1;i++){var cc=i<r.S.length-1?(r.C[i]||0):-1;if(cc!==cur){var seg=document.createElement('i');seg.style.width=((r.S[i]-r.S[st])/r.dist*100)+'%';seg.style.background=col[cur]||'#2b7bff';tb.appendChild(seg);st=i;cur=cc}}
-      el._r=r;el.onclick=function(){if(rtSel===el){show('rtSheet',0);applyRoute(d,r);return}selRoute(el,d)};box.appendChild(el);shown++;S0.shown++;if(first&&shown===1)setTimeout(function(){selRoute(el,d)},0);
+      el._r=r;el.onclick=function(){if(rtSel===el){show('rtSheet',0);applyRoute(d,r);return}selRoute(el,d)};box.appendChild(el);shown++;S0.shown++;/* 기본 선택은 티맵 우선: 터널·도로 이름·제한속도가 티맵 경로에만 있음. 티맵이 1.5초 안에 안 오면 먼저 온 것 (11/21) */
+      if(first){if(!r.prov){if(!rtSel||rtSel._auto)setTimeout(function(){selRoute(el,d);el._auto=1},0)}else if(shown===1){var e1=el;setTimeout(function(){if(!rtSel){selRoute(e1,d);e1._auto=1}},1500)}}
       setTimeout(function(){el.querySelector('.rk').textContent=lab.join(' · ')},0)});
     if(!S0.shown)box.innerHTML='<div class="item">경로를 찾지 못했습니다: '+((rs[0]||{}).err||'')+'</div>';
     rs.forEach(function(r){if(!r.err&&(!rtBase||r.time<rtBase))rtBase=r.time});
