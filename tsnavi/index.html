@@ -426,12 +426,18 @@ body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 
   <h2>안내음성 크기</h2><input type="range" min="0" max="1" step="0.05" id="volG" style="width:100%">
   <h2>경고음 크기</h2><input type="range" min="0" max="1" step="0.05" id="volW" style="width:100%">
   <h2 style="margin-top:22px">메뉴</h2>
-  <div class="grid"><button id="mTrips">주행 기록</button><button id="mFb">의견 보내기</button><button id="mSet">설정</button><button id="mInfo">정보·개인정보</button><button id="mClose">닫기</button><button id="mDemo" class="devOnly">시연</button><button id="mFix" class="devOnly">카메라 여기</button><button id="mMap" class="devOnly">지도 끄기</button></div>
+  <div class="grid"><button id="mTrips">주행 기록</button><button id="mFb">의견 보내기</button><button id="mSet">설정</button><button id="mInfo">정보·개인정보</button><button id="mClose">닫기</button><button id="mDemo" class="devOnly">시연</button><button id="mFix" class="devOnly">카메라 여기</button><button id="mMap" class="devOnly">지도 끄기</button><button id="mLink" class="devOnly">차량 연동</button></div>
   <p class="muted" style="font-size:13px;margin:10px 2px 0;line-height:1.6">내 기록·즐겨찾기·설정은 이 차 브라우저에만 저장되고 서버로 보내지 않아요.<br>브라우저 데이터(캐시)를 지우면 모두 사라지고 되돌릴 수 없어요.</p>
   <button class="wide" id="clearVia" style="display:none;background:#eceff3;color:#111">경유지 빼기</button>
   <button class="wide" id="stopNav" style="display:none">안내 종료</button>
 </div></div>
 
+<div class="sheet" id="linkSheet"><div class="panel">
+  <div style="display:flex;align-items:center"><h2 style="flex:1">차량 연동 (시험)</h2><button class="back" id="linkClose"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+  <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div id="linkQr" style="background:#fff;padding:10px;border-radius:12px;width:200px;height:200px;display:flex;align-items:center;justify-content:center"></div>
+  <div style="flex:1;min-width:220px"><p style="margin:0 0 8px;font-size:17px">폰의 <b>TSnavi 연동</b> 앱으로 이 QR 을 찍으세요.</p><p class="muted" style="margin:0 0 10px">폰이 블루투스로 읽은 차 속도·기어를 받아서 터널 안 위치를 더 정확히 맞춥니다. 위치는 주고받지 않아요.</p><p id="linkSt" style="font-size:17px;font-weight:700;margin:0">-</p></div></div>
+  <button class="wide" id="linkOff" style="background:#eceff3;color:#111">연동 끊기 (새 QR 만들기)</button>
+</div></div>
 <div class="sheet" id="setSheet"><div class="panel full">
   <div style="display:flex;align-items:center"><h2 style="flex:1">설정</h2><button class="back" id="setClose"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
   <h2 style="font-size:20px">과속단속카메라 안내 설정</h2><p class="muted" style="margin:0">제한속도별 안내 시작 기준</p><div id="alertOpts"></div>
@@ -509,6 +515,21 @@ $('keySave').onclick=function(){var k=$('keyIn').value.trim();if(!k){KEY='';LS.r
 try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);if(LS.getItem('dev')==='1')document.body.classList.add('dev')}catch(e){}
 Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(b){b.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(o){o.classList.toggle('on',o===b)});if(/카메라|위치/.test(b.dataset.t))$('fbLoc').checked=true}});
 $('mInfo').onclick=function(){location.href='about.html'};
+/* 차량 연동: 폰 앱이 블루투스로 읽은 차 속도·기어를 중계 서버 웹소켓으로 받음. 3초 안 값만 씀 (11/21 시험) */
+var LINK={at:0,v:0,g:'',b:null,ws:null,phone:0,retry:null};
+function linkOk(){return LINK.at&&Date.now()-LINK.at<3000}
+function linkId(make){var id=LS.getItem('linkId');if(!id&&make){var a=new Uint8Array(24);crypto.getRandomValues(a);id=Array.from(a,function(x){return 'abcdefghijkmnpqrstuvwxyz23456789'[x%32]}).join('');LS.setItem('linkId',id)}return id}
+function linkStatus(){var e=$('linkSt');if(!e)return;e.textContent=linkOk()?'연결됨 · 차 속도 '+Math.round(LINK.v*3.6)+'km/h · 기어 '+(LINK.g||'-')+(LINK.b!=null?' · 배터리 '+LINK.b+'%':''):LINK.phone?'폰 앱 연결됨 · 차 정보 기다리는 중':LINK.ws&&LINK.ws.readyState===1?'폰 앱을 기다리는 중':'연결 준비 중'}
+function linkConnect(){var id=linkId(false);if(!id||LINK.ws)return;clearTimeout(LINK.retry);var ws;try{ws=new WebSocket(RELAY.replace(/^http/,'ws')+'link/ws?c='+id+'&r=car')}catch(e){return}LINK.ws=ws;
+  ws.onmessage=function(ev){var d;try{d=JSON.parse(ev.data)}catch(e){return}if(d.hub){LINK.phone=d.phone;linkStatus();return}if(typeof d.s==='number'){LINK.v=Math.max(0,d.s)/3.6;LINK.g=d.g||'';LINK.b=d.b==null?null:d.b;LINK.at=Date.now();if(!LINK.lg||Date.now()-LINK.lg>5000){LINK.lg=Date.now();lg(['link',LINK.at,d.s,d.g])}linkStatus()}};
+  ws.onclose=function(){LINK.ws=null;LINK.phone=0;linkStatus();if(linkId(false))LINK.retry=setTimeout(linkConnect,5000)};ws.onopen=linkStatus}
+function linkQr(){var id=linkId(true),box=$('linkQr');box.textContent='QR 만드는 중…';var draw=function(){var q=qrcode(0,'M');q.addData('tsnavi-link:'+id);q.make();box.innerHTML=q.createSvgTag({cellSize:5,margin:0,scalable:true});var sv=box.querySelector('svg');if(sv){sv.style.width='180px';sv.style.height='180px'}};
+  if(window.qrcode)draw();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';sc.onload=draw;sc.onerror=function(){box.textContent='QR 을 못 불러왔어요'};document.head.appendChild(sc)}}
+$('mLink').onclick=function(){show('menuSheet',0);linkQr();linkConnect();linkStatus();show('linkSheet',1)};
+$('linkClose').onclick=function(){show('linkSheet',0)};
+$('linkOff').onclick=function(){LS.removeItem('linkId');var w=LINK.ws;LINK.ws=null;if(w)try{w.close()}catch(e){}LINK.at=0;linkQr();linkConnect();linkStatus()};
+setInterval(linkStatus,1000);setTimeout(linkConnect,1500);
+
 $('mFb').onclick=function(){try{$('mClose').onclick()}catch(e){}setTimeout(function(){try{$('mSet').onclick()}catch(e){}setTimeout(function(){var t=$('fbH');if(t){t.scrollIntoView({block:'start'})}},300)},250)};
 $('fbSend').onclick=function(){var t=$('fbText').value.trim();var ty0=(document.querySelector('.fbType button.on')||{dataset:{}}).dataset.t;if(t.length<2&&!(ty0&&ty0!=='의견'&&$('fbLoc').checked)){$('fbState').textContent='내용을 적어 주세요';return}if(t.length<2)t=ty0;hideKb();$('fbSend').disabled=true;$('fbState').textContent='보내는 중…';
   var ty=(document.querySelector('.fbType button.on')||{}).dataset||{},loc=$('fbLoc').checked&&fix?{la:+fix.la.toFixed(4),lo:+fix.lo.toFixed(4),h:head==null?null:Math.round(head)}:null;
@@ -756,6 +777,7 @@ function onFix(la,lo,acc,h,spd,t){
   var calc=null;
   if(prevFix){var dt=(t-prevFix.t)/1000;if(dt>0.2&&dt<5){var dm=dist(prevFix.la,prevFix.lo,la,lo);calc=dm/dt;if(dm>3&&calc>2)head=brg(prevFix.la,prevFix.lo,la,lo) /* 멈춰 있을 때 GPS 흔들림으로 지도가 돌지 않게 (7km/h 미만 무시) */}}
   if(spd!=null&&!isNaN(spd)&&spd>0){v=v*0.3+spd*0.7;spdSrc='차'}else if(calc!=null){v=v*0.5+calc*0.5;spdSrc='계산'}else if(spd===0){v=0;spdSrc='차'}
+  if(linkOk()){v=LINK.v;spdSrc='연동'}
   if(h!=null&&!isNaN(h)&&v>1.5)head=h;
   if(!wxAt)setTimeout(loadWx,0);
 }
@@ -1397,11 +1419,12 @@ function tickBody(){
   tunNear=false;if(NAV&&NAV.F&&NAV.S){for(var ti=Math.max(0,NAV.idx-5);ti<NAV.S.length-1&&NAV.S[ti]<NAV.s+300;ti++)if(NAV.S[ti]>NAV.s-100&&(NAV.F[ti]===2||NAV.F[ti]===4)){tunNear=true;break}}
   if(tunNear&&!TL.on)TL={on:true,t:now,n:0,mv:0,acc:0,dr:0};else if(TL.on&&!tunNear&&now-TL.t>3000){TL.on=false;var tl=Math.round((now-TL.t)/1000)+'초 · 위치 '+TL.n+'회(움직임 '+TL.mv+') · 정확도 최대 '+Math.round(TL.acc)+'m · 추정 '+Math.round(TL.dr)+'초';try{var a=JSON.parse(LS.getItem('tunLog')||'[]');a.unshift(new Date().toTimeString().slice(0,5)+' '+tl);LS.setItem('tunLog',JSON.stringify(a.slice(0,10)))}catch(e){}HID.last=' · 터널 '+tl;lg(['tun',now,tl])}
   if(TL.on&&DR.on)TL.dr+=Math.min(0.5,(DR.lt2?now-DR.lt2:0)/1000);DR.lt2=now;
+  if(linkOk()){v=LINK.v;spdSrc='연동'}
   var drOn=false,drI=-1;if(NAV&&DR.s!=null&&NAV.F){var di=Math.max(0,NAV.idx);while(di<NAV.S.length-2&&NAV.S[di+1]<DR.s+(DR.d||0))di++;drI=di}
-  var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=tv0&&v>4?(tv0+v)/2:tv0,tunEnd=1e12;
+  var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=linkOk()?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12;
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
   DR.d=(DR.d||0)+(age>(inTun?1.2:2.5)&&tv?tv:v)*drDt;
-  if(age>(inTun?1.2:2.5)&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+30-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
+  if(age>(inTun?1.2:2.5)&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
   else if(age>2.5&&v>4&&head!=null&&age<40){var p=move(la,lo,head,v*age);la=p[0];lo=p[1];drOn=true}
   else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(2,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
