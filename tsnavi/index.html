@@ -341,6 +341,16 @@ body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 
 #linkChip.on i{background:#16a34a;box-shadow:0 0 0 3px #16a34a33}#linkChip.on{color:#111}
 #linkChip.wait i{background:#f5a400}
 body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{color:#e8eaed}
+/* 운전자 프로필 */
+#fav .hd #profBtn{border:0;border-radius:16px;background:#eef1f5;color:#111;font-size:14px;font-weight:700;padding:6px 11px;margin-right:2px;display:flex;align-items:center;gap:6px;white-space:nowrap;max-width:140px;overflow:hidden}
+#fav .hd #profBtn i{width:20px;height:20px;border-radius:50%;color:#fff;font-style:normal;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #eef0f3}
+.prow i{width:34px;height:34px;border-radius:50%;color:#fff;font-style:normal;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.prow input{flex:1;min-width:0;font-size:18px;border:1px solid transparent;border-radius:8px;padding:6px 8px;background:transparent;color:inherit}
+.prow input:focus{border-color:#2b7bff;outline:0;background:#fff}
+.prow button{border:0;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:700;background:#eef1f5;color:#111}
+.prow button.on{background:#2b7bff;color:#fff}.prow button.del{background:transparent;color:#e3151a}
+body.night #profBtn,body.night .prow button{background:#2a2e35;color:#e8eaed}body.night .prow{border-color:#30353c}body.night .prow input:focus{background:#2a2e35}
 </style>
 </head>
 <body>
@@ -401,7 +411,7 @@ body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{co
   <button class="ic" id="menuBtn" title="메뉴"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 </div>
 
-<div id="fav"><div class="gripHit" id="favGrip"><div class="grip"></div></div><div class="hd"><b>어디로 갈까요?</b><span id="quota"></span><button id="favSearch">검색</button><button id="favClose">닫기</button></div><div id="favList"></div></div>
+<div id="fav"><div class="gripHit" id="favGrip"><div class="grip"></div></div><div class="hd"><button id="profBtn" type="button"></button><b>어디로 갈까요?</b><span id="quota"></span><button id="favSearch">검색</button><button id="favClose">닫기</button></div><div id="favList"></div></div>
 
 <div class="sheet" id="navSheet"><div class="panel">
   <form class="sbar" id="sbar" action="javascript:void(0)"><button class="bk" id="navClose" type="button" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><input id="q" type="search" enterkeyhint="search" placeholder="어디로 갈까요?" autocomplete="off"><button class="clr" id="qClr" type="button" aria-label="지우기"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 7l10 10M17 7L7 17" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></button><button class="go" id="qGo" type="submit">검색</button></form>
@@ -445,6 +455,12 @@ body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{co
   <div style="flex:1;min-width:220px"><p style="margin:0 0 8px;font-size:17px">폰의 <b>TSnavi 연동</b> 앱으로 이 QR 을 찍으세요.</p><p class="muted" style="margin:0 0 10px">폰이 블루투스로 읽은 차 속도·기어를 받아서 터널 안 위치를 더 정확히 맞춥니다. 위치는 주고받지 않아요.</p><p id="linkSt" style="font-size:17px;font-weight:700;margin:0">-</p></div></div>
   <button class="wide" id="linkOff" style="background:#eceff3;color:#111">연동 끊기 (새 QR 만들기)</button>
 </div></div>
+<div class="sheet" id="profSheet"><div class="panel">
+  <div style="display:flex;align-items:center"><h2 style="flex:1">운전자</h2><button class="back" id="profClose"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+  <p class="muted" style="margin:0 0 10px">집·회사·즐겨찾기·최근 목적지·주행 기록·소리·알림 설정을 운전자마다 따로 저장해요.</p>
+  <div id="profList"></div>
+  <button class="wide" id="profAdd" style="background:#eceff3;color:#111">+ 운전자 추가</button>
+</div></div>
 <div class="sheet" id="setSheet"><div class="panel full">
   <div style="display:flex;align-items:center"><h2 style="flex:1">설정</h2><button class="back" id="setClose"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
   <h2 style="font-size:20px">과속단속카메라 안내 설정</h2><p class="muted" style="margin:0">제한속도별 안내 시작 기준</p><div id="alertOpts"></div>
@@ -468,7 +484,14 @@ body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{co
 <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 <script>
 var $=function(i){return document.getElementById(i)};
-var LS=window.localStorage;
+var LS0=window.localStorage;
+/* 운전자 프로필 (11/21): 집·회사·즐겨찾기·최근·주행 기록·화면·소리·알림 설정은 운전자마다 따로. 운전자 1 은 예전 저장 그대로 */
+var PKEYS={homeDest:1,workDest:1,favDest:1,recentDest:1,trips:1,navResume:1,view:1,rotOff:1,volW:1,volG:1,night:1,kwh:1,eff:1,tollShow:1,poiOn:1,fastOn:1,bumpOn:1,bigText:1,hipass:1,carColor:1,evHi:1,mapEng:1};
+var PROF=(function(){try{return LS0.getItem('prof')||'1'}catch(e){return '1'}})();
+function lsk(k){return PROF!=='1'&&(PKEYS[k]||/^a\d+$/.test(k))?'p'+PROF+':'+k:k}
+var LS={getItem:function(k){return LS0.getItem(lsk(k))},setItem:function(k,v){return LS0.setItem(lsk(k),v)},removeItem:function(k){return LS0.removeItem(lsk(k))}};
+function profList(){var a;try{a=JSON.parse(LS0.getItem('profs')||'null')}catch(e){}if(!a||!a.length)a=[{id:'1',name:'운전자 1'}];return a}
+function profName(){var p=profList().filter(function(x){return x.id===PROF})[0];return p?p.name:'운전자 1'}
 var D2R=Math.PI/180;
 function dist(a,b,c,d){var x=(d-b)*D2R*Math.cos((a+c)/2*D2R),y=(c-a)*D2R;return Math.sqrt(x*x+y*y)*6371000}
 function brg(a,b,c,d){var y=Math.sin((d-b)*D2R)*Math.cos(c*D2R),x=Math.cos(a*D2R)*Math.sin(c*D2R)-Math.sin(a*D2R)*Math.cos(c*D2R)*Math.cos((d-b)*D2R);return (Math.atan2(y,x)/D2R+360)%360}
@@ -522,6 +545,22 @@ $('keySave').onclick=function(){var k=$('keyIn').value.trim();if(!k){KEY='';LS.r
 try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);if(LS.getItem('dev')==='1')document.body.classList.add('dev')}catch(e){}
 Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(b){b.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(o){o.classList.toggle('on',o===b)});if(/카메라|위치/.test(b.dataset.t))$('fbLoc').checked=true}});
 $('mInfo').onclick=function(){location.href='about.html'};
+/* 운전자 고르기: 바꾸면 그 운전자 저장값으로 다시 불러옴 */
+var PCOL=['#2b7bff','#e3151a','#16a34a','#a855f7'];
+function profIcon(p,i){return '<i style="background:'+PCOL[i%4]+'">'+(p.name||'?').trim().charAt(0)+'</i>'}
+function profBtnDraw(){var a=profList(),i=Math.max(0,a.map(function(x){return x.id}).indexOf(PROF));$('profBtn').innerHTML=profIcon(a[i]||{name:profName()},i)+'<span></span>';$('profBtn').querySelector('span').textContent=profName()}
+function profSave(a){LS0.setItem('profs',JSON.stringify(a))}
+function profSwitch(id){if(id===PROF)return show('profSheet',0);LS0.setItem('prof',id);lg(['prof',Date.now(),id]);location.reload()}
+function profDraw(){var a=profList(),box=$('profList');box.innerHTML='';a.forEach(function(p,i){var r=document.createElement('div');r.className='prow';r.innerHTML=profIcon(p,i)+'<input maxlength="10"><button class="pick"></button>'+(p.id!=='1'?'<button class="del">지우기</button>':'');
+    var inp=r.querySelector('input');inp.value=p.name;inp.onchange=function(){var v=inp.value.trim()||('운전자 '+(i+1));p.name=v;profSave(a);profBtnDraw();profDraw()};
+    var b=r.querySelector('.pick');b.textContent=p.id===PROF?'지금 운전자':'이 운전자로';if(p.id===PROF)b.classList.add('on');b.onclick=function(){profSwitch(p.id)};
+    var d=r.querySelector('.del');if(d)d.onclick=function(){if(!confirm(p.name+' 의 집·즐겨찾기·기록을 지울까요? 되돌릴 수 없어요.'))return;Object.keys(LS0).forEach(function(k){if(k.indexOf('p'+p.id+':')===0)LS0.removeItem(k)});profSave(a.filter(function(x){return x.id!==p.id}));if(PROF===p.id)profSwitch('1');else profDraw()};
+    box.appendChild(r)});$('profAdd').style.display=a.length>=4?'none':''}
+$('profBtn').onclick=function(e){e.stopPropagation();profDraw();show('profSheet',1)};
+$('profClose').onclick=function(){show('profSheet',0)};
+$('profAdd').onclick=function(){var a=profList(),n=1;while(a.some(function(x){return x.id===String(n)}))n++;if(a.length>=4)return;a.push({id:String(n),name:'운전자 '+(a.length+1)});profSave(a);profDraw()};
+profBtnDraw();
+
 /* 차량 연동: 폰 앱이 블루투스로 읽은 차 속도·기어를 중계 서버 웹소켓으로 받음. 3초 안 값만 씀 (11/21 시험) */
 var LINK={at:0,v:0,g:'',b:null,ws:null,phone:0,retry:null};
 function linkOk(){return LINK.at&&Date.now()-LINK.at<3000}
