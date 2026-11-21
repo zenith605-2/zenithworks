@@ -1171,7 +1171,9 @@ $('clearVia').onclick=function(){if(NAV){NAV.via=[];route()}show('menuSheet',0)}
 /* 경로 주변 슈퍼차저 · 휴게소 (경로를 따라 간 거리) */
 function routePois(N){var out={},R=N.R,S=N.S,last=-1e9;
   for(var i=0;i<R.length;i++){if(S[i]-last<150&&i<R.length-1)continue;last=S[i];var c0=Math.floor(R[i][0]*100),c1=Math.floor(R[i][1]*100);
-    for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=PGRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;ids.forEach(function(t){var p=poiOf(t),d=dist(R[i][0],R[i][1],p[0],p[1]),lim=t[0]==='sc'?2000:300;if(d>lim)return;var key=t[0]+t[1];if(!out[key]||d<out[key].off)out[key]={k:t[0],p:p,s:S[i],off:d}})}}
+    for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=PGRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;ids.forEach(function(t){var p=poiOf(t),d=dist(R[i][0],R[i][1],p[0],p[1]),lim=t[0]==='sc'?2000:300;if(d>lim)return;var key=t[0]+t[1];if(!out[key]||d<out[key].off){var j=Math.min(i,R.length-2),h=brg(R[j][0],R[j][1],R[j+1][0],R[j+1][1]),lat=d*Math.sin(adiff(h,brg(R[i][0],R[i][1],p[0],p[1]))*D2R);out[key]={k:t[0],p:p,s:S[i],off:d,right:lat>-15}}})}}
+  /* 휴게소는 진행 방향 오른쪽(가장 가까운 지점 기준)에 있어야: 반대 방향·옆 도로 휴게소 빼기 (11/21 실차: 의정부휴게소) */
+  Object.keys(out).forEach(function(k){if(out[k].k!=='sc'&&!out[k].right)delete out[k]});
   N.rp=Object.keys(out).map(function(k){return out[k]}).sort(function(a,b){return a.s-b.s})}
 /* 나중에 출발하면 (티맵 타임머신 길안내) */
 function pad2(n){return String(n).padStart(2,'0')}
