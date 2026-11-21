@@ -1236,14 +1236,14 @@ function layClear(kind){LAY.mk=LAY.mk.filter(function(m){if(m.k===kind){m.el.rem
 function layAdd(kind,la,lo,html,dd,sub){var el=document.createElement('button');el.type='button';el.className='pmk '+kind;el.innerHTML='<i>'+html+'</i><b></b>';
   el.onclick=function(e){e.stopPropagation();layCard(dd,sub,kind)};$('poiLayer').appendChild(el);LAY.mk.push({k:kind,la:la,lo:lo,el:el})}
 /* 충전소 카드: 사업자별 급속·완속 빈자리, 상태, 갱신 시각 (티맵 POI 의 evChargers) */
-function evAgeH(p){var up=0;(((p.evChargers||{}).evCharger)||[]).forEach(function(c){var u=+(c.updateDateTime||0);if(u>up)up=u});if(!up)return 1e9;var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12));return (Date.now()-d)/3600000}
+function evAgeH(p){if(p._live&&Date.now()-p._live<900000)return 0;var up=0;(((p.evChargers||{}).evCharger)||[]).forEach(function(c){var u=+(c.updateDateTime||0);if(u>up)up=u});if(!up)return 1e9;var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12));return (Date.now()-d)/3600000}
 var EV_FRESH_H=3; /* 이보다 오래된 상태는 빈자리로 안 보여 줌 (11/21: 티맵 상태가 11/09 이후 멈춰 있음) */
 function poiAddr(p){return [p.upperAddrName,p.middleAddrName,p.lowerAddrName,p.roadName||'',p.firstBuildNo||''].filter(Boolean).slice(1).join(' ').trim()}
 function evDetail(p){var L=((p.evChargers||{}).evCharger)||[];if(!L.length)return '<div class="evd"><p class="evn">충전기 상태 정보가 없는 곳이에요</p></div>';
   var G={},up=0,bad=0,busy=0;L.forEach(function(c){var fast=/급속/.test(c.powerType||'')||c.type!=='02',k=c.operatorName||c.operatorId||'기타',g=G[k]||(G[k]={f:0,fa:0,s:0,sa:0,kw:0});var m=/(\d+)kW/.exec(c.powerType||'');if(fast){g.f++;if(c.status==='2')g.fa++;if(m)g.kw=Math.max(g.kw,+m[1])}else{g.s++;if(c.status==='2')g.sa++}if(c.status==='3')busy++;if(/^[1459]$/.test(c.status))bad++;var u=+(c.updateDateTime||0);if(u>up)up=u});
   var fr=evAgeH(p)<EV_FRESH_H;var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op">'+evShort(k)+'</span>'+(g.f?'<span class="ch '+(fr&&g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' '+(fr?'<b>'+g.fa+'</b>/'+g.f:'<b>'+g.f+'</b>대')+'</span>':'')+(g.s?'<span class="ch '+(fr&&g.sa?'ok':'no')+'">완속 '+(fr?'<b>'+g.sa+'</b>/'+g.s:'<b>'+g.s+'</b>대')+'</span>':'')+'</div>'});
   var t='';if(up){var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12)),mn=Math.round((Date.now()-d)/60000);t=mn<1?'방금':mn<60?mn+'분 전':mn<1440?Math.round(mn/60)+'시간 전':Math.round(mn/1440)+'일 전'}
-  h+='<p class="evn">'+(fr?[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',t?'상태 '+t+' 기준':''].filter(Boolean).join(' · '):'실시간 빈자리 정보가 없어 충전기 대수만 보여요'+(t?' (마지막 상태 '+t+')':''))+'</p></div>';return h}
+  h+='<p class="evn">'+(fr?[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',p._live?'환경부 실시간':(t?'상태 '+t+' 기준':'')].filter(Boolean).join(' · '):'실시간 빈자리 정보를 못 받아 충전기 대수만 보여요')+'</p></div>';return h}
 function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);var tx=el.querySelector('.tx');tx.insertBefore(dv.firstChild,tx.querySelector('.ac'))}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
 function layDraw(){if(!LAY.mk.length)return;var W=innerWidth,H=innerHeight;for(var i=0;i<LAY.mk.length;i++){var m=LAY.mk[i],p=mapPx(m.la,m.lo);if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40){if(m.el.style.display!=='none')m.el.style.display='none'}else{if(m.el.style.display)m.el.style.display='';m.el.style.left=p.x+'px';m.el.style.top=p.y+'px'}}}
 var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#fff"/></svg>';
@@ -1254,12 +1254,25 @@ function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC
 function evOps(p){var n={};((p.evChargers||{}).evCharger||[]).forEach(function(e){var k=e.operatorName||e.operatorId;if(k)n[k]=(n[k]||0)+1});return Object.keys(n).sort(function(a,b){return n[b]-n[a]})}
 var EVSHORT={'환경부':'환경부','한국전력':'한전','한국전력공사':'한전','GS차지비':'GS','차지비':'GS','SK일렉링크':'SK','SK브로드밴드':'SK','에버온':'에버온','휴맥스이브이':'휴맥스','NICE인프라':'나이스','파워큐브코리아':'파워큐브','이카플러그':'이카플러그','플러그링크':'플러그링크','한솔엠에스':'한솔','스타코프':'스타코프','대영채비':'채비','채비':'채비','테슬라':'테슬라','LG유플러스':'LGU+','LG헬로비전':'LG헬로','현대자동차':'현대','E-pit':'E-pit','이피트':'E-pit','기아':'기아','KT':'KT'};
 function evShort(n){if(EVSHORT[n])return EVSHORT[n];for(var k in EVSHORT)if(n.indexOf(k)===0)return EVSHORT[k];return n.replace(/(주식회사|\(주\)|코리아|이브이|모빌리티|에너지|일렉트릭)/g,'').trim().slice(0,5)}
+/* 말풍선 글자: 사업자 + (실시간이면 빈자리/전체, 아니면 대수) */
+function evLabel(p){var e=evSum(p),tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p),fresh=evAgeH(p)<EV_FRESH_H;
+  return {fresh:fresh,full:fresh&&tot&&!e.free,html:(op.length?'<u>'+evShort(op[0])+'</u>':'')+(fresh?(e.fa?'⚡':'')+(tot?e.free+'/'+tot:'?'):(tot?tot+'대':'?'))}}
+/* 환경부 실시간 상태로 티맵 충전기 목록을 덮어씀 (충전소 번호 statId 가 같은 형식) */
+var EVSLOW={'02':1,'08':1};
+function evMerge(p,live){var L=((p.evChargers||{}).evCharger)||[],sid={},any=0;L.forEach(function(c){if(c.stationId)sid[c.stationId]=c.operatorName||c.operatorId||''});var out=[];
+  Object.keys(sid).forEach(function(id){var v=live[id];if(!v||!v.c||!v.c.length){L.forEach(function(c){if(c.stationId===id)out.push(c)});return}any=1;
+    v.c.forEach(function(x){var slow=EVSLOW[x[4]]||(!x[4]&&+x[3]<20);out.push({operatorName:sid[id],stationId:id,chargerId:x[0],status:x[1],updateDateTime:x[2],type:slow?'02':(x[4]||'04'),powerType:(slow?'완속':'급속')+'('+(x[3]||'?')+'kW)'})})});
+  if(any){p.evChargers={evCharger:out};p._live=Date.now()}return any}
+var evLiveToast=0;
+function evLiveFill(ms){var ids={};ms.forEach(function(m){(((m.p.evChargers||{}).evCharger)||[]).forEach(function(c){if(c.stationId)ids[c.stationId]=1})});var all=Object.keys(ids);if(!all.length)return;
+  var parts=[];for(var i=0;i<all.length;i+=25)parts.push(all.slice(i,i+25));var got=0;
+  parts.forEach(function(ch){fetch(RELAY+'ev?ids='+ch.join(',')).then(function(r){return r.ok?r.json():{}}).then(function(live){ms.forEach(function(m){if(evMerge(m.p,live)){got++;var lb=evLabel(m.p);m.el.querySelector('i').innerHTML=lb.html;m.el.classList.toggle('full',!!lb.full)}});
+    if(got&&!evLiveToast){evLiveToast=1;toast('충전기 빈자리: 환경부 실시간')}}).catch(function(){})})}
 function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/around?version=1&centerLat='+c.la+'&centerLon='+c.lo+'&categories='+encodeURIComponent('전기차충전소')+'&radius=3&count=40&reqCoordType=WGS84GEO&resCoordType=WGS84GEO').then(function(d){if(!LAY.ev)return;layClear('ev');var ps=poiList(d),seen={},anyFresh=0;
     ps=ps.map(function(p){var l=poiLL(p);return{p:p,d:dist(c.la,c.lo,l.la,l.lo)}}).sort(function(x,y){return x.d-y.d}).map(function(x){return x.p});var cnt=0;
-    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var e=evSum(p),free=e.free,tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p);
-      var fresh=evAgeH(p)<EV_FRESH_H;if(fresh)anyFresh=1;
-      layAdd('ev',l.la,l.lo,(op.length?'<u>'+evShort(op[0])+'</u>':'')+(fresh?(e.fa?'⚡':'')+(tot?free+'/'+tot:'?'):(tot?tot+'대':'?')),{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id,ev:p},fmtD(dist(c.la,c.lo,l.la,l.lo))+(poiAddr(p)?' · '+poiAddr(p):''));var m=LAY.mk[LAY.mk.length-1];if(fresh&&tot&&!free)m.el.classList.add('full')});
-    toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · '+(anyFresh?'숫자는 빈 충전기':'숫자는 충전기 대수 (실시간 빈자리 정보 없음)'):'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
+    ps.forEach(function(p){var l=poiLL(p),k=Math.round(l.la*2000)+'_'+Math.round(l.lo*2000);if(seen[k]||cnt>=20)return;seen[k]=1;cnt++;var lb=evLabel(p);if(lb.fresh)anyFresh=1;
+      layAdd('ev',l.la,l.lo,lb.html,{name:p.name.replace(/전기차충전소$/,'충전소'),la:l.la,lo:l.lo,pid:p.id,ev:p},fmtD(dist(c.la,c.lo,l.la,l.lo))+(poiAddr(p)?' · '+poiAddr(p):''));var m=LAY.mk[LAY.mk.length-1];m.p=p;if(lb.full)m.el.classList.add('full')});evLiveFill(LAY.mk.filter(function(m){return m.k==='ev'&&m.p}));
+    toast(ps.length?'주변 충전소 '+LAY.mk.filter(function(m){return m.k==='ev'}).length+'곳 · '+'숫자는 빈 충전기/전체':'3km 안에 충전소가 없어요')}).catch(function(e){toast('충전소를 못 불러왔어요')})}
 $('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
 $('evBtn').onclick=function(){LAY.ev=!LAY.ev;this.classList.toggle('on',LAY.ev);if(LAY.ev)layShowEv();else{layClear('ev');LAY.evAt=null}};
 setInterval(function(){if(LAY.ev&&LAY.evAt){var c=layCenter();if(c&&dist(c.la,c.lo,LAY.evAt.la,LAY.evAt.lo)>2500)layShowEv()}},6000);
