@@ -789,12 +789,15 @@ function tmDrawTurn(g){if(!TMM)return;var k=g?g.s+'_'+g.t:null;if(k===tmTurnKey)
   var P=[];for(var sd=g.s-50;sd<=g.s+30;sd+=4){var q=routePoint(Math.max(0,Math.min(NAV.total,sd)));P.push([q.la,q.lo])}if(P.length<4)return;
   var S=chaikin(P,3),n=S.length,a=S[n-4],tip=S[n-1],h=brg(a[0],a[1],tip[0],tip[1]);
   var h0=brg(S[0][0],S[0][1],S[Math.min(3,n-1)][0],S[Math.min(3,n-1)][1]);if(Math.abs(adiff(h0,h))<25)return; /* 사실상 직진이면 그리지 않음 (11/21 실차: 직진 화살표가 투박) */
-  /* 몸통과 머리를 한 도형으로: 테두리가 끊기지 않게 (11/21) */
-  var hw=5.5,bt=move(tip[0],tip[1],h+180,4),head=move(bt[0],bt[1],h,22),Lp=[],Rp=[];
-  for(var k=0;k<n-1;k++){var b0=k<n-2?brg(S[k][0],S[k][1],S[k+1][0],S[k+1][1]):h;Lp.push(move(S[k][0],S[k][1],b0-90,hw));Rp.push(move(S[k][0],S[k][1],b0+90,hw))}
-  Lp.push(move(bt[0],bt[1],h-90,hw));Rp.push(move(bt[0],bt[1],h+90,hw));
-  var poly=Lp.concat([move(bt[0],bt[1],h-90,15),head,move(bt[0],bt[1],h+90,15)]).concat(Rp.reverse()).map(function(q){return LL(q[0],q[1])});
-  try{tmTurn.push(new Tmapv3.Polygon({paths:poly,fillColor:'#ffffff',fillOpacity:1,strokeColor:'#14202e',strokeWeight:3,zIndex:999,map:TMM}))}catch(e){}}
+  /* 검은 층(몸통+머리)을 먼저 깔고 흰 층을 올림: 테두리가 끊기지 않게, 도형은 볼록한 것만 써서 깨지지 않게 (11/21) */
+  var bt=move(tip[0],tip[1],h+180,4),shaft=S.slice(0,n-1).concat([bt]).map(function(q){return LL(q[0],q[1])});
+  var tri=function(w,len,back){var b=move(bt[0],bt[1],h+180,back);return[LL.apply(null,move(b[0],b[1],h-90,w)),LL.apply(null,move(b[0],b[1],h,len+back)),LL.apply(null,move(b[0],b[1],h+90,w))]};
+  try{
+    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#14202e',strokeWeight:22,strokeOpacity:1,zIndex:996,map:TMM}));
+    tmTurn.push(new Tmapv3.Polygon({paths:tri(19,26,3),fillColor:'#14202e',fillOpacity:1,strokeWeight:0,zIndex:997,map:TMM}));
+    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#ffffff',strokeWeight:15,strokeOpacity:1,zIndex:998,map:TMM}));
+    tmTurn.push(new Tmapv3.Polygon({paths:tri(15,21,0),fillColor:'#ffffff',fillOpacity:1,strokeWeight:0,zIndex:999,map:TMM}));
+  }catch(e){}}
 function segLen(c){var L=0;for(var i=1;i<c.length;i++)L+=dist(c[i-1][1],c[i-1][0],c[i][1],c[i][0]);return L}
 var tmJob=0;function runJobs(J,tok,done,cancel){var k=0;(function step(){if(tok!==tmJob){if(cancel)cancel();return}for(var n=0;n<6&&k<J.length;n++,k++){try{J[k]()}catch(e){}}if(k<J.length)setTimeout(step,16);else{tmTurnKey=null;if(done)done()}})()}
 function slimRoute(fs){if(!fs.length)return fs;var th=200,out=fs;
