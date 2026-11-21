@@ -1262,7 +1262,7 @@ var EVCOL={'환경부':'#0b6e4f','기후부':'#0b6e4f','한전':'#e8501c','GS':'
 var EVPAL=['#5d4037','#455a64','#7b1fa2','#00796b','#c2185b','#303f9f','#f57c00','#0097a7'];
 function evColor(n){if(EVCOL[n])return EVCOL[n];var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return EVPAL[h%EVPAL.length]}
 /* 사업자 로고 (각 사 홈페이지 사이트 아이콘, 운영사 표시용). 빼려면 EV_LOGO_ON=false */
-var EV_LOGO_ON=true,EVLOGO={'에버온':'everon.png','GS':'gs.png','채비':'chaevi.png','휴맥스':'humax.png','나이스':'nice.png','플러그링크':'pluglink.png','파워큐브':'powercube.png','스타코프':'starkoff.png','LGU+':'voltup.svg'};
+var EV_LOGO_ON=true,EVLOGO={'에버온':'everon.png','GS':'gs.png','채비':'chaevi.png','휴맥스':'humax.png','나이스':'nice.png','플러그링크':'pluglink.png','파워큐브':'powercube.png','스타코프':'starkoff.png','LGU+':'voltup.svg','SK':'sk.png','한전':'kepco.png','서울씨엔지':'seoulcng.png','E-pit':'epit.png','현대':'epit.png','아이파킹':'iparking.png'};
 function evBadge(n){var f=EV_LOGO_ON&&EVLOGO[n];return f?'<img class="evl" src="evlogo/'+f+'" alt="'+n+'">':'<u style="background:'+evColor(n)+'">'+n+'</u>'}
 function evLabel(p){var e=evSum(p),tot=((p.evChargers||{}).evCharger||[]).length,op=evOps(p),fresh=evAgeH(p)<EV_FRESH_H;
   return {fresh:fresh,full:fresh&&tot&&!e.free,html:(op.length?evBadge(evShort(op[0])):'')+(fresh?(e.fa?'⚡':'')+(tot?e.free+'/'+tot:'?'):(tot?tot+'대':'?'))}}
