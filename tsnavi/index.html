@@ -809,8 +809,8 @@ function tmDrawRoute(fs,pins){fs=slimRoute(fs);var JOB=[],tok=++tmJob,oldL=tmLin
   var col={1:'#22b14c',2:'#f5b400',3:'#ff7a00',4:'#e3151a'},dk={1:'#16803a',2:'#b88600',3:'#c25500',4:'#a50e12'};
   fs.forEach(function(ft){var c=ft.properties.c;try{JOB.push(function(){NL.push(new Tmapv3.Polyline({path:ft.geometry.coordinates.map(function(q){return LL(q[1],q[0])}),strokeColor:col[c]||'#2b7bff',strokeWeight:14,strokeOpacity:1,outlineColor:dk[c]||'#1546b8',outlineWidth:3,zIndex:10,map:TMM}))})}catch(e){}});tmTurnKey=null;
   var RT=PREV||NAV;if(RT&&RT.R&&RT.R.length>1&&RT.S){var s0=PREV?0:(NAV.s||0),s1=PREV?-1:Math.min(RT.S[RT.S.length-1]-15,s0+3000),step=250;
-    for(var sd=s0+40;sd<s1;sd+=step){var A=routePointAt(RT,sd),B=routePointAt(RT,sd+6),h=brg(A.la,A.lo,B.la,B.lo),L=move(B.la,B.lo,h+150,5),R=move(B.la,B.lo,h-150,5);
-      (function(L,R,B){JOB.push(function(){NL.push(new Tmapv3.Polyline({path:[LL(L[0],L[1]),LL(B.la,B.lo),LL(R[0],R[1])],strokeColor:'#ffffff',strokeWeight:3,strokeOpacity:1,zIndex:11,map:TMM}))})})(L,R,B)}}
+    step=150;for(var sd=s0+40;sd<s1;sd+=step){var A=routePointAt(RT,sd),B=routePointAt(RT,sd+8),h=brg(A.la,A.lo,B.la,B.lo),L=move(B.la,B.lo,h+140,9),R=move(B.la,B.lo,h-140,9);
+      (function(L,R,B){JOB.push(function(){var pa=[LL(L[0],L[1]),LL(B.la,B.lo),LL(R[0],R[1])];NL.push(new Tmapv3.Polyline({path:pa,strokeColor:'#0c3d1f',strokeWeight:7,strokeOpacity:.55,zIndex:11,map:TMM}));NL.push(new Tmapv3.Polyline({path:pa,strokeColor:'#ffffff',strokeWeight:4,strokeOpacity:1,zIndex:12,map:TMM}))})})(L,R,B)}}
   pins.forEach(function(p){var ic=tmIcon(p.ic);if(!ic)return;try{JOB.push(function(){NP.push(new Tmapv3.Marker({position:LL(p.la,p.lo),icon:ic.url,iconSize:new Tmapv3.Size(Math.round(ic.w*0.8),Math.round(ic.h*0.8)),anchor:'bottom',map:TMM}))})}catch(e){}});var rm=function(a){a.forEach(function(x){try{x.setMap(null)}catch(e){}})};runJobs(JOB,tok,function(){rm(oldL);rm(oldP);tmLines=NL;tmPins=NP},function(){rm(NL);rm(NP)})}
 function initMap(){
   if(ENG==='tmap'){if(TMM)return;loadTmap(function(){try{curStyle=nightNow()?'NIGHT':'ROAD';TMM=new Tmapv3.Map('map',{center:LL(37.4979,127.0276),width:'100%',height:'100%',zoom:17,mapType:curStyle});
@@ -1553,12 +1553,12 @@ function tickBody(){
   var drOn=false,drI=-1;if(NAV&&DR.s!=null&&NAV.F){var di=Math.max(0,NAV.idx);while(di<NAV.S.length-2&&NAV.S[di+1]<DR.s+(DR.d||0))di++;drI=di}
   var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=linkOk()?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12;
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
-  DR.d=(DR.d||0)+(age>(inTun?1.2:2.5)&&tv?tv:v)*drDt;
-  if(age>(inTun?1.2:2.5)&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
+  DR.d=(DR.d||0)+(age>2.5&&tv?tv:v)*drDt;
+  if(age>2.5&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
   else if(age>2.5&&v>4&&head!=null&&age<40){var p=move(la,lo,head,v*age);la=p[0];lo=p[1];drOn=true}
   else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(2,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
-  if(drOn!==DR.on){DR.on=drOn;show('drChip',drOn)}if(drOn)$('drChip').textContent=(inTun?'터널':'GPS 신호 없음')+' · 추정 위치로 안내 중';
+  if(drOn!==DR.on){DR.on=drOn;show('drChip',drOn)}if(drOn)$('drChip').textContent=(inTun?(NAV.F[drI]===4?'지하차도':'터널'):'GPS 신호 없음')+' · 추정 위치로 안내 중';
   var kmh=v*3.6;$('spd').textContent=Math.round(kmh);
   var mla=la,mlo=lo,mh=head;
   if(NAV&&NAV.R&&NAV.R.length>1){var sp=project(la,lo);if(sp&&sp.d<30){var A=NAV.R[sp.i],B=NAV.R[sp.i+1];mla=A[0]+(B[0]-A[0])*sp.t;mlo=A[1]+(B[1]-A[1])*sp.t;if(v>2){var sh=brg(A[0],A[1],B[0],B[1]);if(head==null||Math.abs(adiff(head,sh))<45)mh=sh}}}
