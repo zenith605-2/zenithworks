@@ -552,6 +552,7 @@ function profBtnDraw(){var a=profList(),i=Math.max(0,a.map(function(x){return x.
 function profSave(a){LS0.setItem('profs',JSON.stringify(a))}
 function profSwitch(id){if(id===PROF)return show('profSheet',0);LS0.setItem('prof',id);lg(['prof',Date.now(),id]);location.reload()}
 function profDraw(){var a=profList(),box=$('profList');box.innerHTML='';a.forEach(function(p,i){var r=document.createElement('div');r.className='prow';r.innerHTML=profIcon(p,i)+'<input maxlength="10"><button class="pick"></button>'+(p.id!=='1'?'<button class="del">지우기</button>':'');
+    var ph=Object.keys(lpMap()).filter(function(k){return lpMap()[k]===p.id})[0];if(ph){var t=document.createElement('button');t.className='del';t.textContent='📱 폰 해제';t.title='이 운전자와 짝지은 폰을 풀어요';t.onclick=function(){var m=lpMap();delete m[ph];LS0.setItem('linkPhones',JSON.stringify(m));profDraw()};r.appendChild(t)}
     var inp=r.querySelector('input');inp.value=p.name;inp.onchange=function(){var v=inp.value.trim()||('운전자 '+(i+1));p.name=v;profSave(a);profBtnDraw();profDraw()};
     var b=r.querySelector('.pick');b.textContent=p.id===PROF?'지금 운전자':'이 운전자로';if(p.id===PROF)b.classList.add('on');b.onclick=function(){profSwitch(p.id)};
     var d=r.querySelector('.del');if(d)d.onclick=function(){if(!confirm(p.name+' 의 집·즐겨찾기·기록을 지울까요? 되돌릴 수 없어요.'))return;Object.keys(LS0).forEach(function(k){if(k.indexOf('p'+p.id+':')===0)LS0.removeItem(k)});profSave(a.filter(function(x){return x.id!==p.id}));if(PROF===p.id)profSwitch('1');else profDraw()};
@@ -566,20 +567,28 @@ var LINK={at:0,v:0,g:'',b:null,ws:null,phone:0,retry:null};
 function linkOk(){return LINK.at&&Date.now()-LINK.at<3000}
 function linkId(make){var id=LS.getItem('linkId');if(!id&&make){var a=new Uint8Array(24);crypto.getRandomValues(a);id=Array.from(a,function(x){return 'abcdefghijkmnpqrstuvwxyz23456789'[x%32]}).join('');LS.setItem('linkId',id)}return id}
 /* 기어가 바뀌면 말해 줌: R 이면 "후진합니다", R·P·N 에서 D 면 "전진합니다" + 지도를 내 위치로 */
+/* 폰마다 운전자 짝: 처음 보는 폰은 지금 운전자(짝 없는 경우)에게 붙임. 지금 운전자의 폰이 와 있으면 그 폰 값만 쓰고, 방에 {use} 로 알려 다른 폰은 쉬게 함 */
+LINK.ph={};
+function lpMap(){try{return JSON.parse(LS0.getItem('linkPhones')||'{}')}catch(e){return{}}}
+function lpMine(){var m=lpMap();for(var k in m)if(m[k]===PROF)return k;return null}
+function linkFrom(d){var pid=typeof d.p==='string'?d.p:'';if(!pid)return true;LINK.ph[pid]=Date.now();
+  var mine=lpMine();if(!mine&&!lpMap()[pid]){var m=lpMap();m[pid]=PROF;LS0.setItem('linkPhones',JSON.stringify(m));mine=pid;lg(['linkpair',Date.now(),pid,PROF])}
+  if(d.hb)return false;if(mine&&pid!==mine&&LINK.ph[mine]&&Date.now()-LINK.ph[mine]<15000)return false;return true}
+function linkUse(){var w=LINK.ws;if(!w||w.readyState!==1)return;var mine=lpMine(),want=mine&&LINK.ph[mine]&&Date.now()-LINK.ph[mine]<15000?mine:null;if(want!==LINK.useSent){LINK.useSent=want;try{w.send(JSON.stringify({use:want}))}catch(e){}}}
 function linkGear(from,to){lg(['gear',Date.now(),from,to]);if(to==='R')sayParts(['gear_r'],true,'후진합니다');else if(to==='D'){sayParts(['gear_d'],true,'전진합니다');if(FREE)setFree(false)}}
 function linkChip(){var c=$('linkChip');if(!c)return;var id=linkId(false);c.classList.toggle('show',!!id);if(!id)return;var ok=linkOk(),open=LINK.ws&&LINK.ws.readyState===1;
   c.className='show '+(ok?'on':LINK.phone?'wait':'');c.querySelector('span').textContent=ok?'차량 연동 · '+Math.round(LINK.v*3.6)+'km/h '+(LINK.g||''):LINK.phone?'차량 연동 · 차 정보 대기':open?'차량 연동 · 폰 앱 꺼짐':'차량 연동 · 서버 연결 중'}
 function linkStatus(){linkChip();var e=$('linkSt');if(!e)return;e.textContent=linkOk()?'연결됨 · 차 속도 '+Math.round(LINK.v*3.6)+'km/h · 기어 '+(LINK.g||'-')+(LINK.b!=null?' · 배터리 '+LINK.b+'%':''):LINK.phone?'폰 앱 연결됨 · 차 정보 기다리는 중':LINK.ws&&LINK.ws.readyState===1?'폰 앱을 기다리는 중':'연결 준비 중'}
 function linkConnect(){var id=linkId(false);if(!id||LINK.ws)return;clearTimeout(LINK.retry);var ws;try{ws=new WebSocket(RELAY.replace(/^http/,'ws')+'link/ws?c='+id+'&r=car')}catch(e){return}LINK.ws=ws;
-  ws.onmessage=function(ev){var d;try{d=JSON.parse(ev.data)}catch(e){return}if(d.hub){LINK.phone=d.phone;linkStatus();return}if(typeof d.s==='number'){LINK.v=Math.max(0,d.s)/3.6;var ng=d.g||'';if(LINK.pg&&ng!==LINK.pg&&LINK.at&&Date.now()-LINK.at<10000)linkGear(LINK.pg,ng);LINK.pg=ng;LINK.g=ng;LINK.b=d.b==null?null:d.b;LINK.at=Date.now();if(!LINK.lg||Date.now()-LINK.lg>5000){LINK.lg=Date.now();lg(['link',LINK.at,d.s,d.g])}linkStatus()}};
-  ws.onclose=function(){LINK.ws=null;LINK.phone=0;linkStatus();if(linkId(false))LINK.retry=setTimeout(linkConnect,5000)};ws.onopen=linkStatus}
+  ws.onmessage=function(ev){var d;try{d=JSON.parse(ev.data)}catch(e){return}if(d.hub){LINK.phone=d.phone;LINK.useAt=d.use;linkStatus();return}if(!linkFrom(d))return;if(typeof d.s==='number'){LINK.v=Math.max(0,d.s)/3.6;var ng=d.g||'';if(LINK.pg&&ng!==LINK.pg&&LINK.at&&Date.now()-LINK.at<10000)linkGear(LINK.pg,ng);LINK.pg=ng;LINK.g=ng;LINK.b=d.b==null?null:d.b;LINK.at=Date.now();if(!LINK.lg||Date.now()-LINK.lg>5000){LINK.lg=Date.now();lg(['link',LINK.at,d.s,d.g])}linkStatus()}};
+  ws.onclose=function(){LINK.ws=null;LINK.useSent=undefined;LINK.phone=0;linkStatus();if(linkId(false))LINK.retry=setTimeout(linkConnect,5000)};ws.onopen=linkStatus}
 function linkQr(){var id=linkId(true),box=$('linkQr');box.textContent='QR 만드는 중…';var draw=function(){var q=qrcode(0,'M');q.addData('tsnavi-link:'+id);q.make();box.innerHTML=q.createSvgTag({cellSize:5,margin:0,scalable:true});var sv=box.querySelector('svg');if(sv){sv.style.width='180px';sv.style.height='180px'}};
   if(window.qrcode)draw();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';sc.onload=draw;sc.onerror=function(){box.textContent='QR 을 못 불러왔어요'};document.head.appendChild(sc)}}
 $('mLink').onclick=function(){show('menuSheet',0);linkQr();linkConnect();linkStatus();show('linkSheet',1)};
 $('linkClose').onclick=function(){show('linkSheet',0)};
 $('linkChip').onclick=function(){linkQr();linkConnect();linkStatus();show('linkSheet',1)};
 $('linkOff').onclick=function(){LS.removeItem('linkId');var w=LINK.ws;LINK.ws=null;if(w)try{w.close()}catch(e){}LINK.at=0;linkQr();linkConnect();linkStatus()};
-setInterval(linkStatus,1000);setTimeout(linkConnect,1500);
+setInterval(function(){linkStatus();linkUse()},1000);setTimeout(linkConnect,1500);
 
 $('mFb').onclick=function(){try{$('mClose').onclick()}catch(e){}setTimeout(function(){try{$('mSet').onclick()}catch(e){}setTimeout(function(){var t=$('fbH');if(t){t.scrollIntoView({block:'start'})}},300)},250)};
 $('fbSend').onclick=function(){var t=$('fbText').value.trim();var ty0=(document.querySelector('.fbType button.on')||{dataset:{}}).dataset.t;if(t.length<2&&!(ty0&&ty0!=='의견'&&$('fbLoc').checked)){$('fbState').textContent='내용을 적어 주세요';return}if(t.length<2)t=ty0;hideKb();$('fbSend').disabled=true;$('fbState').textContent='보내는 중…';
