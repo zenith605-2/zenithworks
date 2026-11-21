@@ -351,6 +351,12 @@ body.night #linkChip{background:#2a2e35;color:#aab1ba}body.night #linkChip.on{co
 .prow button{border:0;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:700;background:#eef1f5;color:#111}
 .prow button.on{background:#2b7bff;color:#fff}.prow button.del{background:transparent;color:#e3151a}
 body.night #profBtn,body.night .prow button{background:#2a2e35;color:#e8eaed}body.night .prow{border-color:#30353c}body.night .prow input:focus{background:#2a2e35}
+/* 메뉴 버튼: 아이콘 + 한 줄 글자 (11/21) */
+.grid.mg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;white-space:nowrap;padding:14px 4px}
+.grid.mg button svg{width:26px;height:26px;flex:none}
+body.dev .grid.mg #mLink{display:flex!important}
+.devTools{margin:12px 2px 0;font-size:13px;color:#8a919c}
+.devTools button{border:0;background:none;color:#2b7bff;font-size:13px;padding:4px 6px;margin-left:2px}
 </style>
 </head>
 <body>
@@ -443,7 +449,8 @@ body.night #profBtn,body.night .prow button{background:#2a2e35;color:#e8eaed}bod
   <h2>안내음성 크기</h2><input type="range" min="0" max="1" step="0.05" id="volG" style="width:100%">
   <h2>경고음 크기</h2><input type="range" min="0" max="1" step="0.05" id="volW" style="width:100%">
   <h2 style="margin-top:22px">메뉴</h2>
-  <div class="grid"><button id="mTrips">주행 기록</button><button id="mFb">의견 보내기</button><button id="mSet">설정</button><button id="mInfo">정보·개인정보</button><button id="mClose">닫기</button><button id="mDemo" class="devOnly">시연</button><button id="mFix" class="devOnly">카메라 여기</button><button id="mMap" class="devOnly">지도 끄기</button><button id="mLink" class="devOnly">차량 연동</button></div>
+  <div class="grid mg"><button id="mTrips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 2"/></svg><span>주행 기록</span></button><button id="mFb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span>의견 보내기</span></button><button id="mSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>설정</span></button><button id="mInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><span>정보</span></button><button id="mLink" class="devOnly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M3 9.5a6 6 0 0 0 0 5M21 9.5a6 6 0 0 1 0 5"/></svg><span>차량 연동</span></button><button id="mClose" style="display:none">닫기</button></div>
+  <div class="devOnly devTools">개발 · <button id="mDemo">시연</button><button id="mFix">카메라 여기</button><button id="mMap">지도 끄기</button></div>
   <p class="muted" style="font-size:13px;margin:10px 2px 0;line-height:1.6">내 기록·즐겨찾기·설정은 이 차 브라우저에만 저장되고 서버로 보내지 않아요.<br>브라우저 데이터(캐시)를 지우면 모두 사라지고 되돌릴 수 없어요.</p>
   <button class="wide" id="clearVia" style="display:none;background:#eceff3;color:#111">경유지 빼기</button>
   <button class="wide" id="stopNav" style="display:none">안내 종료</button>
