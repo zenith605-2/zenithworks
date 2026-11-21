@@ -269,7 +269,7 @@
   #boot .sp{width:38px;height:38px;border-radius:50%;border:4px solid #2b7bff33;border-top-color:#2b7bff;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   #lp{position:fixed;left:50%;top:64px;transform:translateX(-50%);width:440px;max-width:calc(100% - 32px);z-index:22;background:#fff;border-radius:14px;box-shadow:0 6px 24px #0004;padding:4px 6px;display:none}
   #lp.on{display:block;animation:lpIn .18s ease-out}@keyframes lpIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}}
-  #lp .go{background:#2b7bff!important;color:#fff!important}
+  #lp .go{background:#2b7bff!important;color:#fff!important}#lp .crow{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-top:1px solid #0001;margin-top:2px}#lp .crow span{flex:1;font-size:14px;color:#667085;white-space:nowrap}#lp .crow button{height:40px;padding:0 14px;border:0;border-radius:10px;background:#eef1f5;color:#111;font-size:15px;font-weight:700;white-space:nowrap}#lp .crow button.bad{background:#fde8e8;color:#c81e1e}body.night #lp .crow button{background:#2a2e35;color:#e8eaed}body.night #lp .crow button.bad{background:#3a2326;color:#ff8a8a}body.night #lp .crow{border-color:#ffffff14}
   #lp .x{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;border-radius:50%;background:#0000;font-size:18px;color:#888;z-index:1}
   body.night #lp{background:#1c1f24;color:#eee}
   #lpPin{position:fixed;z-index:5;width:30px;height:40px;margin:-40px 0 0 -15px;pointer-events:none;display:none}
@@ -669,7 +669,8 @@ $('stopNav').onclick=function(){endNav();show('menuSheet',0)};
 /* 카메라 데이터 */
 var CAMS=[],GRID={};
 function cellKey(la,lo){return Math.floor(la*100)+'_'+Math.floor(lo*100)}
-function indexCams(arr){var fx={};try{fx=JSON.parse(LS.getItem('camfix3')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0[6]==null)a0[6]=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0[6]];if(f0){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
+/* 내가 고친 카메라(이 차에만): '카메라 여기'로 옮김 [위도,경도], 꾹 눌러 '카메라 없음' 신고 'x'(숨김). 키는 원본 좌표. 6번 칸이 도로 이름이 된 뒤 키가 도로 이름이 돼 같은 도로 카메라가 다 같이 옮겨지던 버그(camfix3) 고침 (11/21) */
+function indexCams(arr){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0._k==null)a0._k=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0._k];a0.hid=f0==='x'?1:0;if(f0&&f0!=='x'){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){if(arr[i].hid)continue;var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
 var DATA='https://actparty.app/tesla-webnav/';
 function loadCams(){
   var cur=LS.getItem('camsVer'),have=null;
@@ -728,10 +729,22 @@ function lpClose(){$('lp').classList.remove('on');var k=$('lpPin');if(k)k.style.
 function lpShow(px,py){var ll=scrToLL(px,py);if(!ll)return;lpAt=ll;if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}
   var k=$('lpPin');if(!k){k=document.createElement('div');k.id='lpPin';k.innerHTML='<svg viewBox="0 0 30 40"><path d="M15 39C15 39 2 23 2 14a13 13 0 0 1 26 0c0 9-13 25-13 25z" fill="#e3151a" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fff"/></svg>';document.body.appendChild(k)}
   k.style.left=px+'px';k.style.top=py+'px';k.style.display='block';
-  var b=$('lp').querySelector('.body');b.innerHTML='';var dd={name:'지도에서 고른 곳',la:ll.la,lo:ll.lo};var el=placeItem(dd,'주소 찾는 중…','pin');var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');
+  var b=$('lp').querySelector('.body');b.innerHTML='';var dd={name:'지도에서 고른 곳',la:ll.la,lo:ll.lo};var el=placeItem(dd,'주소 찾는 중…','pin');var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);camReportRow(b,ll);$('lp').classList.add('on');
   api('geo/reversegeocoding?version=1&lat='+ll.la+'&lon='+ll.lo+'&coordType=WGS84GEO&addressType=A10').then(function(d){if(lpAt!==ll)return;var a=(d||{}).addressInfo||{};
     var road=a.roadName?(a.roadName+' '+(a.buildingIndex||'')).trim():'',bld=a.buildingName||'',jib=[a.legalDong,a.bunji].filter(Boolean).join(' ');
     dd.name=bld||road||jib||'지도에서 고른 곳';el.querySelector('.nm').textContent=dd.name;el.querySelector('.sb').textContent=[bld?road:'',jib,fix?fmtD(dist(fix.la,fix.lo,ll.la,ll.lo)):''].filter(Boolean).join(' · ')}).catch(function(){el.querySelector('.sb').textContent=''})}
+/* 카메라 신고(11/21): 꾹 누른 곳에 [카메라 있음] / 가까운 카메라가 있으면 [카메라 없음]. 서버(camfix)로 보내고, '없음'은 이 차에서 바로 숨김 */
+function camNear(la,lo,R){var best=null,bd=R,c0=Math.floor(la*100),c1=Math.floor(lo*100);for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){(GRID[(c0+a)+'_'+(c1+b)]||[]).forEach(function(id){var c=CAMS[id],d=dist(la,lo,c[0],c[1]);if(d<bd){bd=d;best=id}})}return best}
+function camReport(kind,ll,id){var c=id!=null?CAMS[id]:null;var body={kind:kind,la:ll.la,lo:ll.lo,h:head,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
+  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(r.ok?'신고했어요. 데이터 고칠 때 반영할게요':'지금은 보낼 수 없어요')}).catch(function(){toast('보내지 못했어요')});
+  lg(['camfix',Date.now(),kind,id]);
+  if(kind==='wrong'&&c){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[c._k]='x';LS.setItem('camfix4',JSON.stringify(fx));indexCams(CAMS);if(NAV)routeHits(NAV);if(target&&target.id===id)target=null;try{camSrcAt=null}catch(e){}}
+  lpClose()}
+function camReportRow(b,ll){var id=camNear(ll.la,ll.lo,80),row=document.createElement('div');row.className='crow';
+  var t=document.createElement('span');t.textContent=id!=null?'카메라 '+(CAMS[id][2]||'신호')+' · '+Math.round(dist(ll.la,ll.lo,CAMS[id][0],CAMS[id][1]))+'m':'카메라 신고';row.appendChild(t);
+  var a=document.createElement('button');a.type='button';a.textContent='카메라 있음';a.onclick=function(e){e.stopPropagation();camReport('add',ll,id)};row.appendChild(a);
+  if(id!=null){var w=document.createElement('button');w.type='button';w.className='bad';w.textContent='카메라 없음';w.onclick=function(e){e.stopPropagation();camReport('wrong',ll,id)};row.appendChild(w)}
+  b.appendChild(row)}
 $('lp').querySelector('.x').onclick=function(e){e.stopPropagation();lpClose()};
 $('map').addEventListener('pointerdown',function(e){clearTimeout(lpT);if(PREV)return;var x=e.clientX,y=e.clientY;lpT=setTimeout(function(){if(Object.keys(PT).length===1&&(!drag||!drag.moved))lpShow(x,y)},600)},true);
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,function(){clearTimeout(lpT)},true)});
@@ -1483,7 +1496,7 @@ function evDetail(p){var L=((p.evChargers||{}).evCharger)||[];if(!L.length)retur
   var fr=evAgeH(p)<EV_FRESH_H;var h='<div class="evd">';Object.keys(G).sort(function(a,b){return (G[b].f+G[b].s)-(G[a].f+G[a].s)}).forEach(function(k){var g=G[k];h+='<div class="evr"><span class="op" style="color:'+evColor(evShort(k))+'">'+(EV_LOGO_ON&&EVLOGO[evShort(k)]?'<img class="evl" src="evlogo/'+EVLOGO[evShort(k)]+'" alt="">':'')+evShort(k)+'</span>'+(g.f?'<span class="ch '+(fr&&g.fa?'ok':'no')+'">급속'+(g.kw?' '+g.kw+'kW':'')+' '+(fr?'<b>'+g.fa+'</b>/'+g.f:'<b>'+g.f+'</b>대')+'</span>':'')+(g.s?'<span class="ch '+(fr&&g.sa?'ok':'no')+'">완속 '+(fr?'<b>'+g.sa+'</b>/'+g.s:'<b>'+g.s+'</b>대')+'</span>':'')+'</div>'});
   var t='';if(up){var q=String(up),d=new Date(+q.slice(0,4),+q.slice(4,6)-1,+q.slice(6,8),+q.slice(8,10),+q.slice(10,12)),mn=Math.round((Date.now()-d)/60000);t=mn<1?'방금':mn<60?mn+'분 전':mn<1440?Math.round(mn/60)+'시간 전':Math.round(mn/1440)+'일 전'}
   h+='<p class="evn">'+(fr?[busy?'충전 중 '+busy+'대':'',bad?'고장·점검 '+bad+'대':'',p._live?'환경부 실시간':(t?'상태 '+t+' 기준':'')].filter(Boolean).join(' · '):'실시간 빈자리 정보를 못 받아 충전기 대수만 보여요')+'</p></div>';return h}
-function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);var tx=el.querySelector('.tx');tx.insertBefore(dv.firstChild,tx.querySelector('.ac'))}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
+function layCard(dd,sub,kind){var b=$('lp').querySelector('.body');b.innerHTML='';var el=placeItem(dd,sub||'',kind);if(dd.ev){var dv=document.createElement('div');dv.innerHTML=evDetail(dd.ev);var tx=el.querySelector('.tx');tx.insertBefore(dv.firstChild,tx.querySelector('.ac'))}var g=document.createElement('button');g.className='go';g.textContent='여기로 안내';g.onclick=function(e){e.stopPropagation();startNav(dd)};el.querySelector('.ac').insertBefore(g,el.querySelector('.ac').firstChild);b.appendChild(el);camReportRow(b,ll);$('lp').classList.add('on');var k=$('lpPin');if(k)k.style.display='none'}
 function layDraw(){if(!LAY.mk.length)return;var W=innerWidth,H=innerHeight;for(var i=0;i<LAY.mk.length;i++){var m=LAY.mk[i],p=mapPx(m.la,m.lo);if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40){if(m.el.style.display!=='none')m.el.style.display='none'}else{if(m.el.style.display)m.el.style.display='';m.el.style.left=p.x+'px';m.el.style.top=p.y+'px'}}}
 var SCI='<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#fff"/></svg>';
 function layShowSc(){layClear('sc');var c=layCenter()||{la:37.5,lo:127};var a=SC.map(function(p){return{p:p,d:dist(c.la,c.lo,p[0],p[1])}}).sort(function(x,y){return x.d-y.d});var near=a.filter(function(x){return x.d<40000}).slice(0,40);if(!near.length)near=a.slice(0,3);
@@ -1580,7 +1593,7 @@ function secDraw(){var b=$('secBar');if(!b)return;var sc=section;if(!sc){if(b.st
   b.querySelector('span').innerHTML='구간단속 · '+txt+' · 평균 <b class="'+(avg>sc.lim?'ov':'')+'">'+avg+'</b>/'+sc.lim;
   var u=b.querySelector('u');u.style.width=(pct==null?0:pct)+'%';b.querySelector('i').style.display=pct==null?'none':'';b.style.display=''}
 var secEndAt=null,lastPassed=null,target=null,passed={},announced={},lastBeep=0,section=null;
-function fixCam(b){var id=target?target.id:lastPassed;if(id==null||!fix){b.textContent='고칠 카메라 없음';setTimeout(function(){b.textContent='카메라 여기'},1500);return}var fx={};try{fx=JSON.parse(LS.getItem('camfix3')||'{}')}catch(e){}fx[CAMS[id][6]]=[fix.la,fix.lo];LS.setItem('camfix3',JSON.stringify(fx));var old=dist(CAMS[id][0],CAMS[id][1],fix.la,fix.lo);CAMS[id][0]=fix.la;CAMS[id][1]=fix.lo;indexCams(CAMS);passed[id]=Date.now();if(target&&target.id===id)target=null;b.textContent='고침 ('+Math.round(old)+'m 옮김)';setTimeout(function(){b.textContent='카메라 여기'},2500)}
+function fixCam(b){var id=target?target.id:lastPassed;if(id==null||!fix){b.textContent='고칠 카메라 없음';setTimeout(function(){b.textContent='카메라 여기'},1500);return}var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[CAMS[id]._k]=[fix.la,fix.lo];LS.setItem('camfix4',JSON.stringify(fx));var old=dist(CAMS[id][0],CAMS[id][1],fix.la,fix.lo);CAMS[id][0]=fix.la;CAMS[id][1]=fix.lo;indexCams(CAMS);passed[id]=Date.now();if(target&&target.id===id)target=null;b.textContent='고침 ('+Math.round(old)+'m 옮김)';setTimeout(function(){b.textContent='카메라 여기'},2500)}
 function findAhead(la,lo,h){
   var c0=Math.floor(la*100),c1=Math.floor(lo*100),best=null;
   for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=GRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;
