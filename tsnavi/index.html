@@ -388,7 +388,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 <div id="map"></div>
 <div id="poiLayer"></div>
 <div id="drChip">GPS 신호 없음 · 추정 위치로 안내 중</div>
-<div id="lp"><button class="x" type="button">✕</button><div class="body"></div></div>
+<div id="lp"><button class="x" type="button" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button><div class="body"></div></div>
 <div id="carMk"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="#fff"/><circle cx="40" cy="40" r="36" fill="none" stroke="#1d6ff2" stroke-width="5"/><path d="M40 16 L56 56 L40 47 L24 56 Z" fill="#1d6ff2" stroke="#1d6ff2" stroke-width="3" stroke-linejoin="round"/></svg></div>
 <div id="warn"></div>
 
@@ -430,8 +430,8 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <button class="rb lay" id="scBtn" title="슈퍼차저"><svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="currentColor"/></svg></button>
   <button class="rb lay" id="evBtn" title="충전소"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 6.5 8 12h3l-1 5 3.5-6.5h-3z" fill="currentColor"/><path d="M15 9h2a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V8l-2-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
 </div>
-<div id="cctvBar"><div class="hd"><b>가는 길 상황</b><span id="cctvN"></span><button type="button" id="cctvX">✕</button></div><div id="cctvRow"></div></div>
-<div id="cctvBig"><video id="cctvBigV" muted playsinline autoplay></video><div class="nm" id="cctvBigN"></div><button type="button" id="cctvBigX">✕</button></div>
+<div id="cctvBar"><div class="hd"><b>가는 길 상황</b><span id="cctvN"></span><button type="button" id="cctvX" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div><div id="cctvRow"></div></div>
+<div id="cctvBig"><video id="cctvBigV" muted playsinline autoplay></video><div class="nm" id="cctvBigN"></div><button type="button" id="cctvBigX" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
 <div id="prog"><div id="progFill"></div><div id="progDot"></div></div>
 <div id="diag"></div>
 
@@ -788,14 +788,13 @@ function tmDrawTurn(g){if(!TMM)return;var k=g?g.s+'_'+g.t:null;if(k===tmTurnKey)
   /* 유턴은 갔다 오는 선이 겹쳐 덩어리로 보여서 지도 화살표 생략(왼쪽 카드로 안내). 티맵식 회전 화살표: 회전 지점 앞 50m~뒤 30m 를 부드럽게 다듬은 몸통 + 꽉 찬 삼각형 화살촉 (검은 테두리) */
   var P=[];for(var sd=g.s-50;sd<=g.s+30;sd+=4){var q=routePoint(Math.max(0,Math.min(NAV.total,sd)));P.push([q.la,q.lo])}if(P.length<4)return;
   var S=chaikin(P,3),n=S.length,a=S[n-4],tip=S[n-1],h=brg(a[0],a[1],tip[0],tip[1]);
-  var bt=move(tip[0],tip[1],h+180,4),head=move(bt[0],bt[1],h,24),base=S.slice(0,n-1),L=move(bt[0],bt[1],h-90,18),R=move(bt[0],bt[1],h+90,18);
-  var shaft=base.map(function(q){return LL(q[0],q[1])});
-  try{
-    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#1b2533',strokeWeight:24,strokeOpacity:1,zIndex:997,map:TMM}));
-    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#ffffff',strokeWeight:16,strokeOpacity:1,zIndex:998,map:TMM}));
-    var tri=[LL(L[0],L[1]),LL(head[0],head[1]),LL(R[0],R[1])];
-    tmTurn.push(new Tmapv3.Polygon({paths:tri,fillColor:'#ffffff',fillOpacity:1,strokeColor:'#1b2533',strokeWeight:3,zIndex:999,map:TMM}));
-  }catch(e){}}
+  var h0=brg(S[0][0],S[0][1],S[Math.min(3,n-1)][0],S[Math.min(3,n-1)][1]);if(Math.abs(adiff(h0,h))<25)return; /* 사실상 직진이면 그리지 않음 (11/21 실차: 직진 화살표가 투박) */
+  /* 몸통과 머리를 한 도형으로: 테두리가 끊기지 않게 (11/21) */
+  var hw=5.5,bt=move(tip[0],tip[1],h+180,4),head=move(bt[0],bt[1],h,22),Lp=[],Rp=[];
+  for(var k=0;k<n-1;k++){var b0=k<n-2?brg(S[k][0],S[k][1],S[k+1][0],S[k+1][1]):h;Lp.push(move(S[k][0],S[k][1],b0-90,hw));Rp.push(move(S[k][0],S[k][1],b0+90,hw))}
+  Lp.push(move(bt[0],bt[1],h-90,hw));Rp.push(move(bt[0],bt[1],h+90,hw));
+  var poly=Lp.concat([move(bt[0],bt[1],h-90,15),head,move(bt[0],bt[1],h+90,15)]).concat(Rp.reverse()).map(function(q){return LL(q[0],q[1])});
+  try{tmTurn.push(new Tmapv3.Polygon({paths:poly,fillColor:'#ffffff',fillOpacity:1,strokeColor:'#14202e',strokeWeight:3,zIndex:999,map:TMM}))}catch(e){}}
 function segLen(c){var L=0;for(var i=1;i<c.length;i++)L+=dist(c[i-1][1],c[i-1][0],c[i][1],c[i][0]);return L}
 var tmJob=0;function runJobs(J,tok,done,cancel){var k=0;(function step(){if(tok!==tmJob){if(cancel)cancel();return}for(var n=0;n<6&&k<J.length;n++,k++){try{J[k]()}catch(e){}}if(k<J.length)setTimeout(step,16);else{tmTurnKey=null;if(done)done()}})()}
 function slimRoute(fs){if(!fs.length)return fs;var th=200,out=fs;
@@ -874,6 +873,7 @@ function updCamSrc(la,lo,h){
     if(CFG.bumpOn&&Math.abs(a)<=1&&Math.abs(b)<=1&&BGRID[ck])BGRID[ck].forEach(function(i){var p=BUMPS[i];if(bumpOk(i,p))f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:'bump',o:-1}})});
     if(CFG.poiOn&&PGRID[ck])PGRID[ck].forEach(function(t){if(t[0]==='sc')return; /* 슈퍼차저는 ⚡ 버튼 말풍선으로만 (11/21) */var p=poiOf(t);f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:t[0]==='sc'?'sc':'rest'+p[3],o:2}})})}
   (function(){var L=NAV&&NAV.inc?NAV.inc.filter(function(x){return x.s>NAV.s-30&&x.s-NAV.s<5000}).map(function(x){return x.q}):INC.filter(function(q){return dist(la,lo,q[0],q[1])<2000});L.forEach(function(q){f.push({type:'Feature',geometry:{type:'Point',coordinates:[q[1],q[0]]},properties:{ic:'inc',o:3}})})})();
+  f=f.filter(function(a,i){for(var k=0;k<i;k++){var b=f[k];if(b.properties.ic===a.properties.ic&&dist(a.geometry.coordinates[1],a.geometry.coordinates[0],b.geometry.coordinates[1],b.geometry.coordinates[0])<20)return false}return true}); /* 같은 자리 겹친 카메라는 하나만 (11/21) */
   if(TMM)tmSetIcons(f);else map.getSource('cams').setData({type:'FeatureCollection',features:f});
 }
 
