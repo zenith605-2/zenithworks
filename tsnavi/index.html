@@ -553,7 +553,7 @@ var TT={11:'직진',12:'좌회전',13:'우회전',14:'유턴',16:'8시 방향 �
 function ttName(t){if(TT[t])return TT[t];if(t>=131&&t<=142)return'회전교차로';if(t>=182&&t<=189)return'경유지';return'직진'}
 
 /* 설정 */
-var CFG={tollShow:LS.getItem('tollShow')!=='0',hipass:LS.getItem('hipass')!=='0',evHi:LS.getItem('evHi')==='1',night:LS.getItem('night')||'auto',eff:Number(LS.getItem('eff')||6),kwh:Number(LS.getItem('kwh')||300),a80:LS.getItem('a80')||'1000',a50:LS.getItem('a50')||'600',a0:LS.getItem('a0')||'300',rot:(LS.getItem('view')||(LS.getItem('rotOff')==='1'?'n':'2d'))!=='n',volG:Number(LS.getItem('volG')||0.8),volW:Number(LS.getItem('volW')||0.8),car:LS.getItem('carColor')||'#e9e9e9',diag:LS.getItem('diagOff')!=='1',bumpOn:LS.getItem('bumpOn')!=='0',poiOn:LS.getItem('poiOn')!=='0',bigText:LS.getItem('bigText')==='1',fastOn:LS.getItem('fastOn')==='1'};
+var CFG={tollShow:LS.getItem('tollShow')!=='0',hipass:LS.getItem('hipass')!=='0',evHi:LS.getItem('evHi')==='1',night:LS.getItem('night')||'auto',eff:Number(LS.getItem('eff')||6),kwh:Number(LS.getItem('kwh')||300),a80:LS.getItem('a80')||'800',a50:LS.getItem('a50')||'400',a0:LS.getItem('a0')||'300',rot:(LS.getItem('view')||(LS.getItem('rotOff')==='1'?'n':'2d'))!=='n',volG:Number(LS.getItem('volG')||0.8),volW:Number(LS.getItem('volW')||0.8),car:LS.getItem('carColor')||'#e9e9e9',diag:LS.getItem('diagOff')!=='1',bumpOn:LS.getItem('bumpOn')!=='0',poiOn:LS.getItem('poiOn')!=='0',bigText:LS.getItem('bigText')==='1',fastOn:LS.getItem('fastOn')==='1'};
 document.body.classList.toggle('big',CFG.bigText);
 var VIEW=LS.getItem('view')||(LS.getItem('rotOff')==='1'?'n':'2d');
 var KEY=LS.getItem('tmapKey')||'';
@@ -564,7 +564,7 @@ var urlK=(location.search.match(/[?&]k=([^&]+)/)||[])[1];if(urlK)KEY=decodeURICo
 function optRow(box,opts,cur,cb){$(box).innerHTML='';opts.forEach(function(o){var b=document.createElement('button');b.textContent=o[1];b.className=cur===o[0]?'sel':'';b.onclick=function(){cb(o[0]);renderSet()};$(box).appendChild(b)})}
 function renderSet(){
   var A=$('alertOpts');A.innerHTML='';
-  [['a80','80km/h 이상',[['2000','2km 전'],['1000','1km 전'],['500','500m 전']]],['a50','50km/h 이상~80km/h 미만',[['1000','1km 전'],['600','600m 전'],['300','300m 전']]],['a0','50km/h 미만',[['1000','1km 전'],['600','600m 전'],['300','300m 전']]]].forEach(function(r){
+  [['a80','80km/h 이상',[['1000','1km 전'],['800','800m 전'],['500','500m 전']]],['a50','50km/h 이상~80km/h 미만',[['600','600m 전'],['400','400m 전'],['300','300m 전']]],['a0','50km/h 미만',[['600','600m 전'],['300','300m 전'],['200','200m 전']]]].forEach(function(r){
     var card=document.createElement('div');card.className='band';var t=document.createElement('div');t.className='bt';t.textContent=r[1];card.appendChild(t);
     r[2].forEach(function(o){var row=document.createElement('div');row.className='row';row.innerHTML='<span></span><i></i>';row.querySelector('span').textContent=o[1];row.querySelector('i').textContent=CFG[r[0]]===o[0]?'✓':'';row.onclick=function(){CFG[r[0]]=o[0];LS.setItem(r[0],o[0]);announced={};renderSet()};card.appendChild(row)});
     A.appendChild(card)});
@@ -1609,8 +1609,12 @@ function findAhead(la,lo,h){
   for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=GRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;
     for(var j=0;j<ids.length;j++){var id=ids[j],c=CAMS[id];if(passed[id])continue;var d=dist(la,lo,c[0],c[1]);if(d>(NAV&&NAV.cams?2100:1000)||d<5)continue; /* 안내 없을 땐 1km 까지만: 직선 앞 먼 카메라는 다른 길일 때가 많음 */
       if(NAV&&NAV.cams){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
-      var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:20))continue;
-      var lat=d*Math.sin(df*D2R);if(!(NAV&&NAV.cams)&&(lat<-6||lat>28))continue;
+      if(c[7]!=null&&c[7]>=0&&Math.abs(adiff(h,c[7]))>=60)continue; /* 단속 방향이 반대인 카메라 (11/21 재생 시험: 안내 없을 때 성남대로 반대편 경고) */
+      /* 굽은 길: 단속 방향이 내 방향과 맞거나(45° 안), 고속도로 카메라(80+)를 시속 60 넘게 달릴 땐 정면 30°·좌우 거리의 35%까지 (11/21 재생 시험: 고속도로 커브에서 100 카메라를 200m 앞에서야 잡음) */
+      var curve=!(NAV&&NAV.cams)&&((c[7]!=null&&c[7]>=0&&Math.abs(adiff(h,c[7]))<45)||(c[2]>=80&&v>16.7));
+      var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:curve?30:20))continue;
+      /* 안내 없을 때 좌우 범위: 멀수록 방향 오차로 벌어져서 거리에 비례(500m 에서 -25~+40m). 방향이 맞는 카메라는 ±35m 더 넓게. 예전 -6~+28m 고정이라 고속도로 100 카메라를 200m 앞에서야 잡음 (11/21 재생 시험) */
+      var lat=d*Math.sin(df*D2R),dirOk=c[7]!=null&&c[7]>=0;if(!(NAV&&NAV.cams)&&(curve?Math.abs(lat)>Math.max(35,d*0.35):(lat<-Math.max(dirOk?35:8,d*0.05)||lat>Math.max(dirOk?35:28,d*0.08))))continue;
       if(!(NAV&&NAV.cams)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c,roadNowHw()))continue}
       if(!best||d<best.d)best={id:id,c:c,d:d}}}
   return best;
