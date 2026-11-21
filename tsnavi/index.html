@@ -65,7 +65,8 @@
   #progFill{position:absolute;left:0;right:0;bottom:0;background:#2b7bff;border-radius:4px}
   #progDot{position:absolute;left:50%;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:#fff;border:4px solid #2b7bff;box-sizing:border-box}
 
-  #bottom{position:fixed;left:0;right:0;bottom:0;height:60px;background:#fff;color:#111;border-top-left-radius:18px;border-top-right-radius:18px;box-shadow:0 -2px 12px #0002;z-index:7;display:flex;align-items:center;padding:0 12px;gap:12px}
+  #goHere{position:fixed;left:16px;bottom:96px;z-index:8;display:none;align-items:center;gap:8px;height:48px;padding:0 20px 0 16px;border:0;border-radius:24px;background:#1c1f24;color:#fff;font-size:19px;font-weight:700;box-shadow:0 3px 10px #0005}#goHere svg{width:20px;height:20px}body:has(#cctvBar.on) #goHere{display:none!important}
+#bottom{position:fixed;left:0;right:0;bottom:0;height:60px;background:#fff;color:#111;border-top-left-radius:18px;border-top-right-radius:18px;box-shadow:0 -2px 12px #0002;z-index:7;display:flex;align-items:center;padding:0 12px;gap:12px}
   #bottom .ic{width:44px;height:44px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
   #bottom .ic svg{width:26px;height:26px}
   #bMid{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -422,7 +423,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 <div id="viewPill"><button data-v="3d"><b>3D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="2d"><b>2D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="n"><b>N</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button class="vx" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
 <div id="rightBtns">
   <button class="rb" id="viewBtn" title="지도 보기"><span id="viewLbl" style="font-size:13px;font-weight:800;line-height:1">2D</span></button>
-  <button class="rb" id="recenter" title="현위치" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="#2b7bff"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="rb" id="recenter" title="현위치" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="#2b7bff"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
   <button class="rb" id="navBtn" title="목적지"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15 15 L21 21" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
   <button class="rb" id="cctvBtn" title="경로 CCTV"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z" fill="currentColor"/></svg></button>
   <div id="zoomGrp"><button class="rb" id="zIn">+</button><button class="rb" id="zOut">−</button></div>
@@ -512,6 +513,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <h2 style="font-size:20px;margin-top:22px">진단 정보 표시</h2><div class="opt"><button id="diagBtn">켜짐</button></div>
 </div></div>
 
+<button id="goHere"><svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7.5 3 3 7.5z" fill="currentColor"/></svg>현위치로</button>
 <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 <script>
 var $=function(i){return document.getElementById(i)};
@@ -731,8 +733,8 @@ $('map').addEventListener('pointerdown',function(e){clearTimeout(lpT);if(PREV)re
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,function(){clearTimeout(lpT)},true)});
 $('map').addEventListener('pointermove',function(){if(drag&&drag.moved)clearTimeout(lpT)},true);
 $('map').addEventListener('contextmenu',function(e){e.preventDefault()});
-function setFree(on){FREE=on?Date.now():0;$('recenter').style.display=on?'flex':'none';if(!on){tmZ=tmB=tmMppZ=null}}
-$('recenter').onclick=function(){setFree(false)};
+function setFree(on){FREE=on?Date.now():0;$('recenter').style.display='none';$('goHere').style.display=on?'flex':'none';if(!on){tmZ=tmB=tmMppZ=null}}
+$('recenter').onclick=$('goHere').onclick=function(){setFree(false)};
 $('map').addEventListener('pointerdown',function(e){if(PREV)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};var n=Object.keys(PT).length;if(n===1)drag={x:e.clientX,y:e.clientY,moved:false};if(n===2){drag=null;pinch0={d:ptGap(),z:zoff,a:ptAng(),b:TMM?(TMM.getBearing()||0):(map?map.getBearing():0),rot:false}}},true);
 $('map').addEventListener('pointermove',function(e){if(!drag||!PT[e.pointerId]||Object.keys(PT).length!==1||!mapReady)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.sqrt(dx*dx+dy*dy)<8)return;drag.moved=true;panBy(dx,dy);drag.x=e.clientX;drag.y=e.clientY;setFree(true);e.preventDefault()},true);
 $('map').addEventListener('pointermove',function(e){if(!PT[e.pointerId]||Object.keys(PT).length<2)return;PT[e.pointerId]={x:e.clientX,y:e.clientY};if(pinch0&&Object.keys(PT).length>=2){var g=ptGap();if(g>10&&pinch0.d>10){zoff=Math.max(-6,Math.min(3,pinch0.z+Math.log(g/pinch0.d)/Math.LN2));manZT=Date.now();if(FREE)FREE=Date.now()}var da=adiff(pinch0.a,ptAng());if(!pinch0.rot&&Math.abs(da)>12)pinch0.rot=true;if(pinch0.rot){setFree(true);var nb=(pinch0.b-da+360)%360;if(TMM){TMM.setBearing(nb);tmB=nb}else if(map)map.setBearing(nb)}e.preventDefault()}},true);
@@ -1328,9 +1330,18 @@ $('arrGo').onclick=function(){if(!ARR)return;var d=ARR.dest,o=ARR.opt||'0',c=fix
   fetchRoute(c,d,o).then(function(r){r.opt=[o,''];b.textContent='목적지로 계속 안내';applyRoute(d,r)}).catch(function(e){b.textContent='경로 실패'})};
 /* 가는 길 CCTV: 경로 앞 40km 안 국가교통정보센터 CCTV를 순서대로 썸네일(실시간 영상)로. 보이는 카드만 재생, 끌어서 넘김 */
 var CC={list:[],hls:{},loading:0};
-function hlsLoad(cb){if(window.Hls||document.createElement('video').canPlayType('application/vnd.apple.mpegurl'))return cb();var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js';sc.onload=cb;sc.onerror=cb;document.head.appendChild(sc)}
-function ccPlay(v,url,id){if(CC.hls[id])return;if(window.Hls&&Hls.isSupported()){var h=new Hls({maxBufferLength:4,lowLatencyMode:true});h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){var i=v.parentNode.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}});CC.hls[id]=h}else{v.src=url;CC.hls[id]={destroy:function(){v.removeAttribute('src');v.load()}}}
-  v.onplaying=function(){var i=v.parentNode.querySelector('i');if(i)i.style.display='none'};var p=v.play();if(p&&p.catch)p.catch(function(){})}
+function hlsLoad(cb){if(window.Hls)return cb();var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js';sc.onload=cb;sc.onerror=cb;document.head.appendChild(sc)}
+/* 작은 CCTV 가 첫 장면만 보이고 멈추던 문제(11/21 실차): 자동 재생 거부·버퍼 멈춤을 4초마다 살펴 다시 틀고, 12초 넘게 그대로면 스트림을 새로 연다(두 번까지). 원인은 주행 기록에 남김 */
+function ccTxt(v,t){var i=v.parentNode&&v.parentNode.querySelector('i');if(i){i.textContent=t;i.style.display=t?'':'none'}}
+function ccPlay(v,url,id,tries){if(CC.hls[id])return;tries=tries||0;v.muted=true;v.defaultMuted=true;v.playsInline=true;var o={v:v,ct:-1,same:0,t0:Date.now()};
+  var go=function(){var p=v.play();if(p&&p.catch)p.catch(function(e){lg(['cc','rej',id,e&&e.name||'']);ccTxt(v,'눌러서 재생')})};
+  if(window.Hls&&Hls.isSupported()){var h=new Hls({maxBufferLength:6,liveSyncDurationCount:2,lowLatencyMode:false});o.h=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,go);
+    var ne=0;h.on(Hls.Events.ERROR,function(e,d){if(ne++<3)lg(['cc','err',id,d.type,d.details,d.fatal?1:0]);if(d.fatal){if(d.type==='networkError'&&ne<6)h.startLoad();else if(d.type==='mediaError'&&ne<6)h.recoverMediaError();else ccTxt(v,'영상 없음')}})}
+  else{v.src=url;go()}
+  v.onplaying=function(){ccTxt(v,'');if(!o.ok){o.ok=1;lg(['cc','play',id,Date.now()-o.t0])}};
+  o.w=setInterval(function(){if(!CC.hls[id]){clearInterval(o.w);return}if(v.paused)go();if(v.currentTime===o.ct)o.same+=4;else{o.same=0;o.ct=v.currentTime}
+    if(o.same>=12){lg(['cc','stall',id,tries,v.readyState]);ccStop(id);if(tries<2)ccPlay(v,url,id,tries+1);else ccTxt(v,'영상 없음')}},4000);
+  o.destroy=function(){clearInterval(o.w);if(o.h)o.h.destroy();else{v.removeAttribute('src');v.load()}};CC.hls[id]=o;go()}
 function ccStop(id){var h=CC.hls[id];if(h){try{h.destroy()}catch(e){}delete CC.hls[id]}}
 function ccStopAll(){Object.keys(CC.hls).forEach(ccStop)}
 function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length<2)ccPlay(c.querySelector('video'),CC.list[id].u,id);else if(!on)ccStop(id)})}
@@ -1365,7 +1376,7 @@ function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return
 $('tbar').addEventListener('click',function(){if(NAV)cctvOpen()});$('jamChip').addEventListener('click',function(){if(NAV)cctvOpen()});
 $('cctvBtn').onclick=function(){if($('cctvBar').classList.contains('on'))cctvClose();else cctvOpen()};$('cctvX').onclick=cctvClose;$('cctvBigX').onclick=cctvBigClose;
 (function(){var row=$('cctvRow'),st=null,t=null;row.addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(ccVisible,200)});
-  row.addEventListener('pointerdown',function(e){st={x:e.clientX,l:row.scrollLeft};row._dragged=false});
+  row.addEventListener('pointerdown',function(e){st={x:e.clientX,l:row.scrollLeft};row._dragged=false;Array.prototype.forEach.call(row.querySelectorAll('video'),function(v){if(v.paused&&(v.src||v.currentSrc||v.srcObject||v.readyState)){var p=v.play();if(p&&p.catch)p.catch(function(){})}})});
   row.addEventListener('pointermove',function(e){if(!st)return;var dx=e.clientX-st.x;if(Math.abs(dx)>6){row._dragged=true;row.scrollLeft=st.l-dx}});
   ['pointerup','pointercancel','pointerleave'].forEach(function(n){row.addEventListener(n,function(){st=null;setTimeout(function(){row._dragged=false},50)})})})();
 function limRoute(N){var R=N.R,n=R.length,step=Math.max(1,Math.ceil(n/480)),idx=[];for(var i=0;i<n;i+=step)idx.push(i);if(idx[idx.length-1]!==n-1)idx.push(n-1);
