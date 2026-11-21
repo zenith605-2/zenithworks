@@ -1395,7 +1395,7 @@ async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
         var n=Object.keys(SN).length;wait=n>3?2500*n/3:2500}}
     else if(full)wait=Math.max(300,dur*500);
     o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);if(o.onerr)o.onerr(o.fail,o.err)}
-  if(o.once&&o.n>0){o.done=1;return} /* 작은 칸은 한 장 그리면 끝(SN 에 남겨 다시 받지 않음) */
+  if(o.once&&o.n>0){o.done=1;if(o.dec){try{o.dec.close()}catch(e){}o.dec=null}return} /* 해독기도 바로 닫음(차 하드웨어 해독기 자원) */ /* 작은 칸은 한 장 그리면 끝(SN 에 남겨 다시 받지 않음) */
   if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):wait)}
 window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
 window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err;o.once=cb.once}loop(id);return o};
