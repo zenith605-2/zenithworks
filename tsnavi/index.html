@@ -790,6 +790,7 @@ function tmSetIcons(f){var keep={};f.forEach(function(ft){var c=ft.geometry.coor
 var tmTurn=[],tmTurnKey=null;
 function chaikin(P,n){for(var k=0;k<n;k++){var Q=[P[0]];for(var i=0;i<P.length-1;i++){var a=P[i],b=P[i+1];Q.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25],[a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75])}Q.push(P[P.length-1]);P=Q}return P}
 function tmDrawTurn(g){if(!TMM)return;var zz=13;try{zz=TMM.getZoom()}catch(e){}var k=g?g.s+'_'+g.t+'_'+Math.round(zz*2):null; /* 줌이 바뀌면 테두리 두께(m)를 다시 맞춤 */if(k===tmTurnKey)return;tmTurnKey=k;tmTurn.forEach(function(l){try{l.setMap(null)}catch(e){}});tmTurn=[];
+  return; /* 지도 위 회전 화살표는 뺌(11/21 사용자 "아무리 해도 별로"). 회전 안내는 왼쪽 카드로 */
   if(!g||!NAV||g.t===201||g.t===200||g.t===11||g.t===14||g.t===185)return;
   /* 유턴은 갔다 오는 선이 겹쳐 덩어리로 보여서 지도 화살표 생략(왼쪽 카드로 안내). 티맵식 회전 화살표: 회전 지점 앞 50m~뒤 30m 를 부드럽게 다듬은 몸통 + 꽉 찬 삼각형 화살촉 (검은 테두리) */
   var P=[];for(var sd=g.s-50;sd<=g.s+30;sd+=4){var q=routePoint(Math.max(0,Math.min(NAV.total,sd)));P.push([q.la,q.lo])}if(P.length<4)return;
@@ -1377,7 +1378,7 @@ async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
   try{
     if(!o.pl){var r=await fetch(o.url),t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href}
     var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),L2=lines(t2),seg=L2.pop(),dur=+((/#EXTINF:([\d.]+)/g.exec(t2.slice(t2.lastIndexOf('#EXTINF')))||[0,3])[1])||3;
-    var full=window.ccStill&&ccStill()&&(o.fm||fullN()<3);o.fm=full;
+    var full=!o.once&&window.ccStill&&ccStill()&&(o.fm||fullN()<3);o.fm=full;
     if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href;
       if(full){var aus=allAus(await (await fetch(su)).arrayBuffer());if(!SN[id])return;var k0=-1;for(var i=0;i<aus.length;i++)if(aus[i].key&&aus[i].sps){k0=i;break}
         if(k0>=0){mkDec(o,codecOf(aus[k0].sps));var A=aus.slice(k0),p0=A[0].pts,st=performance.now();
@@ -1394,9 +1395,10 @@ async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
         var n=Object.keys(SN).length;wait=n>3?2500*n/3:2500}}
     else if(full)wait=Math.max(300,dur*500);
     o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);if(o.onerr)o.onerr(o.fail,o.err)}
+  if(o.once&&o.n>0){o.done=1;return} /* 작은 칸은 한 장 그리면 끝(SN 에 남겨 다시 받지 않음) */
   if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):wait)}
 window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
-window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err}loop(id);return o};
+window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err;o.once=cb.once}loop(id);return o};
 window.ccSnapStop=function(id){var o=SN[id];if(!o)return;delete SN[id];clearTimeout(o.t);if(o.dec)try{o.dec.close()}catch(e){}};
 window.ccSnapAll=function(){return SN};
 })();
@@ -1415,9 +1417,9 @@ function ccPlay(v,url,id,tries){if(CC.hls[id])return;tries=tries||0;v.muted=true
 function ccStop(id){ccSnapStop(id);var h=CC.hls[id];if(h){try{h.destroy()}catch(e){}delete CC.hls[id]}}
 function ccStopAll2(){Object.keys(ccSnapAll()).forEach(ccSnapStop)}
 /* 작은 화면 = 캔버스 스냅샷(주행 중에도 바뀜). 못 쓰는 브라우저면 예전 영상 */
-function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id];if(!o)ccSnapStart(cv,CC.list[id].u,id,{frame:function(){var i=c.querySelector('i');if(i)i.style.display='none'},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
+function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id];if(!o)ccSnapStart(cv,CC.list[id].u,id,{once:1,frame:function(){var i=c.querySelector('i');if(i)i.style.display='none'},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
 function ccStopAll(){Object.keys(CC.hls).forEach(ccStop);ccStopAll2()}
-function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).length<(ccSnapOk?6:3))ccTile(c,id);else if(!on)ccStop(id)})}
+function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).filter(function(k){return !ccSnapAll()[k].done}).length<(ccSnapOk?6:3))ccTile(c,id);else if(!on&&!(ccSnapAll()[id]&&ccSnapAll()[id].done))ccStop(id)})}
 function jamList(){if(!NAV||!NAV.C||!NAV.S)return[];var C=NAV.C,S=NAV.S,R=NAV.R,G=NAV.G||[],out=[],i=Math.max(0,NAV.idx);
   while(i<S.length-1){if((C[i]||0)<3){i++;continue}var st=i,en=i,gap=0,bad=0,j=i;for(;j<S.length-1;j++){if((C[j]||0)>=3){en=j;gap=0;if(C[j]===4)bad+=S[j+1]-S[j]}else{gap+=S[j+1]-S[j];if(gap>80)break}}
     var a=Math.max(S[st],NAV.s),L=S[en+1]-a;if(L>=150){var slow=L-bad,sec=bad/(8/3.6)+slow/(18/3.6),nm='';for(var g=G.length-1;g>=0;g--)if(G[g].s<=S[st]+30&&G[g].name){nm=G[g].name;break}
