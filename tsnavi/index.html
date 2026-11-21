@@ -880,14 +880,14 @@ function updCamSrc(la,lo,h){
 }
 
 /* 위치 */
-var fix=null,prevFix=null,v=0,head=null,fixes=0,gaps=[],spdSrc='-',lastAcc=0,demo=null;
+var carSpdT=0,fix=null,prevFix=null,v=0,head=null,fixes=0,gaps=[],spdSrc='-',lastAcc=0,demo=null;
 function onFix(la,lo,acc,h,spd,t){
   lg(['f',t,+la.toFixed(6),+lo.toFixed(6),Math.round(acc||0),h==null?null:Math.round(h),spd==null?null:+(+spd).toFixed(1)]);fixes++;lastAcc=acc;if(TL.on){TL.n++;if(fix&&dist(fix.la,fix.lo,la,lo)>=1)TL.mv++;TL.acc=Math.max(TL.acc,acc||0)}
   if(fix){gaps.push(t-fix.t);if(gaps.length>10)gaps.shift()}
   prevFix=fix;fix={la:la,lo:lo,t:t,mt:t};var frozen=tunNear&&prevFix&&(spd!=null&&spd>0?spd:v)>5&&dist(prevFix.la,prevFix.lo,la,lo)<1&&t-prevFix.t<5000;if(frozen){if(!(spd!=null&&spd>0)){fix=prevFix;prevFix=null;return}fix.mt=prevFix.mt}
   var calc=null;
   if(prevFix){var dt=(t-prevFix.t)/1000;if(dt>0.2&&dt<5){var dm=dist(prevFix.la,prevFix.lo,la,lo);calc=dm/dt;if(dm>3&&calc>2)head=brg(prevFix.la,prevFix.lo,la,lo) /* 멈춰 있을 때 GPS 흔들림으로 지도가 돌지 않게 (7km/h 미만 무시) */}}
-  if(spd!=null&&!isNaN(spd)&&spd>0){v=v*0.3+spd*0.7;spdSrc='차'}else if(calc!=null){v=v*0.5+calc*0.5;spdSrc='계산'}else if(spd===0){v=0;spdSrc='차'}
+  if(spd!=null&&!isNaN(spd)&&spd>=0&&(spd>0||acc<100)){v=v*0.3+spd*0.7;spdSrc='차';carSpdT=t}else if(calc!=null){v=v*0.5+calc*0.5;spdSrc='계산'}else if(spd===0){v=0;spdSrc='차'}
   if(linkOk()){v=LINK.v;spdSrc='연동'}
   if(h!=null&&!isNaN(h)&&v>1.5)head=h;
   if(!wxAt)setTimeout(loadWx,0);
@@ -1553,10 +1553,10 @@ function tickBody(){
   if(TL.on&&DR.on)TL.dr+=Math.min(0.5,(DR.lt2?now-DR.lt2:0)/1000);DR.lt2=now;
   if(linkOk()){v=LINK.v;spdSrc='연동'}
   var drOn=false,drI=-1;if(NAV&&DR.s!=null&&NAV.F){var di=Math.max(0,NAV.idx);while(di<NAV.S.length-2&&NAV.S[di+1]<DR.s+(DR.d||0))di++;drI=di}
-  var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=linkOk()?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12;
+  var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=(linkOk()||Date.now()-carSpdT<3000)?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12; /* 테슬라는 터널에서도 차 속도를 줌(11/21 실차: 정확도 10000m·속도 차) → 그 속도만 씀 */
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
   DR.d=(DR.d||0)+(age>2.5&&tv?tv:v)*drDt;
-  if(age>2.5&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
+  if(age>2.5&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()||Date.now()-carSpdT<3000?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
   else if(age>2.5&&v>4&&head!=null&&age<40){var p=move(la,lo,head,v*age);la=p[0];lo=p[1];drOn=true}
   else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(2,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
