@@ -1290,7 +1290,7 @@ $('reroute').onclick=function(){if(NAV)route()};
 /* 더 빠른 경로 제안 (티맵식): 3분마다 다시 찾고, 다른 길인데 3분 이상 빠르면 묻는다. 같은 길이면 교통 정보·도착 시각만 조용히 새로 */
 var fastR=null,fastT=0;
 function applyRouteData(r){NAV.R=r.R;NAV.RN=r.RN||null;NAV.S=r.S;NAV.G=r.G;NAV.C=r.C;NAV.T=r.T;NAV.F=r.F;NAV.V=r.V;NAV.total=r.dist;NAV.time=r.time;NAV.fare=r.fare;NAV.idx=0;NAV.s=0;NAV.spoken={};NAV.lastRoute=Date.now();lastDrawIdx=-1;routePois(NAV);routeHits(NAV);incMatch();camSrcAt=null;buildTbar();drawRoute(true);if(demo&&demo.route)demo.s=0}
-function fastCheck(now){if(!CFG.fastOn||!NAV||demo||now-NAV.lastRoute<420000||now-(NAV.fastChk||0)<420000)return;var remain=NAV.total-NAV.s;if(remain<5000)return;NAV.fastChk=now;var N=NAV,c=fix||{la:37.4979,lo:127.0276};
+function fastCheck(now){if(!CFG.fastOn||!NAV||demo||now-NAV.lastRoute<420000||now-(NAV.fastChk||0)<420000)return;if(DR.on||tunNear||!fix||now-fix.t>3000)return; /* 터널·GPS 끊김 중엔 마지막 위치가 낡아서 경로를 갈아 끼우면 위치가 뒤로 튐 (11/21 시뮬레이션) */var remain=NAV.total-NAV.s;if(remain<5000)return;NAV.fastChk=now;var N=NAV,c=fix||{la:37.4979,lo:127.0276};
   fetchRoute(c,N.dest,N.opt||'0',N.via).then(function(r){if(NAV!==N)return;var rem=N.total-N.s,cur=N.time*rem/Math.max(1,N.total);
     if(Math.abs(r.dist-rem)<Math.max(150,rem*0.03)){applyRouteData(r);return}
     var save=cur-r.time;if(save>=180){fastR=r;fastT=Date.now();var eta=new Date(Date.now()+r.time*1000);$('fastT').textContent='더 빠른 경로 · '+Math.round(save/60)+'분 단축';$('fastS').textContent=tm(eta)+' 도착 · '+fmtD(r.dist);show('fastCard',1);beep(760,0.1,2,CFG.volG)}}).catch(function(){})}
