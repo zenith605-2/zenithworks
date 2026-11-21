@@ -38,6 +38,9 @@ button.ghost{background:transparent;color:var(--sub);border:1px solid var(--line
 <div id="app">
   <div class="row" style="justify-content:flex-end"><button class="ghost" id="reload">새로고침</button><button class="ghost" id="out">나가기</button></div>
 
+  <h2>오늘 무료 호출 <small>한국 시간 자정에 초기화</small></h2>
+  <div id="quota" class="card"></div>
+
   <h2>의견 <small id="fbN"></small></h2>
   <div id="fb"></div>
 
@@ -72,11 +75,12 @@ function loadLogs(){$('logs').innerHTML='<div class="empty">불러오는 중…<
     $('logs').innerHTML=r.map(function(x){return '<div class="card row" style="justify-content:space-between"><span><b>'+x.d+'</b> · 조각 '+x.n+'개 (1분마다 하나)</span><button class="ghost" data-d="'+x.d+'">내려받기</button></div>'}).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#logs button'),function(b){b.onclick=function(){var x=r.filter(function(y){return y.d===b.dataset.d})[0];b.textContent='모으는 중…';
       Promise.all(x.keys.map(function(k){return fetch(API+'logs?f='+encodeURIComponent(k.name),{headers:{'x-admin':TOK}}).then(function(q){return q.text()})})).then(function(parts){var blob=new Blob(['['+parts.join(',')+']'],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tsnavi-log-'+x.d+'.json';a.click();b.textContent='내려받기'})}})})}
-function enter(){$('gate').style.display='none';$('app').style.display='block';loadFb().catch(fail);loadLogs().catch(fail)}
+function loadQuota(){return fetch('https://tsnavi-relay.zenithworks.workers.dev/quota').then(function(r){return r.json()}).then(function(q){var L=q.limit,U=q.used,row=function(n,u,l){return '<div class="row" style="justify-content:space-between"><span>'+n+'</span><b>'+(u||0).toLocaleString()+' / '+l.toLocaleString()+'</b></div>'};$('quota').innerHTML=row('티맵 길찾기',U.routes,L.routes)+row('티맵 교통',U.traffic,L.traffic)+row('티맵 제한속도',U.match,L.match)+row('카카오 길찾기',U.kakao,L.kakao)+row('충전기 실시간',U.ev,L.ev||8000)+row('네이버 (이번 달)',U.naverMonth,L.naverMonth)})}
+function enter(){$('gate').style.display='none';$('app').style.display='block';loadFb().catch(fail);loadLogs().catch(fail);loadQuota().catch(function(){})}
 function fail(e){ls('tsAdmin',null);TOK='';$('app').style.display='none';$('gate').style.display='block';$('gateMsg').textContent=e.message}
 $('go').onclick=function(){TOK=$('tok').value.trim();if(!TOK)return;call('feedback').then(function(){ls('tsAdmin',TOK);enter()}).catch(fail)};
 $('tok').onkeydown=function(e){if(e.key==='Enter')$('go').onclick()};
-$('reload').onclick=function(){loadFb();loadLogs()};$('out').onclick=function(){ls('tsAdmin',null);location.reload()};
+$('reload').onclick=function(){loadFb();loadLogs();loadQuota()};$('out').onclick=function(){ls('tsAdmin',null);location.reload()};
 TOK=ls('tsAdmin')||'';if(TOK)enter();else $('gate').style.display='block';
 </script>
 </main></body></html>
