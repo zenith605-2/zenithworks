@@ -333,7 +333,7 @@ body.nav #map .vsm-pos-bottom-right,body.nav #map .vsm-pos-bottom-left{bottom:0!
 body.night .evr .op{color:#aab1ba}body.night .evr .ch{background:#2a2e35;color:#aab1ba}body.night .evr .ch.ok{background:#1f3a2a;color:#6fd59a}
 /* 카메라 경고·속도: 회전 카드·안내 목록 바로 아래에 붙인다 (11/21) */
 body:not(.nomap) #left #alertBox{position:static;transform:none;margin:14px 0 0 18px}
-body:not(.nomap) #left #bumpBox{position:static;margin:10px 0 0 18px}
+body:not(.nomap) #left #bumpBox,body:not(.nomap) #left #accBox{position:static;transform:none;margin:10px 0 0 18px}
 .pmk i .evl{width:18px;height:18px;border-radius:5px;background:#fff;margin:0 5px 0 -3px;object-fit:contain;box-shadow:0 0 0 1px #ffffff66}
 .evr .op .evl{width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:5px;object-fit:contain}
 /* 차량 연동 상태 칩 (날씨 아래) */
@@ -789,14 +789,13 @@ function tmDrawTurn(g){if(!TMM)return;var k=g?g.s+'_'+g.t:null;if(k===tmTurnKey)
   var P=[];for(var sd=g.s-50;sd<=g.s+30;sd+=4){var q=routePoint(Math.max(0,Math.min(NAV.total,sd)));P.push([q.la,q.lo])}if(P.length<4)return;
   var S=chaikin(P,3),n=S.length,a=S[n-4],tip=S[n-1],h=brg(a[0],a[1],tip[0],tip[1]);
   var h0=brg(S[0][0],S[0][1],S[Math.min(3,n-1)][0],S[Math.min(3,n-1)][1]);if(Math.abs(adiff(h0,h))<25)return; /* 사실상 직진이면 그리지 않음 (11/21 실차: 직진 화살표가 투박) */
-  /* 검은 층(몸통+머리)을 먼저 깔고 흰 층을 올림: 테두리가 끊기지 않게, 도형은 볼록한 것만 써서 깨지지 않게 (11/21) */
-  var bt=move(tip[0],tip[1],h+180,4),shaft=S.slice(0,n-1).concat([bt]).map(function(q){return LL(q[0],q[1])});
-  var tri=function(w,len,back){var b=move(bt[0],bt[1],h+180,back);return[LL.apply(null,move(b[0],b[1],h-90,w)),LL.apply(null,move(b[0],b[1],h,len+back)),LL.apply(null,move(b[0],b[1],h+90,w))]};
+  var bt=move(tip[0],tip[1],h+180,4),head=move(bt[0],bt[1],h,24),base=S.slice(0,n-1),L=move(bt[0],bt[1],h-90,18),R=move(bt[0],bt[1],h+90,18);
+  var shaft=base.map(function(q){return LL(q[0],q[1])});
   try{
-    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#14202e',strokeWeight:22,strokeOpacity:1,zIndex:996,map:TMM}));
-    tmTurn.push(new Tmapv3.Polygon({paths:tri(19,26,3),fillColor:'#14202e',fillOpacity:1,strokeWeight:0,zIndex:997,map:TMM}));
-    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#ffffff',strokeWeight:15,strokeOpacity:1,zIndex:998,map:TMM}));
-    tmTurn.push(new Tmapv3.Polygon({paths:tri(15,21,0),fillColor:'#ffffff',fillOpacity:1,strokeWeight:0,zIndex:999,map:TMM}));
+    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#1b2533',strokeWeight:24,strokeOpacity:1,zIndex:997,map:TMM}));
+    tmTurn.push(new Tmapv3.Polyline({path:shaft,strokeColor:'#ffffff',strokeWeight:16,strokeOpacity:1,zIndex:998,map:TMM}));
+    var tri=[LL(L[0],L[1]),LL(head[0],head[1]),LL(R[0],R[1])];
+    tmTurn.push(new Tmapv3.Polygon({paths:tri,fillColor:'#ffffff',fillOpacity:1,strokeColor:'#1b2533',strokeWeight:3,zIndex:999,map:TMM}));
   }catch(e){}}
 function segLen(c){var L=0;for(var i=1;i<c.length;i++)L+=dist(c[i-1][1],c[i-1][0],c[i][1],c[i][0]);return L}
 var tmJob=0;function runJobs(J,tok,done,cancel){var k=0;(function step(){if(tok!==tmJob){if(cancel)cancel();return}for(var n=0;n<6&&k<J.length;n++,k++){try{J[k]()}catch(e){}}if(k<J.length)setTimeout(step,16);else{tmTurnKey=null;if(done)done()}})()}
@@ -1653,6 +1652,6 @@ setMap(mapOn);
 requestAnimationFrame(tick);
 if(/autodemo/.test(location.search)){var iv=setInterval(function(){if(CAMS.length){clearInterval(iv);if(/navdemo/.test(location.search)){startNav(/far/.test(location.search)?{name:'대전역',la:36.3324,lo:127.4342}:{name:'양재역',la:37.4842,lo:127.0346});var iv2=setInterval(function(){var f=document.querySelector('#rtList .rt');if(f&&!/shot/.test(location.search)){clearInterval(iv2);f.click();setTimeout(toggleDemo,300)}},300)}else toggleDemo()}},200)}
 </script>
-<script>(function(){var l=document.getElementById('left'),a=document.getElementById('alertBox'),b=document.getElementById('bumpBox');if(l&&a)l.appendChild(a);if(l&&b)l.appendChild(b)})()</script>
+<script>(function(){var l=document.getElementById('left'),a=document.getElementById('alertBox'),b=document.getElementById('bumpBox'),c=document.getElementById('accBox');if(l&&a)l.appendChild(a);if(l&&b)l.appendChild(b);if(l&&c)l.appendChild(c)})()</script>
 </body>
 </html>
