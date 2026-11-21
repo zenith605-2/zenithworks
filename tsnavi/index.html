@@ -843,13 +843,19 @@ function projSeg(la,lo,A,B){var kx=111320*Math.cos(la*D2R),ky=111320,ax=(A[1]-lo
 function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
   for(var i=0;i<R.length-1;i++){if(S[i]-last<20)continue;last=S[i];var h=brg(R[i][0],R[i][1],R[i+1][0],R[i+1][1]),c0=Math.floor(R[i][0]*100),c1=Math.floor(R[i][1]*100);
     for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var k=(c0+a)+'_'+(c1+b),ids=GRID[k];
-      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id],d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<35&&sideOk(h,R[i][0],R[i][1],c)){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
+      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id],d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<35&&sideOk(h,R[i][0],R[i][1],c)&&(!N.RN||camRoadOk(N.RN[i],c))){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
       var bs=BGRID[k];if(bs)bs.forEach(function(id){if(bmp[id]!=null)return;var p=BUMPS[id];if(dist(R[i][0],R[i][1],p[0],p[1])<18)bmp[id]=S[i]})}}
   N.cams=cam;N.bumps=bmp;N.camPos=cpos}
 var camSrcT=0,camSrcH=null;
 /* 지도에 그릴 '앞쪽' 판정: 멀수록 옆으로 넓게 봄 (11/21: 굽은 길에서 경고는 320m 부터인데 아이콘은 늦게 나오던 것) */
 /* 한 번 보인 카메라는 지나칠 때(뒤로 100° 넘게 돌거나 멀어질 때)까지 유지 → 방향이 흔들려도 깜빡이지 않음 (11/21) */
 var SHOWN={};
+/* 카메라가 단속하는 도로(자료 7번째)와 지금 도로가 다르면 옆길 카메라로 보고 뺌 (11/21: 교차로 한가운데 옆길 카메라가 우리 쪽으로 뜸) */
+function rnorm(x){return String(x||'').replace(/\s|\(.*?\)/g,'')}
+function roadMatch(a,b){a=rnorm(a);b=rnorm(b);if(!a||!b)return true;return a===b||a.indexOf(b)>=0||b.indexOf(a)>=0}
+/* 이름 비교는 교차로 카메라(신호·신호과속)만: 고속도로 과속 카메라는 자료 이름이 티맵과 달라도 놓치면 안 되니 그대로 */
+function camRoadOk(rn,c){return c[3]==='S'||roadMatch(rn,c[6])}
+function roadNowName(la,lo){return LIMN.road&&Date.now()-LIMN.rt<90000&&dist(la,lo,LIMN.rla,LIMN.rlo)<400?LIMN.road:''}
 function stillAhead(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<25)return true;return Math.abs(adiff(h,brg(la,lo,p[0],p[1])))<100}
 function aheadOk(la,lo,h,p,max){var d=dist(la,lo,p[0],p[1]);if(d>max)return false;if(d<15)return true;var df=adiff(h,brg(la,lo,p[0],p[1]));if(Math.abs(df)>40)return false;var lat=d*Math.sin(df*D2R),w=Math.max(30,d*0.15);return lat>=-Math.max(10,w*0.5)&&lat<=w}
 /* 카메라 아이콘은 도로 가운데에 (티맵처럼): 안내 중엔 경로 선 위로, 아니면 600m 안·옆 35m 안이면 내 진행 선 위로. 경고 판정은 원래 좌표 */
@@ -859,7 +865,7 @@ function updCamSrc(la,lo,h){
   if(!mapReady||!CAMS.length)return;var now=Date.now();
   if(camSrcAt&&now-camSrcT<1500&&dist(camSrcAt[0],camSrcAt[1],la,lo)<60&&(h==null||camSrcH==null||Math.abs(adiff(h,camSrcH))<15))return;camSrcAt=[la,lo];camSrcT=now;camSrcH=h;
   var f=[],c0=Math.floor(la*100),c1=Math.floor(lo*100),nav=NAV&&NAV.cams,s0=nav?NAV.s:0;
-  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return !!SHOWN[id];var ok=SHOWN[id]?stillAhead(la,lo,h,c,2800):aheadOk(la,lo,h,c,2500);if(ok)SHOWN[id]=now;else delete SHOWN[id];return ok};
+  var camOk=function(id,c){if(nav){var cs=NAV.cams[id];return cs!=null&&cs>s0-30&&cs<s0+3000}if(h==null)return !!SHOWN[id];var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c)){delete SHOWN[id];return false}var ok=SHOWN[id]?stillAhead(la,lo,h,c,2800):aheadOk(la,lo,h,c,2500);if(ok)SHOWN[id]=now;else delete SHOWN[id];return ok};
   var bumpOk=function(id,p){if(nav){var bs=NAV.bumps[id];return bs!=null&&bs>s0-20&&bs<s0+800}var k='b'+id;if(h==null)return !!SHOWN[k];var ok=SHOWN[k]?stillAhead(la,lo,h,p,700):aheadOk(la,lo,h,p,600);if(ok)SHOWN[k]=now;else delete SHOWN[k];return ok};
   for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++){var ck=(c0+a)+'_'+(c1+b),ids=GRID[ck];
     if(ids)for(var j=0;j<ids.length;j++){var c=CAMS[ids[j]];if(!camOk(ids[j],c))continue;var cp=camDraw(ids[j],c,la,lo,h);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2],o:c[3]==='R'?0:1}})}
@@ -1248,10 +1254,10 @@ function fetchRoute(c,dest,opt,via){if(opt==='k')return kakaoRoute(c,dest,via);i
   return api('routes?version=1&format=json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(parseRoute);
 }
 function parseRoute(d){
-  var R=[],G=[],C=[],T=[],F=[],V=[],time=0,fare=0;
+  var R=[],G=[],C=[],T=[],F=[],V=[],RN=[],time=0,fare=0;
   (d.features||[]).forEach(function(f){var g=f.geometry,p=f.properties;
     if(g.type==='LineString'&&p.index==null)return;
-    if(g.type==='LineString'){var base=R.length,skip=0;g.coordinates.forEach(function(xy,i){if(R.length&&i===0){var L=R[R.length-1];if(L[0]===xy[1]&&L[1]===xy[0]){skip=1;return}}R.push([xy[1],xy[0]]);C.push(0);T.push(p.roadType==null?-1:p.roadType);F.push(+p.facilityType||0);V.push(0)});(g.traffic||[]).forEach(function(tr){for(var k=tr[0];k<tr[1];k++){var gi=base+k-skip;if(gi>=0&&gi<C.length){C[gi]=tr[2];V[gi]=+tr[3]||0}}})}
+    if(g.type==='LineString'){var base=R.length,skip=0;g.coordinates.forEach(function(xy,i){if(R.length&&i===0){var L=R[R.length-1];if(L[0]===xy[1]&&L[1]===xy[0]){skip=1;return}}R.push([xy[1],xy[0]]);C.push(0);T.push(p.roadType==null?-1:p.roadType);F.push(+p.facilityType||0);V.push(0);RN.push(p.name||'')});(g.traffic||[]).forEach(function(tr){for(var k=tr[0];k<tr[1];k++){var gi=base+k-skip;if(gi>=0&&gi<C.length){C[gi]=tr[2];V[gi]=+tr[3]||0}}})}
     else if(g.type==='Point'&&p.turnType==null&&/^B/.test(p.pointType||'')){G.push({la:g.coordinates[1],lo:g.coordinates[0],t:185,name:'',pname:'경유지',ri:Math.max(0,R.length-1)})}
     else if(g.type==='Point'&&p.turnType!=null){var dm=/에서\s*(.+?)\s*방면/.exec(p.description||'');G.push({dir:dm?dm[1].split('/').filter(function(x){return x.trim()}).slice(0,2).join(' · '):'',la:g.coordinates[1],lo:g.coordinates[0],t:p.turnType,name:p.nextRoadName||'',pname:p.name||'',ri:Math.max(0,R.length-1)})}
     if(p.totalTime)time=p.totalTime;if(p.totalFare!=null&&p.totalTime)fare=p.totalFare;
@@ -1260,7 +1266,7 @@ function parseRoute(d){
   G.forEach(function(gp){var bi=gp.ri,bd=1e9,j0=gp.t===185?0:Math.max(0,gp.ri-3),j1=gp.t===185?R.length:Math.min(R.length,gp.ri+3);for(var j=j0;j<j1;j++){var dd=dist(gp.la,gp.lo,R[j][0],R[j][1]);if(dd<bd){bd=dd;bi=j}}gp.s=S[bi]});
   G.sort(function(x,y){return x.s-y.s});
   if(R.length<2)throw new Error('경로 없음');
-  return{R:R,S:S,G:G,C:C,T:T,F:F,V:V,time:time,fare:fare,dist:S[S.length-1]};
+  return{R:R,S:S,G:G,C:C,T:T,F:F,V:V,RN:RN,time:time,fare:fare,dist:S[S.length-1]};
 }
 var PREV=null,rtSel=null;
 function previewRoute(r,d){PREV={R:r.R,C:r.C,S:r.S,dest:d};drawRoute(true);fitRoute(r.R)}
@@ -1277,7 +1283,7 @@ function applyRoute(d,r){
 $('reroute').onclick=function(){if(NAV)route()};
 /* 더 빠른 경로 제안 (티맵식): 3분마다 다시 찾고, 다른 길인데 3분 이상 빠르면 묻는다. 같은 길이면 교통 정보·도착 시각만 조용히 새로 */
 var fastR=null,fastT=0;
-function applyRouteData(r){NAV.R=r.R;NAV.S=r.S;NAV.G=r.G;NAV.C=r.C;NAV.T=r.T;NAV.F=r.F;NAV.V=r.V;NAV.total=r.dist;NAV.time=r.time;NAV.fare=r.fare;NAV.idx=0;NAV.s=0;NAV.spoken={};NAV.lastRoute=Date.now();lastDrawIdx=-1;routePois(NAV);routeHits(NAV);incMatch();camSrcAt=null;buildTbar();drawRoute(true);if(demo&&demo.route)demo.s=0}
+function applyRouteData(r){NAV.R=r.R;NAV.RN=r.RN||null;NAV.S=r.S;NAV.G=r.G;NAV.C=r.C;NAV.T=r.T;NAV.F=r.F;NAV.V=r.V;NAV.total=r.dist;NAV.time=r.time;NAV.fare=r.fare;NAV.idx=0;NAV.s=0;NAV.spoken={};NAV.lastRoute=Date.now();lastDrawIdx=-1;routePois(NAV);routeHits(NAV);incMatch();camSrcAt=null;buildTbar();drawRoute(true);if(demo&&demo.route)demo.s=0}
 function fastCheck(now){if(!CFG.fastOn||!NAV||demo||now-NAV.lastRoute<420000||now-(NAV.fastChk||0)<420000)return;var remain=NAV.total-NAV.s;if(remain<5000)return;NAV.fastChk=now;var N=NAV,c=fix||{la:37.4979,lo:127.0276};
   fetchRoute(c,N.dest,N.opt||'0',N.via).then(function(r){if(NAV!==N)return;var rem=N.total-N.s,cur=N.time*rem/Math.max(1,N.total);
     if(Math.abs(r.dist-rem)<Math.max(150,rem*0.03)){applyRouteData(r);return}
@@ -1286,7 +1292,7 @@ $('fastYes').onclick=function(){if(fastR&&NAV)applyRouteData(fastR);fastR=null;s
 $('fastNo').onclick=function(){fastR=null;show('fastCard',0)};
 function route(){
   if(!NAV)return;var c=fix||{la:37.4979,lo:127.0276};NAV.lastRoute=Date.now();
-  fetchRoute(c,NAV.dest,NAV.opt||'0',NAV.via).then(function(r){if(!NAV)return;NAV.R=r.R;NAV.S=r.S;NAV.G=r.G;NAV.C=r.C;NAV.T=r.T;NAV.F=r.F;NAV.V=r.V;NAV.total=r.dist;NAV.time=r.time;NAV.fare=r.fare;NAV.idx=0;NAV.s=0;NAV.spoken={};lastDrawIdx=-1;routePois(NAV);routeHits(NAV);incMatch();camSrcAt=null;buildTbar();drawRoute();if(demo&&demo.route)demo.s=0})
+  fetchRoute(c,NAV.dest,NAV.opt||'0',NAV.via).then(function(r){if(!NAV)return;NAV.R=r.R;NAV.RN=r.RN||null;NAV.S=r.S;NAV.G=r.G;NAV.C=r.C;NAV.T=r.T;NAV.F=r.F;NAV.V=r.V;NAV.total=r.dist;NAV.time=r.time;NAV.fare=r.fare;NAV.idx=0;NAV.s=0;NAV.spoken={};lastDrawIdx=-1;routePois(NAV);routeHits(NAV);incMatch();camSrcAt=null;buildTbar();drawRoute();if(demo&&demo.route)demo.s=0})
   .catch(function(e){if(NAV){$('tDist').textContent='경로 실패';$('tName').textContent=errText(e)}});
 }
 function drawRoute(force){if(!mapReady)return;
@@ -1360,10 +1366,10 @@ function limRoute(N){var R=N.R,n=R.length,step=Math.max(1,Math.ceil(n/480)),idx=
     var M=((d||{}).resultData||{}).matchedPoints||[],at={};M.forEach(function(m){if(m.sourceIndex!=null){var v=+m.speed||0;at[m.sourceIndex]=(m.roadCategory>=11||v<20)?0:v}});
     var L=new Array(n),cur=at[0]||0,k=0;for(var i=0;i<n;i++){while(k<idx.length-1&&idx[k+1]<=i){k++;if(at[k]!=null)cur=at[k]}L[i]=cur}
     NAV.LIM=L}).catch(function(){if(NAV&&NAV.R===R)NAV.LIMFAIL=1})}
-function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
+function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.road=h.roadName||'';LIMN.rt=Date.now();LIMN.rla=la;LIMN.rlo=lo;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
 function limNow(la,lo,kmh,now){var v=0;
   if(NAV&&NAV.R){if(!PREV&&NAV.R!==LIMR&&now-LIMT>5000&&now-(NAV.t0||0)>1500){LIMR=NAV.R;LIMT=now;NAV.LIM=null;limRoute(NAV)}if(NAV.LIM)v=NAV.LIM[Math.max(0,Math.min(NAV.LIM.length-1,NAV.idx))]||0}
-  if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&now-LIMN.t>90000&&dist(la,lo,LIMN.la,LIMN.lo)>500)limNear(la,lo);if(now-LIMN.t<150000&&dist(la,lo,LIMN.la,LIMN.lo)<1200)v=LIMN.v}
+  if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&((now-LIMN.t>90000&&dist(la,lo,LIMN.la,LIMN.lo)>500)||(!NAV&&now-LIMN.t>10000&&(dist(la,lo,LIMN.la,LIMN.lo)>250||(head!=null&&LIMN.h!=null&&Math.abs(adiff(head,LIMN.h))>50)))))limNear(la,lo);if(now-LIMN.t<150000&&dist(la,lo,LIMN.la,LIMN.lo)<1200)v=LIMN.v}
   var e=$('limNow');if(v){if(e.textContent!==String(v))e.textContent=v;e.classList.add('show')}else e.classList.remove('show');document.body.classList.toggle('overLim',!!v&&kmh>v+5)}
 /* 지도 버튼: 슈퍼차저·충전소 위치를 지도에 표시. 누르면 카드(여기로 안내·집·회사·★) */
 var LAY={sc:false,ev:false,mk:[],evAt:null};
@@ -1483,6 +1489,7 @@ function findAhead(la,lo,h){
       if(NAV&&NAV.cams){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
       var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:20))continue;
       var lat=d*Math.sin(df*D2R);if(!(NAV&&NAV.cams)&&(lat<-6||lat>28))continue;
+      if(!(NAV&&NAV.cams)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c))continue}
       if(!best||d<best.d)best={id:id,c:c,d:d}}}
   return best;
 }
