@@ -577,7 +577,7 @@ try{var dq=/[?&]dev=([01])/.exec(location.search);if(dq)LS.setItem('dev',dq[1]);
 Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(b){b.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.fbType button'),function(o){o.classList.toggle('on',o===b)});if(/카메라|위치/.test(b.dataset.t))$('fbLoc').checked=true}});
 $('mInfo').onclick=function(){location.href='about.html'};
 /* 이번 주행: 거리·시간·평균·최고 (TRIP 이 있을 때만) */
-setInterval(function(){var e=$('tripStat');if(!e)return;var t=TRIP;if(!t||t.m<50){e.classList.remove('show');return}
+setInterval(function(){var e=$('tripStat');if(!e)return;var t=TRIP;if(!t||t.m<50||section){e.classList.remove('show');return} /* 구간단속 중엔 막대와 겹쳐서 숨김 */
   var sec=Math.max(1,(Date.now()-t.st)/1000),km=t.m/1000,mm=Math.floor(sec/60),hh=Math.floor(mm/60);
   e.innerHTML='<span><b>'+(km<10?km.toFixed(1):Math.round(km))+'</b>km</span><span><b>'+(hh?hh+':'+String(mm%60).padStart(2,'0'):mm+':'+String(Math.floor(sec%60)).padStart(2,'0'))+'</b>'+(hh?'':'')+'</span><span>평균 <b>'+Math.round(km/(sec/3600))+'</b></span><span>최고 <b>'+Math.round(t.max)+'</b></span>';e.classList.add('show')},1000);
 
@@ -1482,14 +1482,15 @@ setInterval(function(){if(!demo)return;var now=Date.now(),dt=(now-demo.t)/1000;d
 
 /* 카메라 경고 */
 /* 구간단속: 경로 위 다음 "끝" 카메라까지 거리로 진행 막대 (11/21) */
-function secEnd(){if(!NAV||!NAV.cams)return null;var best=null;for(var id in NAV.cams){var cs=NAV.cams[id],c=CAMS[id];if(c&&c[4]===2&&cs>NAV.s+50&&(best==null||cs<best))best=cs}return best}
+function secEnd(){if(!NAV||!NAV.R)return null;var best=null;for(var id in NAV.cams||{}){var cs=NAV.cams[id],c=CAMS[id];if(c&&c[4]===2&&cs>NAV.s+50&&(best==null||cs<best))best=cs}if(best!=null)return best;
+  /* 경로 위 목록에 없으면 30km 안 경로 60m 이내의 '끝' 카메라를 직접 찾음 */var R=NAV.R,S=NAV.S,i0=Math.max(0,NAV.idx||0);for(var j=0;j<CAMS.length;j++){var c=CAMS[j];if(c[4]!==2)continue;for(var i=i0;i<R.length&&S[i]<NAV.s+30000;i+=2){if(S[i]<NAV.s+50)continue;if(Math.abs(R[i][0]-c[0])>0.002||Math.abs(R[i][1]-c[1])>0.002)continue;if(dist(R[i][0],R[i][1],c[0],c[1])<60){if(best==null||S[i]<best)best=S[i];break}}}return best}
 function secDraw(){var b=$('secBar');if(!b)return;var sc=section;if(!sc){if(b.style.display!=='none')b.style.display='none';return}
   var avg=Math.round(sc.m/Math.max(1,(Date.now()-sc.t)/1000)*3.6),txt,pct=null;
   if(sc.end!=null&&NAV&&sc.s0!=null){var tot=Math.max(1,sc.end-sc.s0),rem=Math.max(0,sc.end-NAV.s);pct=Math.min(100,Math.max(0,100*(1-rem/tot)));txt='남은 <b>'+(rem>=1000?(rem/1000).toFixed(1)+'</b>km':Math.round(rem)+'</b>m');
     /* 평균이 제한을 넘지 않으려면 끝까지 최소 이만큼 더 걸려야 함 */var need=Math.round(tot/(sc.lim/3.6)-(Date.now()-sc.t)/1000);txt+=need>0?' · 최소 <b>'+Math.floor(need/60)+':'+String(need%60).padStart(2,'0')+'</b>':' · 여유'}else txt='지난 <b>'+(sc.m/1000).toFixed(1)+'</b>km';
   b.querySelector('span').innerHTML='구간단속 · '+txt+' · 평균 <b class="'+(avg>sc.lim?'ov':'')+'">'+avg+'</b>/'+sc.lim;
   var u=b.querySelector('u');u.style.width=(pct==null?0:pct)+'%';b.querySelector('i').style.display=pct==null?'none':'';b.style.display=''}
-var lastPassed=null,target=null,passed={},announced={},lastBeep=0,section=null;
+var secEndAt=null,lastPassed=null,target=null,passed={},announced={},lastBeep=0,section=null;
 function fixCam(b){var id=target?target.id:lastPassed;if(id==null||!fix){b.textContent='고칠 카메라 없음';setTimeout(function(){b.textContent='카메라 여기'},1500);return}var fx={};try{fx=JSON.parse(LS.getItem('camfix3')||'{}')}catch(e){}fx[CAMS[id][6]]=[fix.la,fix.lo];LS.setItem('camfix3',JSON.stringify(fx));var old=dist(CAMS[id][0],CAMS[id][1],fix.la,fix.lo);CAMS[id][0]=fix.la;CAMS[id][1]=fix.lo;indexCams(CAMS);passed[id]=Date.now();if(target&&target.id===id)target=null;b.textContent='고침 ('+Math.round(old)+'m 옮김)';setTimeout(function(){b.textContent='카메라 여기'},2500)}
 function findAhead(la,lo,h){
   var c0=Math.floor(la*100),c1=Math.floor(lo*100),best=null;
@@ -1587,15 +1588,15 @@ function tickBody(){
     if(target&&(!t||t.id!==target.id)){var tc=CAMS[target.id];var dNow=dist(la,lo,tc[0],tc[1]);var behind=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])))>90;
       /* 회전·서행으로 카메라가 옆으로 빠지면(진행 방향 40° 밖, 안내 중엔 경로 위가 아니면) 대상에서 놓아 준다 — 옆 도로 카메라를 붙잡고 있던 문제 */
       var dfT=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])));if(!behind&&dNow>40&&(dfT>40||(NAV&&NAV.cams&&NAV.cams[target.id]==null))){target=null;setAlert('','','')}else 
-      if(behind||dNow>target.d+40){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 안내 중엔 경로 앞에 '끝' 카메라가 있어야 시작 (11/21 실차: 고속도로 반대 방향 시작 카메라로 끝난 구간이 다시 시작됨) */if(!NAV||!NAV.cams||(se!=null&&se-NAV.s<40000))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}target=null}}
+      if(behind||dNow>target.d+40){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 방금 구간이 끝난 자리 400m 안의 '시작'은 반대 방향 카메라로 봄 (11/21 실차) */if(!(secEndAt&&dist(secEndAt[0],secEndAt[1],la,lo)<400))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2){secEndAt=[la,lo]}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}target=null}}
     if(t&&(!target||t.d<target.d+40))target=t;
   }
   for(var k in passed)if(now-passed[k]>120000)delete passed[k];
   if(lastPassed!=null&&passed[lastPassed]&&now-passed[lastPassed]>20000)lastPassed=null;
   var avg=null;
   secDraw();
-  if(section&&NAV&&section.end!=null&&NAV.s>section.end+50){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}
-  if(section){section.m+=dist(section.lastLa,section.lastLo,la,lo);section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(avg>section.lim)over=true;if(section.m>30000)section=null}
+  if(section&&NAV&&section.end!=null&&NAV.s>section.end+50){section=null;secEndAt=[la,lo];sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}
+  if(section){var sdt2=section.lt?Math.min(3,Math.max(0,(now-section.lt)/1000)):0;section.lt=now;section.m+=v*sdt2; /* 거리 = 속도×시간 (위치 흔들림으로 평균이 높게 나오던 것) */section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(avg>section.lim)over=true;if(section.m>30000)section=null}
   if(target&&target.d<alertD+30){var c=target.c,d=dist(la,lo,c[0],c[1]);target.d=Math.min(target.d,d);
     setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',fmtD(d),camTag(c));
     zone=c[5]>0&&d<alertD;
