@@ -242,6 +242,9 @@
   #hwBox .hk{flex:none;min-width:26px;height:20px;border-radius:5px;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}
   #hwBox .hn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}#hwBox .hd{font-weight:700}#hwBox .he{color:#8a9099;font-size:12px}
   body.night #jamChip,body.night #hwBox{background:#2a2e35;color:#e8eaed}body.night #hwBox .hr2+.hr2{border-color:#3a3f47}
+/* 휴게소·IC·출구 목록은 오른쪽 위(날씨 아래)로: 왼쪽 줄은 회전·속도·경고만 (11/21 사용자) */
+#hwBox{position:fixed;right:84px;top:64px;z-index:5;margin:0}
+@media(max-width:600px){#hwBox{right:62px;top:50px;min-width:0}#hwBox .hn{max-width:110px}}
   #fastCard{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9;background:#fff;color:#111;border-radius:14px;box-shadow:0 6px 20px #0004;padding:12px 14px;display:none;min-width:280px}
   #fastCard.show{display:block}#fastCard .ft b{display:block;font-size:17px;color:#16803a}#fastCard .ft span{font-size:13px;color:#555}#fastCard .fa{display:flex;gap:8px;margin-top:10px}
   #fastCard .fa button{flex:1;height:38px;border:0;border-radius:9px;font-size:15px;font-weight:700;background:#f1f3f6;color:#111}#fastCard #fastYes{background:#2b7bff;color:#fff}
@@ -281,8 +284,9 @@
   .cc .dd{position:absolute;left:6px;top:6px;background:#2b7bff;color:#fff;font-size:13px;font-weight:800;border-radius:6px;padding:1px 7px}
   .cc .nm{font-size:13px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ddd}
   #tbar::before{content:'';position:absolute;left:0;right:0;top:-18px;bottom:-18px}#jamChip{pointer-events:auto;cursor:pointer}
-  .jc{flex:0 0 150px;height:142px;box-sizing:border-box;border-radius:10px;background:#ff7a0026;border-left:6px solid #ff7a00;padding:10px 12px;display:flex;flex-direction:column;gap:6px}.jc.red{background:#e3151a2e;border-left-color:#e3151a}.jc.ok{background:#22b14c26;border-left-color:#22b14c;flex-basis:170px}
-  .jc .a{font-size:24px;font-weight:900}.jc .b{font-size:15px;font-weight:700;color:#ffb070}.jc.red .b{color:#ff7070}.jc.ok .b{color:#7ddc95}.jc .m{font-size:15px;font-weight:700;color:#fff}.jc .b,.jc .a{white-space:nowrap}.jc .c{font-size:13px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 정체 카드: 빨간 바탕 대신 어두운 카드 + 왼쪽 상태 막대, 색은 상태 글자에만 (11/21 실차 "보기 좋게") */
+  .jc{flex:0 0 172px;height:120px;box-sizing:border-box;border-radius:10px;background:#23272e;padding:10px 12px 10px 16px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}.jc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:#ff8a1f}.jc.red::before{background:#ef3b3b}.jc.ok::before{background:#22b14c}.jc.ok{flex-basis:180px}
+  .jc .a{font-size:22px;font-weight:800;color:#fff}.jc .b{font-size:14px;font-weight:700;color:#ffa24d}.jc.red .b{color:#ff6b6b}.jc.ok .b{color:#7ddc95}.jc .m{font-size:14px;font-weight:600;color:#e8eaed}.jc .b,.jc .a,.jc .m{white-space:nowrap}.jc .c{margin-top:auto;font-size:12px;color:#9aa0a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #cctvRow .note{color:#aaa;font-size:14px;padding:30px 4px}
   #cctvBig{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,90vw);z-index:41;background:#000;border-radius:14px;overflow:hidden;display:none;box-shadow:0 10px 40px #000a}
   #cctvBig.on{display:block}#cctvBigC{position:absolute;left:0;top:0;width:100%;aspect-ratio:16/9;background:#000}.cc canvas{width:100%;height:100%;display:block;pointer-events:none}#cctvBig video{width:100%;aspect-ratio:16/9;display:block;background:#000}#cctvBig .nm{color:#fff;font-size:16px;font-weight:700;padding:10px 14px}
@@ -399,7 +403,6 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <button id="restChip"></button>
   <div id="incChip"></div>
   <div id="jamChip"></div>
-  <div id="hwBox"></div>
 </div>
 <div id="fastCard"><div class="ft"><b id="fastT"></b><span id="fastS"></span></div><div class="fa"><button id="fastNo">그대로</button><button id="fastYes">바꾸기</button></div></div>
 <div id="arrCard"><div class="ah"><b id="arrName"></b><button id="arrX" aria-label="닫기"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div><div class="as" id="arrSub"></div><div class="aa"><button id="arrFav">★</button><button id="arrGo">목적지로 계속 안내</button></div><div class="at" id="arrTrip"></div><button id="arrLog">주행 기록 보기</button></div>
@@ -418,6 +421,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 </div>
 
 <div id="tripStat"></div>
+<div id="hwBox"></div>
 <button id="linkChip" type="button"><i></i><span></span></button>
 <button id="wx" class="wxc"><span id="wxIc"></span><b id="wxT">-</b><span id="wxA"></span><span id="wxW" class="aq" style="display:none;background:#e3151a"></span></button>
 <div id="viewPill"><button data-v="3d"><b>3D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="2d"><b>2D</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button data-v="n"><b>N</b><svg viewBox="0 0 24 24"><path d="M12 3l7 17-7-4-7 4z" fill="currentColor"/></svg></button><button class="vx" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
@@ -886,7 +890,7 @@ var carSpdT=0,fix=null,prevFix=null,v=0,head=null,fixes=0,gaps=[],spdSrc='-',las
 function onFix(la,lo,acc,h,spd,t){
   lg(['f',t,+la.toFixed(6),+lo.toFixed(6),Math.round(acc||0),h==null?null:Math.round(h),spd==null?null:+(+spd).toFixed(1)]);fixes++;lastAcc=acc;if(TL.on){TL.n++;if(fix&&dist(fix.la,fix.lo,la,lo)>=1)TL.mv++;TL.acc=Math.max(TL.acc,acc||0)}
   if(fix){gaps.push(t-fix.t);if(gaps.length>10)gaps.shift()}
-  prevFix=fix;fix={la:la,lo:lo,t:t,mt:t};var frozen=tunNear&&prevFix&&(spd!=null&&spd>0?spd:v)>5&&dist(prevFix.la,prevFix.lo,la,lo)<1&&t-prevFix.t<5000;if(frozen){if(!(spd!=null&&spd>0)){fix=prevFix;prevFix=null;return}fix.mt=prevFix.mt}
+  prevFix=fix;fix={la:la,lo:lo,t:t,mt:t}; /* 터널 '멈춘 위치' 처리 뺌(11/21): 테슬라는 GPS 를 잃어도 차가 추정한 위치를 계속 줌 */
   var calc=null;
   if(prevFix){var dt=(t-prevFix.t)/1000;if(dt>0.2&&dt<5){var dm=dist(prevFix.la,prevFix.lo,la,lo);calc=dm/dt;if(dm>3&&calc>2)head=brg(prevFix.la,prevFix.lo,la,lo) /* 멈춰 있을 때 GPS 흔들림으로 지도가 돌지 않게 (7km/h 미만 무시) */}}
   if(spd!=null&&!isNaN(spd)&&spd>=0&&(spd>0||acc<100)){v=v*0.3+spd*0.7;spdSrc='차';carSpdT=t}else if(calc!=null){v=v*0.5+calc*0.5;spdSrc='계산'}else if(spd===0){v=0;spdSrc='차'}
@@ -1351,19 +1355,41 @@ function idrPes(buf){var b=new Uint8Array(buf),pmt=-1,vid=-1,cur=null,list=[];
     return idr&&sps?{es:es,codec:'avc1.'+[sps[1],sps[2],sps[3]].map(function(x){return(x<16?'0':'')+x.toString(16)}).join('')}:null}}
 function lines(t){return t.split('\n').map(function(l){return l.trim()}).filter(function(l){return l&&l[0]!=='#'})}
 function draw(cv,f){var c=cv.getContext('2d'),W=cv.width,H=cv.height,fw=f.displayWidth,fh=f.displayHeight,s=Math.max(W/fw,H/fh),dw=fw*s,dh=fh*s;c.drawImage(f,(W-dw)/2,(H-dh)/2,dw,dh)}
-async function loop(id){var o=SN[id];if(!o)return;
+/* 서 있을 때(속도 3.6km/h 미만 3초)는 조각의 모든 장면을 시각에 맞춰 풀어 실제 영상처럼, 달릴 땐 조각마다 한 장 */
+function allAus(buf){var b=new Uint8Array(buf),pmt=-1,vid=-1,cur=null,out=[];
+  function fin(){if(!cur)return;var L=0;cur.p.forEach(function(x){L+=x.length});var es=new Uint8Array(L),w=0;cur.p.forEach(function(x){es.set(x,w);w+=x.length});var key=false,sps=null;nals(es).forEach(function(r){var t=es[r[0]]&0x1f;if(t===5)key=true;if(t===7)sps=es.subarray(r[0],r[1])});out.push({es:es,key:key,pts:cur.pts,sps:sps})}
+  for(var o=0;o+188<=b.length;o+=188){if(b[o]!==0x47)continue;var pid=((b[o+1]&0x1f)<<8)|b[o+2],pusi=b[o+1]&0x40,afc=(b[o+3]>>4)&3,p=o+4;if(afc&2)p+=1+b[o+4];if(!(afc&1)||p>=o+188)continue;
+    if(pid===0&&pusi){var q=p+1+b[p];var sl=((b[q+1]&0xf)<<8)|b[q+2];for(var e=q+8;e<q+3+sl-4;e+=4){var pn=(b[e]<<8)|b[e+1];if(pn){pmt=((b[e+2]&0x1f)<<8)|b[e+3];break}}continue}
+    if(pid===pmt&&pusi&&vid<0){var q2=p+1+b[p];var sl2=((b[q2+1]&0xf)<<8)|b[q2+2],pil=((b[q2+10]&0xf)<<8)|b[q2+11];for(var e2=q2+12+pil;e2<q2+3+sl2-4;){var stp=b[e2],ep=((b[e2+1]&0x1f)<<8)|b[e2+2],eil=((b[e2+3]&0xf)<<8)|b[e2+4];if(stp===0x1b){vid=ep;break}e2+=5+eil}continue}
+    if(pid!==vid)continue;
+    if(pusi){fin();cur={p:[],pts:0};if(b[p]===0&&b[p+1]===0&&b[p+2]===1){if(b[p+7]&0x80){var x=p+9;cur.pts=((b[x]>>1)&7)*1073741824+b[x+1]*4194304+(b[x+2]>>1)*32768+b[x+3]*128+(b[x+4]>>1)}p=p+9+b[p+8]}}
+    if(cur)cur.p.push(b.subarray(p,o+188))}
+  fin();return out}
+function mkDec(o,codec){if(o.dec&&o.codec===codec)return;if(o.dec)try{o.dec.close()}catch(e){}o.codec=codec;o.dec=new VideoDecoder({output:function(f){try{draw(o.cv,f);o.n++;if(o.onframe)o.onframe(o.n)}finally{f.close()}},error:function(e){o.err=String(e);o.dec=null}});o.dec.configure({codec:codec,optimizeForLatency:true})}
+function codecOf(sps){return 'avc1.'+[sps[1],sps[2],sps[3]].map(function(x){return(x<16?'0':'')+x.toString(16)}).join('')}
+function fullN(){var n=0;for(var k in SN)if(SN[k].fm)n++;return n}
+async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
   try{
     if(!o.pl){var r=await fetch(o.url),t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href}
-    var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),seg=lines(t2).pop();
-    if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href,pes=null;
-      /* 앞 192KB 만 받아 보고(조각은 키프레임으로 시작), 없으면 전부 */
-      try{var rr=await fetch(su,{headers:{Range:'bytes=0-196607'}});if(rr.status===206)pes=idrPes(await rr.arrayBuffer())}catch(e){}
-      if(!pes){var fr=await fetch(su);pes=idrPes(await fr.arrayBuffer())}
-      if(!SN[id])return;
-      if(pes){if(!o.dec||o.codec!==pes.codec){if(o.dec)try{o.dec.close()}catch(e){}o.codec=pes.codec;o.dec=new VideoDecoder({output:function(f){try{draw(o.cv,f);o.n++;if(o.onframe)o.onframe(o.n)}finally{f.close()}},error:function(e){o.err=String(e);o.dec=null}});o.dec.configure({codec:pes.codec,optimizeForLatency:true})}
-        o.dec.decode(new EncodedVideoChunk({type:'key',timestamp:(o.ts+=1000),data:pes.es}));await o.dec.flush()}}
+    var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),L2=lines(t2),seg=L2.pop(),dur=+((/#EXTINF:([\d.]+)/g.exec(t2.slice(t2.lastIndexOf('#EXTINF')))||[0,3])[1])||3;
+    var full=window.ccStill&&ccStill()&&(o.fm||fullN()<3);o.fm=full;
+    if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href;
+      if(full){var aus=allAus(await (await fetch(su)).arrayBuffer());if(!SN[id])return;var k0=-1;for(var i=0;i<aus.length;i++)if(aus[i].key&&aus[i].sps){k0=i;break}
+        if(k0>=0){mkDec(o,codecOf(aus[k0].sps));var A=aus.slice(k0),p0=A[0].pts,st=performance.now();
+          /* 장면을 제 시각에 하나씩 넣어 풀자마자 그림(프레임을 쌓아 두지 않음) */
+          for(var j=0;j<A.length;j++){if(!SN[id]||!o.dec)return;var due=st+(A[j].pts-p0)/90;var dl=due-performance.now();if(dl>5)await new Promise(function(r){setTimeout(r,dl)});
+            if(!o.dec||o.dec.state!=='configured')break;o.dec.decode(new EncodedVideoChunk({type:A[j].key?'key':'delta',timestamp:Math.round(A[j].pts/0.09),data:A[j].es}))}
+          wait=0}}
+      else{var pes=null;
+        try{var rr=await fetch(su,{headers:{Range:'bytes=0-196607'}});if(rr.status===206)pes=idrPes(await rr.arrayBuffer())}catch(e){}
+        if(!pes){var fr=await fetch(su);pes=idrPes(await fr.arrayBuffer())}
+        if(!SN[id])return;
+        if(pes){mkDec(o,pes.codec);o.dec.decode(new EncodedVideoChunk({type:'key',timestamp:(o.ts+=1000),data:pes.es}));await o.dec.flush()}
+        /* 보이는 칸이 많으면 차례로: 칸 수에 맞춰 간격을 늘림 */
+        var n=Object.keys(SN).length;wait=n>3?2500*n/3:2500}}
+    else if(full)wait=Math.max(300,dur*500);
     o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);if(o.onerr)o.onerr(o.fail,o.err)}
-  if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):2500)}
+  if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):wait)}
 window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
 window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err}loop(id);return o};
 window.ccSnapStop=function(id){var o=SN[id];if(!o)return;delete SN[id];clearTimeout(o.t);if(o.dec)try{o.dec.close()}catch(e){}};
@@ -1386,7 +1412,7 @@ function ccStopAll2(){Object.keys(ccSnapAll()).forEach(ccSnapStop)}
 /* 작은 화면 = 캔버스 스냅샷(주행 중에도 바뀜). 못 쓰는 브라우저면 예전 영상 */
 function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id];if(!o)ccSnapStart(cv,CC.list[id].u,id,{frame:function(){var i=c.querySelector('i');if(i)i.style.display='none'},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
 function ccStopAll(){Object.keys(CC.hls).forEach(ccStop);ccStopAll2()}
-function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).length<3)ccTile(c,id);else if(!on)ccStop(id)})}
+function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).length<(ccSnapOk?6:3))ccTile(c,id);else if(!on)ccStop(id)})}
 function jamList(){if(!NAV||!NAV.C||!NAV.S)return[];var C=NAV.C,S=NAV.S,R=NAV.R,G=NAV.G||[],out=[],i=Math.max(0,NAV.idx);
   while(i<S.length-1){if((C[i]||0)<3){i++;continue}var st=i,en=i,gap=0,bad=0,j=i;for(;j<S.length-1;j++){if((C[j]||0)>=3){en=j;gap=0;if(C[j]===4)bad+=S[j+1]-S[j]}else{gap+=S[j+1]-S[j];if(gap>80)break}}
     var a=Math.max(S[st],NAV.s),L=S[en+1]-a;if(L>=150){var slow=L-bad,sec=bad/(8/3.6)+slow/(18/3.6),nm='';for(var g=G.length-1;g>=0;g--)if(G[g].s<=S[st]+30&&G[g].name){nm=G[g].name;break}
@@ -1614,9 +1640,8 @@ function tickBody(){
   var inTun=drI>=0&&(NAV.F[drI]===2||NAV.F[drI]===4),tv0=inTun&&NAV.V&&NAV.V[drI]>5?NAV.V[drI]/3.6:0,tv=(linkOk()||Date.now()-carSpdT<3000)?v:(tv0&&v>4?(tv0+v)/2:tv0),tunEnd=1e12; /* 테슬라는 터널에서도 차 속도를 줌(11/21 실차: 정확도 10000m·속도 차) → 그 속도만 씀 */
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
   DR.d=(DR.d||0)+(age>2.5&&tv?tv:v)*drDt;
-  if(age>2.5&&(v>4||tv)&&NAV&&DR.s!=null&&age<(inTun||linkOk()||Date.now()-carSpdT<3000?600:240)){DR.d=Math.min(DR.d,Math.max(0,tunEnd+(linkOk()?300:30)-DR.s));var dq=routePoint(Math.min(NAV.total-1,DR.s+DR.d));la=dq.la;lo=dq.lo;head=dq.h;drOn=true}
-  else if(age>2.5&&v>4&&head!=null&&age<40){var p=move(la,lo,head,v*age);la=p[0];lo=p[1];drOn=true}
-  else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(2,age));la=p[0];lo=p[1]}
+  /* 우리 쪽 터널·위치 추정은 뺌(11/21 사용자 "추정할 필요 없잖아"): 테슬라 위치는 정확도 10000m 일 때도 속도×시간과 5초에 0~6m 차이로 맞음. 위치가 잠깐 안 올 때만 최대 3초 앞으로 부드럽게 */
+  if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(3,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
   if(drOn!==DR.on){DR.on=drOn;show('drChip',drOn)}if(drOn)$('drChip').textContent=(inTun?(NAV.F[drI]===4?'지하차도':'터널'):'GPS 신호 없음')+' · 추정 위치로 안내 중';
   var kmh=v*3.6;$('spd').textContent=Math.round(kmh);
@@ -1695,7 +1720,8 @@ var HID={t:0,f:0,ticks:0,last:''};
 document.addEventListener('visibilitychange',function(){if(document.hidden){HID.t=Date.now();HID.f=fixes;HID.ticks=0}else if(HID.t){HID.last=' · 가려짐 '+Math.round((Date.now()-HID.t)/1000)+'초 위치 '+(fixes-HID.f)+'회 갱신 '+HID.ticks+'회';HID.t=0}});
 /* 화면 갱신(rAF)이 멈춰도 경고·기록은 계속: 11/21 16:09 차 화면이 켜진 채로 rAF 가 8분 멈추고 GPS 만 들어옴(가려짐 이벤트 없음) → 마지막 갱신이 1.5초 넘게 지났으면 GPS·1초 타이머에서 직접 돌린다. 기록 전송도 여기서 챙김 */
 var TKT=Date.now(),STALL=0;
-function keepAlive(src){var n=Date.now();if(n-TKT>1500){if(!STALL){STALL=n;lg(['stall',n,src,document.hidden?1:0])}HID.ticks++;TKT=n-1000;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}}else if(STALL&&n-TKT<500){lg(['stallEnd',n,n-STALL]);STALL=0}if(LOGON&&n-LOGT>65000)logFlush(false)}
+var MOVT=Date.now();function ccStill(){return v<1&&Date.now()-MOVT>3000}
+function keepAlive(src){var n=Date.now();if(v>=1)MOVT=n;if(n-TKT>1500){if(!STALL){STALL=n;lg(['stall',n,src,document.hidden?1:0])}HID.ticks++;TKT=n-1000;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}}else if(STALL&&n-TKT<500){lg(['stallEnd',n,n-STALL]);STALL=0}if(LOGON&&n-LOGT>65000)logFlush(false)}
 setInterval(function(){keepAlive('iv')},1000);
 (function(){try{if(nightNow())$('boot').classList.add('dk')}catch(e){}var iv=setInterval(function(){var w=Date.now()-bootT0;if((mapReady||!mapOn)&&(fix||w>8000)||w>12000){clearInterval(iv);$('boot').classList.add('off');setTimeout(function(){$('boot').style.display='none'},400)}},150)})();
 function tick(){TKT=Date.now();try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
