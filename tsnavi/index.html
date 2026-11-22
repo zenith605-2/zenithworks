@@ -368,6 +368,8 @@ body.dev .grid.mg #mLink{display:flex!important}
 .devTools button{border:0;background:none;color:#2b7bff;font-size:13px;padding:4px 6px;margin-left:2px}
 .nowrap2{font-size:13px;margin:12px 2px 0;line-height:1.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 이번 주행 통계 (주행 중에만, 왼쪽 아래) */
+#qcBtn{position:fixed;left:12px;bottom:146px;z-index:6;width:62px;height:62px;border-radius:50%;border:0;background:#fff;color:#e3151a;box-shadow:0 2px 10px #0004;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0}
+#qcBtn svg{width:26px;height:26px}#qcBtn b{font-size:10px;color:#333;font-weight:800}body.night #qcBtn{background:#2a2e35}body.night #qcBtn b{color:#ddd}#qcBtn.hit{background:#e3151a;color:#fff}#qcBtn.hit b{color:#fff}
 #tripStat{position:fixed;left:12px;bottom:96px;z-index:5;display:none;gap:14px;align-items:baseline;background:#ffffffe8;color:#111;border-radius:14px;padding:7px 13px;box-shadow:0 2px 8px #0003;font-size:12px;color:#667085;white-space:nowrap}
 #tripStat.show{display:flex}#tripStat b{font-size:17px;font-weight:800;color:#111;margin-right:2px}
 body.nav #tripStat{bottom:106px}
@@ -424,6 +426,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 </div>
 
 <div id="tripStat"></div>
+<button id="qcBtn" type="button" aria-label="과속 카메라 알리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="13" height="10" rx="2"/><path d="M15.5 10.5l5-3v9l-5-3"/><path d="M9 9.5v5M6.5 12h5"/></svg><b>카메라</b></button>
 <div id="hwBox"></div>
 <button id="linkChip" type="button"><i></i><span></span></button>
 <button id="wx" class="wxc"><span id="wxIc"></span><b id="wxT">-</b><span id="wxA"></span><span id="wxW" class="aq" style="display:none;background:#e3151a"></span></button>
@@ -751,6 +754,13 @@ setInterval(carHeading,1000);
    메뉴 [카메라 놓침] = 방금 티맵은 울렸는데 여긴 안 울림 → 지금 위치·진행 방향을 보냄. 주행 기록에도 남김 */
 $('oddBtn').onclick=function(e){e.stopPropagation();if(!target||!fix)return;var id=target.id;camReport('odd',{la:fix.la,lo:fix.lo},id,null);passed[id]=Date.now()+480000;target=null;setAlert('','','')};
 $('mMiss').onclick=function(){try{$('mClose').onclick()}catch(e){}if(!fix){toast('위치를 기다리는 중이에요');return}camReport('miss',{la:fix.la,lo:fix.lo},null,null)};
+/* 왼쪽 카메라 버튼 (11/22 사용자): 한 번 누르면 그 순간 위치·방향·속도를 바로 보냄. 창 없이 토스트로만 알림 */
+$('qcBtn').onclick=function(e){e.stopPropagation();if(!fix){toast('위치를 기다리는 중이에요');return}var ch=carHeading(),b=this;
+  var body={kind:'miss',la:fix.la,lo:fix.lo,lim:null,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',src:'qc',cam:null};
+  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},600);toast('📷 카메라 위치 저장했어요');
+  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)toast('저장은 했지만 보내지 못했어요')}).catch(function(){toast('저장은 했지만 보내지 못했어요')});
+  try{var q=JSON.parse(LS.getItem('qcList')||'[]');q.push([Date.now(),+fix.la.toFixed(6),+fix.lo.toFixed(6),ch.h==null?-1:Math.round(ch.h),Math.round(v*3.6)]);LS.setItem('qcList',JSON.stringify(q.slice(-200)))}catch(e){}
+  lg(['camfix',Date.now(),'miss',null,null,'qc'])};
 function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':'신고했어요. 데이터 고칠 때 반영할게요')}).catch(function(){toast('보내지 못했어요')});
   lg(['camfix',Date.now(),kind,id,lim]);
