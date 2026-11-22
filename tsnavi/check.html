@@ -127,7 +127,8 @@ var vline=null;function drawView(){try{var p=rv.getPosition(),vp=rv.getViewpoint
 function labelLR(){if(!DIRS)return;var pan=0;try{pan=rv.getViewpoint().pan}catch(e){}
   var one=function(d){var r=((d-pan)%360+540)%360-180,a=Math.abs(r);var w=a<35?['↑','앞쪽으로']:a>145?['↓','뒤쪽으로']:r<0?['←','왼쪽으로']:['→','오른쪽으로'];
     return w[0]==='→'?w[1]+' 가는 차 →':w[0]+' '+w[1]+' 가는 차'};
-  $('dA').textContent=one(DIRS[0]);$('dB').textContent=one(DIRS[1])}
+  $('dA').textContent=one(DIRS[0]);$('dB').textContent=one(DIRS[1]);
+  var rA=((DIRS[0]-pan)%360+540)%360-180;$('dA').style.order=rA<0?0:1;$('dB').style.order=rA<0?1:0}
 function nameOf(b){return['북','북동','동','남동','남','남서','서','북서'][Math.round(b/45)%8]}
 function arrowOf(b){return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(b/45)%8]}
 function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push([k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
