@@ -845,9 +845,10 @@ function segLen(c){var L=0;for(var i=1;i<c.length;i++)L+=dist(c[i-1][1],c[i-1][0
 var tmJob=0;function runJobs(J,tok,done,cancel){var k=0;(function step(){if(tok!==tmJob){if(cancel)cancel();return}for(var n=0;n<6&&k<J.length;n++,k++){try{J[k]()}catch(e){}}if(k<J.length)setTimeout(step,16);else{tmTurnKey=null;if(done)done()}})()}
 function slimRoute(fs){if(!fs.length)return fs;var th=200,out=fs;
   for(var k=0;k<6;k++){var a=out.map(function(f){return{c:f.properties.c,co:f.geometry.coordinates.slice(),L:segLen(f.geometry.coordinates)}});
-    for(var i=0;i<a.length;i++){if(a[i].L<th){var nb=i>0?a[i-1]:a[i+1];if(nb)a[i].c=nb.c}}
+    /* 짧은 조각은 '더 긴 이웃' 색을 따름 (11/22 실차: 뻥 뚫렸는데 노랑 — 긴 초록이 옆 짧은 노랑 색을 받던 것) */
+    for(var i=0;i<a.length;i++){if(a[i].L<th){var p=a[i-1],q=a[i+1],nb=!p?q:!q?p:(p.L>=q.L?p:q);if(nb&&nb.L>a[i].L)a[i].c=nb.c}}
     var m=[];a.forEach(function(x){var l=m[m.length-1];if(l&&l.c===x.c){l.co=l.co.concat(x.co.slice(1));l.L+=x.L}else m.push(x)});
-    out=m.map(function(x){return{properties:{c:x.c},geometry:{coordinates:x.co}}});if(out.length<=14)break;th*=2}
+    out=m.map(function(x){return{properties:{c:x.c},geometry:{coordinates:x.co}}});if(out.length<=20)break;th*=2}
   out.forEach(function(f){var c=f.geometry.coordinates,r=[c[0]],last=c[0];for(var i=1;i<c.length-1;i++){if(dist(last[1],last[0],c[i][1],c[i][0])>=8){r.push(c[i]);last=c[i]}}if(c.length>1)r.push(c[c.length-1]);f.geometry.coordinates=r});
   return out}
 function tmDrawRoute(fs,pins){fs=slimRoute(fs);var JOB=[],tok=++tmJob,oldL=tmLines,oldP=tmPins,NL=[],NP=[];/* 새 선을 다 그린 뒤에 옛 선을 지움 (깜박임 방지) */
