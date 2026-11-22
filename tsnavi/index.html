@@ -144,7 +144,7 @@
   .muted{color:#777;font-size:17px}
   .wide{display:block;width:100%;font-size:24px;padding:18px;border:0;border-radius:14px;background:#2b7bff;color:#fff;margin-top:18px;font-weight:700}
   .keyRow{display:flex;gap:10px}.keyRow input{flex:1;font-size:22px;padding:12px;border:2px solid #ccc;border-radius:10px}.keyRow button{font-size:20px;border:0;border-radius:10px;background:#2b7bff;color:#fff;padding:0 18px}
-  #snd{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9;background:#111d;color:#fff;font-size:20px;font-weight:700;border-radius:24px;padding:10px 22px;display:none}
+  #snd{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:80;background:#111d;color:#fff;font-size:20px;font-weight:700;border-radius:24px;padding:10px 22px;display:none}
   #snd.show{display:block}
   #start{position:fixed;inset:0;background:#101215f2;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;color:#fff}
   #start button{font-size:40px;padding:26px 60px;border-radius:20px;border:0;background:#3d8bff;color:#fff;font-weight:800}
@@ -1575,7 +1575,7 @@ function navTick(la,lo,kmh,now){
   var pr=project(la,lo);if(!pr)return null;
   NAV.idx=pr.i;NAV.s=NAV.S[pr.i]+pr.t*(NAV.S[pr.i+1]-NAV.S[pr.i]);
   if(Math.abs(NAV.idx-lastDrawIdx)>=3){lastDrawIdx=NAV.idx;drawRoute()}
-  if(pr.d>50&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션) */if(now-NAV.offT>4000&&now-NAV.lastRoute>30000){NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
+  if(pr.d>40&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션). 11/22 실차 "너무 오래 걸려": 50m·4초·30초 간격 → 40m·2.5초·12초 */if(now-NAV.offT>2500&&now-NAV.lastRoute>12000){NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
   var remain=NAV.total-NAV.s;
   if(remain<30||dist(la,lo,NAV.dest.la,NAV.dest.lo)<30){sayParts(['arrive'],true,'목적지에 도착했습니다',660,3);var AN=NAV;endNav();showArrive(AN);return null}
   NAV.G.forEach(function(g){if(g.t===185&&!g.done&&g.s<NAV.s-5){g.done=1;if(NAV.via&&NAV.via.length)NAV.via.shift();sayParts(['via_arrive'],true,'경유지에 도착했습니다',660,2);drawRoute()}});
@@ -1755,7 +1755,7 @@ function tickBody(){
   document.body.classList.toggle('over',over);document.body.classList.toggle('zone',zone);
   if(over&&now-lastBeep>700){beep(1400,0.15,1);lastBeep=now}
   if(CFG.diag){var g=gaps.length?Math.round(gaps.reduce(function(a,b){return a+b},0)/gaps.length):0;
-    $('diag').textContent=(demo?'시연 중 · ':'')+(LOGON?(LOGK?'기록 중':'기록 보내는 중')+(LOGFAIL?' 실패 '+LOGFAIL:'')+' · ':'')+'정확도 '+Math.round(lastAcc)+'m · 간격 '+g+'ms · 수신 '+fixes+'\n속도 '+spdSrc+' · 알림 '+fmtD(alertD)+' · 음성 '+(KO?'한국어':'없음')+' · 카메라 기준 '+(LS.getItem('camsRef')||'-')+HID.last}
+    $('diag').textContent=(demo?'시연 중 · ':'')+(LOGON?(LOGK?'기록 중':'기록 보내는 중')+(LOGFAIL?' 실패 '+LOGFAIL:'')+' · ':'')+'화면 '+FPS+(FASTIV?'+':'')+' · 정확도 '+Math.round(lastAcc)+'m · 간격 '+g+'ms · 수신 '+fixes+'\n속도 '+spdSrc+' · 알림 '+fmtD(alertD)+' · 음성 '+(KO?'한국어':'없음')+' · 카메라 기준 '+(LS.getItem('camsRef')||'-')+HID.last}
   
 }
 
@@ -1788,19 +1788,24 @@ document.addEventListener('visibilitychange',function(){if(document.hidden){HID.
 var TKT=Date.now(),STALL=0;
 var MOVT=Date.now();function ccStill(){return v<1&&Date.now()-MOVT>3000}
 var KAL=Date.now(),FASTIV=0,AUT=0,TMFN=null;
+function fastDraw(){if(!STALL&&FPS>=20){clearInterval(FASTIV);FASTIV=0;return}if(Date.now()-TKT<90)return;try{tickBody();layDraw();tmForce()}catch(e){}}
 /* 티맵 지도는 화면 갱신(rAF) 때만 다시 그린다 → 갱신이 멈추면 지도가 멈춰 있다 뚝 움직였다(11/22 실차 "버벅"). 멈춘 동안 내부 그리기 함수를 직접 부른다 (SDK 내부 이름이라 못 찾으면 조용히 건너뜀) */
 function tmForce(){if(!TMM||TMFN==='-')return;var vm=TMM._data&&TMM._data.vsmMap;if(!vm)return;if(!TMFN){var m=/=null,this\.(\w+)\(\)\}/.exec(String(Object.getPrototypeOf(vm).requestRepaint||''));TMFN=m&&typeof vm[m[1]]==='function'?m[1]:'-';lg(['tmforce',Date.now(),TMFN])}if(TMFN!=='-')vm[TMFN]()}
 function keepAlive(src){var n=Date.now();
   /* 차가 잠들었다 깨면(10분 넘게 멈춤) 페이지를 새로 연다: 어제 열어 둔 화면이 옛 코드·끊긴 연결로 남던 문제 (11/22). 안내 중이면 navResume 이 이어 감 */
-  if(n-KAL>600000&&!(window._rl)){window._rl=1;try{saveResume()}catch(e){}location.reload();return}KAL=n;
+  if(n-KAL>600000&&!(window._rl)&&v<1){window._rl=1;try{saveResume()}catch(e){}location.reload();return}KAL=n;
   /* 소리: 깨어난 뒤 멈춘 오디오를 다시 켜 본다(전에 누른 적 있으면 됨), 안 되면 '화면을 한 번 누르면' 표시 */
   if(n-AUT>5000){AUT=n;try{if(ac&&ac.state!=='running'){ac.resume();lg(['au',n,ac.state])}show('snd',!ac||ac.state!=='running')}catch(e){}}
+  if(n-(window._fpsT||0)>=1000){FPS=Math.round(FPSN*1000/Math.max(1,n-(window._fpsT||n-1000)));FPSN=0;window._fpsT=n;if(LOGON&&n%10000<1100)lg(['fps',n,FPS,FASTIV?1:0]);
+    /* 화면 갱신이 초당 15번 아래면(완전히 멈추지 않아도) 0.1초마다 직접 그린다 (11/22 실차 "너무 버벅") */
+    if(FPS<15&&!FASTIV)FASTIV=setInterval(fastDraw,100)}
   if(v>=1)MOVT=n;if(n-TKT>1500){if(!STALL){STALL=n;lg(['stall',n,src,document.hidden?1:0]);
       /* 화면 갱신이 멈추면 1초에 한 번만 움직여 지도가 뚝뚝 끊겼다 → 멈춘 동안 0.1초마다 그린다 (11/22) */
-      if(!FASTIV)FASTIV=setInterval(function(){if(!STALL){clearInterval(FASTIV);FASTIV=0;return}try{tickBody();layDraw();tmForce()}catch(e){}},100)}HID.ticks++;TKT=n-1000;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}}else if(STALL&&n-TKT<500){lg(['stallEnd',n,n-STALL]);STALL=0}if(LOGON&&n-LOGT>65000)logFlush(false)}
+      if(!FASTIV)FASTIV=setInterval(fastDraw,100)}HID.ticks++;TKT=n-1000;try{tickBody()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80)}}else if(STALL&&n-TKT<500){lg(['stallEnd',n,n-STALL]);STALL=0}if(LOGON&&n-LOGT>65000)logFlush(false)}
 setInterval(function(){keepAlive('iv')},1000);
 (function(){try{if(nightNow())$('boot').classList.add('dk')}catch(e){}var iv=setInterval(function(){var w=Date.now()-bootT0;if((mapReady||!mapOn)&&(fix||w>8000)||w>12000){clearInterval(iv);$('boot').classList.add('off');setTimeout(function(){$('boot').style.display='none'},400)}},150)})();
-function tick(){TKT=Date.now();try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
+var FPSN=0,FPS=60;
+function tick(){TKT=Date.now();FPSN++;try{tickBody();layDraw()}catch(e){errN++;lastErr=String(e&&e.message||e).slice(0,80);lg(['err',Date.now(),lastErr]);try{$('diag').style.display='';$('diag').textContent='오류 '+errN+': '+lastErr}catch(x){}}requestAnimationFrame(tick)}
 addEventListener('error',function(e){errN++;lastErr=String(e.message).slice(0,80)});
 /* 새로고침해도 안내 이어 가기: 안내 중 목적지를 저장, 다시 열면 2시간 안이면 자동으로 경로 찾기 */
 function saveResume(){try{if(NAV)LS.setItem('navResume',JSON.stringify({d:NAV.dest,opt:NAV.opt||'0',via:NAV.via||[],t:Date.now()}));else LS.removeItem('navResume')}catch(e){}}
