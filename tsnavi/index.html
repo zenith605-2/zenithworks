@@ -1495,7 +1495,11 @@ function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return
     :fetch(RELAY+'cctv?'+bb.slice(1)).then(function(r){return r.json().then(function(d){return{st:r.status,d:d}})})});
   src.then(function(o){
     if(o.st===503){noteSet('CCTV는 설정(≡)에서 CCTV 키를 넣으면 나옵니다');return}
-    var out=[];(o.d.list||[]).forEach(function(c){var bd=1e9,bs=0;for(var k=0;k<a.length-1;k++){var A=R[a[k]],B=R[a[k+1]];var q=projSeg(c[0],c[1],A,B),dd=dist(c[0],c[1],q[0],q[1]);if(dd<bd){bd=dd;bs=S[a[k]]+dist(A[0],A[1],q[0],q[1])}}if(bd<150&&bs>NAV.s-100)out.push({la:c[0],lo:c[1],n:c[2].replace(/^\[[^\]]*\]\s*/,''),u:c[3],s:bs})});
+    var out=[];(o.d.list||[]).forEach(function(c){var bd=1e9,bs=0,bl=0;for(var k=0;k<a.length-1;k++){var A=R[a[k]],B=R[a[k+1]];var q=projSeg(c[0],c[1],A,B),dd=dist(c[0],c[1],q[0],q[1]);if(dd<bd){bd=dd;bs=S[a[k]]+dist(A[0],A[1],q[0],q[1]);
+        /* 진행 방향 기준 왼쪽(+)·오른쪽(-) */var kx=111320*Math.cos(c[0]*D2R);bl=((B[1]-A[1])*kx)*((c[0]-A[0])*111320)-((B[0]-A[0])*111320)*((c[1]-A[1])*kx)}}
+      /* 반대편 차로 CCTV 빼기 (11/22 실차): 우측 통행이라 내 방향 CCTV 는 오른쪽. 왼쪽으로 15m 넘게 떨어진 건 반대편 */
+      if(bl>0&&bd>15)return;
+      if(bd<150&&bs>NAV.s-100)out.push({la:c[0],lo:c[1],n:c[2].replace(/^\[[^\]]*\]\s*/,''),u:c[3],s:bs})});
     out.sort(function(x,y){return x.s-y.s});var seen={};out=out.filter(function(c){var k=Math.round(c.s/150);if(seen[k])return false;seen[k]=1;return true});CC.list=out;
     if(!out.length){noteSet('앞쪽 40km 경로에 CCTV가 없습니다');return}
     wait.remove();$('cctvN').textContent=(nJ?'막히는 곳 '+nJ+' · ':'')+'CCTV '+out.length+'곳 · 끌어서 넘기기';
