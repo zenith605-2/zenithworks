@@ -31,7 +31,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
 #go{font-size:18px!important;font-weight:800!important;background:var(--acc)!important;color:#fff!important;border:0!important;padding:14px 16px!important}
 #steps{font-size:14px;color:var(--mut);padding:8px 14px 0;background:var(--card)}#steps b{color:var(--ink)}
-@media (max-width:760px){#views{grid-template-columns:1fr;grid-template-rows:3fr 2fr;height:62vh}#ctl{justify-content:center;padding:8px}#pad{display:none}#help{display:none}#more{flex-direction:row;flex-wrap:wrap;justify-content:center}#more button{flex:1 1 40%}#go{flex-basis:100%!important}}
+@media (max-width:760px){#views{grid-template-columns:1fr;grid-template-rows:3fr 2fr;height:52vh}#ctl{justify-content:center;padding:8px}#pad{display:none}#help{display:none}#more{flex-direction:row;flex-wrap:wrap;justify-content:center}#more button{flex:1 1 40%}#go{flex-basis:100%!important}}
 </style>
 </head>
 <body>
@@ -71,6 +71,7 @@ function brg(a,b,c,d){var R=Math.PI/180,y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math
 var CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
 function start(){$('app').hidden=false;$('who').textContent=ME?'':'· 보내기 권한 없음(주소에 ?me= 필요)';
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(37.8,127.07),level:3});rv=new kakao.maps.Roadview($('rv'));rvc=new kakao.maps.RoadviewClient();
+  var relay=function(){try{rv.relayout();map.relayout()}catch(e){}};addEventListener('resize',relay);setTimeout(relay,300);
   kakao.maps.event.addListener(rv,'viewpoint_changed',drawView);kakao.maps.event.addListener(rv,'position_changed',drawView);
   Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}})]).then(function(a){
     CAMS=a[0];DONE=a[1]||{};
@@ -87,7 +88,7 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
   map.setCenter(pos);if(mk)mk.setMap(null);mk=new kakao.maps.Marker({position:pos,map:map});
   var near=function(r,cb){rvc.getNearestPanoId(pos,r,function(id){if(id||r>=80)cb(id);else near(r*2,cb)})};
   near(20,function(id){if(!id){$('cSub').textContent+=' · 근처 로드뷰 없음';return}rv.setPanoId(id,pos);
-    kakao.maps.event.addListener(rv,'init',function f(){kakao.maps.event.removeListener(rv,'init',f);var p=rv.getPosition();var b=dist(p.getLat(),p.getLng(),c[0],c[1])<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]);rv.setViewpoint({pan:b,tilt:0,zoom:0})})})}
+    kakao.maps.event.addListener(rv,'init',function f(){kakao.maps.event.removeListener(rv,'init',f);try{rv.relayout()}catch(e){}var p=rv.getPosition();var b=dist(p.getLat(),p.getLng(),c[0],c[1])<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]);rv.setViewpoint({pan:b,tilt:0,zoom:0})})})}
 /* 지도에 로드뷰 위치와 지금 보는 방향(빨간 화살표) */
 var vline=null;function drawView(){try{var p=rv.getPosition(),vp=rv.getViewpoint();if(!p)return;var la=p.getLat(),lo=p.getLng(),b=vp.pan*Math.PI/180,L=0.00035;
   var e=new kakao.maps.LatLng(la+L*Math.cos(b),lo+L*Math.sin(b)/Math.cos(la*Math.PI/180));if(vline)vline.setMap(null);
