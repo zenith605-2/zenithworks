@@ -1575,7 +1575,10 @@ function navTick(la,lo,kmh,now){
   var pr=project(la,lo);if(!pr)return null;
   NAV.idx=pr.i;NAV.s=NAV.S[pr.i]+pr.t*(NAV.S[pr.i+1]-NAV.S[pr.i]);
   if(Math.abs(NAV.idx-lastDrawIdx)>=3){lastDrawIdx=NAV.idx;drawRoute()}
-  if(pr.d>40&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션). 11/22 실차 "너무 오래 걸려": 50m·4초·30초 간격 → 40m·2.5초·12초 */if(now-NAV.offT>2500&&now-NAV.lastRoute>12000){NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
+  /* 이탈 판정 (11/22 "다른 길로 들어가면 바로"): 25m 벗어나거나, 12m 넘게 벗어난 채 진행 방향이 경로와 50° 넘게 다르면 1.5초 뒤 다시 찾기 */
+  var segB=brg(NAV.R[pr.i][0],NAV.R[pr.i][1],NAV.R[pr.i+1][0],NAV.R[pr.i+1][1]),offDir=head!=null&&v>3&&dist(NAV.R[pr.i][0],NAV.R[pr.i][1],NAV.R[pr.i+1][0],NAV.R[pr.i+1][1])>3&&Math.abs(adiff(segB,head))>50;
+  var isOff=pr.d>25||(pr.d>12&&offDir);
+  if(isOff&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션). 11/22 실차 "너무 오래 걸려": 50m·4초·30초 간격 → 40m·2.5초·12초 */if(now-NAV.offT>1500&&now-NAV.lastRoute>10000){lg(['off',now,Math.round(pr.d),offDir?1:0]);NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
   var remain=NAV.total-NAV.s;
   if(remain<30||dist(la,lo,NAV.dest.la,NAV.dest.lo)<30){sayParts(['arrive'],true,'목적지에 도착했습니다',660,3);var AN=NAV;endNav();showArrive(AN);return null}
   NAV.G.forEach(function(g){if(g.t===185&&!g.done&&g.s<NAV.s-5){g.done=1;if(NAV.via&&NAV.via.length)NAV.via.shift();sayParts(['via_arrive'],true,'경유지에 도착했습니다',660,2);drawRoute()}});
