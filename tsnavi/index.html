@@ -809,9 +809,12 @@ function mapResize(){if(TMM){var e=$('map');try{TMM.resize(e.clientWidth,e.clien
 function mapPx(la,lo){if(TMM){var p=TMM.realToScreen(LL(la,lo));return{x:p.x,y:p.y}}if(map){var q=map.project([lo,la]);return{x:q.x,y:q.y}}return{x:-999,y:-999}}
 /* 차를 화면 아래쪽(68%)에 두고 따라가기: 중심을 진행 방향 앞으로 밀어 둔다 */
 var tmP=null;
+/* 티맵 setZoom 은 parseInt 로 소수점을 버려 줌이 한 단계씩 '팍' 바뀜(11/22 실차) → 지도 카메라에 직접 소수 줌 */
+function tmZoom(z){try{TMM._data.vsmMap.getCamera().setZoom(z)}catch(e){TMM.setZoom(z)}}
+function tmGetZoom(){try{return TMM._data.vsmMap.getCamera().getZoom()}catch(e){return TMM.getZoom()}}
 function tmFollow(la,lo,b,z){z+=TMZ;var pt=VIEW==='3d'?50:0;
   if(tmP!==pt){try{TMM.setPitch(pt)}catch(e){}tmP=pt;tmMppZ=null}
-  if(tmZ==null||Math.abs(z-tmZ)>0.01){TMM.setZoom(z);tmZ=z}
+  if(tmZ==null||Math.abs(z-tmZ)>0.01){tmZoom(z);tmZ=z}
   if(tmB==null||Math.abs(adiff(tmB,b))>0.3){TMM.setBearing(b);tmB=b;if(VIEW==='3d')tmMppZ=null}
   if(tmMppZ==null||Math.abs(tmMppZ-z)>0.05){TMM.setCenter(LL(la,lo));var a=mapPx(la,lo),c=move(la,lo,b,60),q=mapPx(c[0],c[1]),dp=Math.sqrt((a.x-q.x)*(a.x-q.x)+(a.y-q.y)*(a.y-q.y));if(dp>1){tmMpp=60/dp;tmMppZ=z}}
   var H=$('map').clientHeight,ah=move(la,lo,b,0.18*H*tmMpp);TMM.setCenter(LL(ah[0],ah[1]))}
@@ -821,7 +824,7 @@ function tmSetIcons(f){var keep={};f.forEach(function(ft){var c=ft.geometry.coor
 /* 다음 회전 지점을 지도 위 흰 화살표로 (티맵처럼). 경로 선 위에 겹쳐 그림 */
 var tmTurn=[],tmTurnKey=null;
 function chaikin(P,n){for(var k=0;k<n;k++){var Q=[P[0]];for(var i=0;i<P.length-1;i++){var a=P[i],b=P[i+1];Q.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25],[a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75])}Q.push(P[P.length-1]);P=Q}return P}
-function tmDrawTurn(g){if(!TMM)return;var zz=13;try{zz=TMM.getZoom()}catch(e){}var k=g?g.s+'_'+g.t+'_'+Math.round(zz*2):null; /* 줌이 바뀌면 테두리 두께(m)를 다시 맞춤 */if(k===tmTurnKey)return;tmTurnKey=k;tmTurn.forEach(function(l){try{l.setMap(null)}catch(e){}});tmTurn=[];
+function tmDrawTurn(g){if(!TMM)return;var zz=13;try{zz=tmGetZoom()}catch(e){}var k=g?g.s+'_'+g.t+'_'+Math.round(zz*2):null; /* 줌이 바뀌면 테두리 두께(m)를 다시 맞춤 */if(k===tmTurnKey)return;tmTurnKey=k;tmTurn.forEach(function(l){try{l.setMap(null)}catch(e){}});tmTurn=[];
   return; /* 지도 위 회전 화살표는 뺌(11/21 사용자 "아무리 해도 별로"). 회전 안내는 왼쪽 카드로 */
   if(!g||!NAV||g.t===201||g.t===200||g.t===11||g.t===14||g.t===185)return;
   /* 유턴은 갔다 오는 선이 겹쳐 덩어리로 보여서 지도 화살표 생략(왼쪽 카드로 안내). 티맵식 회전 화살표: 회전 지점 앞 50m~뒤 30m 를 부드럽게 다듬은 몸통 + 꽉 찬 삼각형 화살촉 (검은 테두리) */
@@ -829,7 +832,7 @@ function tmDrawTurn(g){if(!TMM)return;var zz=13;try{zz=TMM.getZoom()}catch(e){}v
   var S=chaikin(P,3),n=S.length,a=S[n-4],tip=S[n-1],h=brg(a[0],a[1],tip[0],tip[1]);
   var h0=brg(S[0][0],S[0][1],S[Math.min(3,n-1)][0],S[Math.min(3,n-1)][1]);if(Math.abs(adiff(h0,h))<25)return; /* 사실상 직진이면 그리지 않음 (11/21 실차: 직진 화살표가 투박) */
   /* 테두리 한 겹: 어두운 몸통+어두운 큰 삼각형을 먼저 깔고 그 위에 흰 몸통+흰 삼각형. 삼각형에 선(stroke)을 안 써서 이음매 선이 없고 테두리 색·굵기가 같음 (11/21 실차) */
-  var z=13;try{z=TMM.getZoom()}catch(e){}var mpp=156543*Math.cos(tip[0]*D2R)/Math.pow(2,z),o=4*mpp;
+  var z=13;try{z=tmGetZoom()}catch(e){}var mpp=156543*Math.cos(tip[0]*D2R)/Math.pow(2,z),o=4*mpp;
   var px=mpp,HW=19*px,HL=26*px,bt=move(tip[0],tip[1],h+180,6*px),head=move(bt[0],bt[1],h,HL),L=move(bt[0],bt[1],h-90,HW),R=move(bt[0],bt[1],h+90,HW); /* 삼각형도 화면 픽셀 기준(몸통 굵기 16px 에 맞춤) */
   var ob=move(bt[0],bt[1],h+180,o),oh=move(head[0],head[1],h,o*1.7),oL=move(ob[0],ob[1],h-90,HW+o*2),oR=move(ob[0],ob[1],h+90,HW+o*2);
   /* 몸통은 삼각형 밑변보다 조금 안쪽(밑변+3m)까지만: 끝이 삼각형 옆으로 삐져나오지 않게 */
@@ -1721,7 +1724,12 @@ function tickBody(){
   if(inTun){var te=drI;while(te<NAV.F.length-1&&(NAV.F[te]===2||NAV.F[te]===4))te++;DR.te=NAV.S[te]}if(DR.te)tunEnd=DR.te;
   DR.d=(DR.d||0)+(age>2.5&&tv?tv:v)*drDt;
   /* 우리 쪽 터널·위치 추정은 뺌(11/21 사용자 "추정할 필요 없잖아"): 테슬라 위치는 정확도 10000m 일 때도 속도×시간과 5초에 0~6m 차이로 맞음. 위치가 잠깐 안 올 때만 최대 3초 앞으로 부드럽게 */
-  if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(3,age));la=p[0];lo=p[1]}
+  /* 11/22 실차: 구리-포천 터널 쪽에서 테슬라가 위치를 35초·15초 아예 안 줌 → 지도가 멈췄다 '팍' 이동.
+     위치가 3초 넘게 안 오면 안내 경로를 따라 마지막 속도로 계속 감(최대 90초), 위치가 다시 오면 화면 보정(DSP)이 부드럽게 맞춤 */
+  if(v>3&&age>3&&NAV&&NAV.S&&NAV.R&&fix){if(!fix.s0){var pr0=project(fix.la,fix.lo);fix.s0=pr0&&pr0.d<40?NAV.S[pr0.i]+pr0.t*(NAV.S[pr0.i+1]-NAV.S[pr0.i]):-1}
+    if(fix.s0>=0){var q=routePointAt(NAV,Math.min(NAV.S[NAV.S.length-1],fix.s0+v*Math.min(90,age))),q2=routePointAt(NAV,Math.min(NAV.S[NAV.S.length-1],fix.s0+v*Math.min(90,age)+15));la=q.la;lo=q.lo;head=brg(q.la,q.lo,q2.la,q2.lo)}
+    else if(head!=null){var p=move(la,lo,head,v*Math.min(10,age));la=p[0];lo=p[1]}}
+  else if(head!=null&&v>1){var p=move(la,lo,head,v*Math.min(3,age));la=p[0];lo=p[1]}
   if(LOGON&&now-LOGLS>1000){LOGLS=now;lg(['s',now,NAV?Math.round(NAV.s):-1,drOn?1:0,tunNear?1:0,+v.toFixed(1),+la.toFixed(6),+lo.toFixed(6),NAV&&NAV.LIM?NAV.LIM[Math.max(0,NAV.idx)]||0:0])}
   if(drOn!==DR.on){DR.on=drOn;show('drChip',drOn)}if(drOn)$('drChip').textContent=(inTun?(NAV.F[drI]===4?'지하차도':'터널'):'GPS 신호 없음')+' · 추정 위치로 안내 중';
   var kmh=v*3.6;$('spd').textContent=Math.round(kmh);
@@ -1734,7 +1742,7 @@ function tickBody(){
     DSP.h=mhp==null?null:DSP.h==null?mhp:(DSP.h+adiff(DSP.h,mhp)*sah+360)%360;DSP.t=now}
   mla=DSP.la;mlo=DSP.lo;mh=DSP.h;
   if(FREE&&Date.now()-FREE>12000&&!Object.keys(PT).length)setFree(false);
-  if(FREE&&mapReady&&mapOn){var fz=zCur+zoff;if(TMM){if(tmZ==null||Math.abs(fz-tmZ)>0.01){TMM.setZoom(fz);tmZ=fz}}else if(map){map.setZoom(fz);var fq=map.project([mlo,mla]);$('carMk').style.left=fq.x+'px';$('carMk').style.top=fq.y+'px'}}
+  if(FREE&&mapReady&&mapOn){var fz=zCur+zoff;if(TMM){if(tmZ==null||Math.abs(fz-tmZ)>0.01){tmZoom(fz);tmZ=fz}}else if(map){map.setZoom(fz);var fq=map.project([mlo,mla]);$('carMk').style.left=fq.x+'px';$('carMk').style.top=fq.y+'px'}}
   if(mapReady&&mapOn&&!PREV&&!FREE&&TMM){tmFollow(mla,mlo,(mh==null||!CFG.rot)?0:mh,zoomNow(kmh,now));updCamSrc(la,lo,head)}
   if(mapReady&&mapOn&&TMM){var cq=mapPx(mla,mlo);$('carMk').style.left=cq.x+'px';$('carMk').style.top=cq.y+'px'}
   if(mapReady&&mapOn&&!TMM&&!PREV&&!FREE){var mH=$('map').clientHeight;map.jumpTo({center:[mlo,mla],bearing:(mh==null||!CFG.rot)?0:mh,zoom:zoomNow(kmh,now),pitch:VIEW==='3d'?50:0,padding:{top:mH*0.36,bottom:0,left:0,right:0}});updCamSrc(la,lo,head);
@@ -1757,13 +1765,13 @@ function tickBody(){
   var avg=null;
   secDraw();
   if(section&&NAV&&section.end!=null&&NAV.s>section.end+50){section=null;secEndAt=[la,lo];sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}
-  if(section){var sdt2=section.lt?Math.min(3,Math.max(0,(now-section.lt)/1000)):0;section.lt=now;section.m+=v*sdt2; /* 거리 = 속도×시간 (위치 흔들림으로 평균이 높게 나오던 것) */section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(avg>section.lim)over=true;if(section.m>30000)section=null}
+  if(section){var sdt2=section.lt?Math.min(3,Math.max(0,(now-section.lt)/1000)):0;section.lt=now;section.m+=v*sdt2; /* 거리 = 속도×시간 (위치 흔들림으로 평균이 높게 나오던 것) */section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(Math.round(avg)>section.lim)over=true;if(section.m>30000)section=null}
   if(target&&target.d<alertD+30){var c=target.c,d=dist(la,lo,c[0],c[1]);target.d=Math.min(target.d,d);
     setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',fmtD(d),camTag(c));
     zone=c[5]>0&&d<alertD;
     if(d<alertD&&!announced[target.id]){announced[target.id]=1;if(TRIP)TRIP.alerts++;var r=Math.round(d/50)*50;
       sayParts([c[5]===2?'child':null,'d'+dk(d),(c[2]&&c[2]%10===0&&c[2]>=20&&c[2]<=120)?'lim'+c[2]:null,c[4]===1?'sec_start':(c[3]==='R'?'cam_sig':c[3]==='X'?'cam_sx':'cam_s')],false,(c[5]===2?'어린이보호구역, ':'')+'전방 '+r+'미터, '+(c[2]?'제한속도 '+c[2]+', ':'')+(c[4]===1?'구간단속 시작입니다':'단속 카메라입니다'),880,2)}
-    if(c[2]&&d<alertD&&kmh>c[2])over=true;
+    if(c[2]&&d<alertD&&Math.round(kmh)>c[2])over=true; /* 화면 속도(반올림)가 제한보다 클 때만 (11/22 실차: '딱 100인데 울리네' — 100.4 를 넘었다고 봄) */
   }else if(section){setAlert('on sec',section.lim,'평균 '+Math.round(avg||0),'구간단속 중')}
   else setAlert('','','');
   var bp=(CFG.bumpOn&&head!=null&&kmh>20&&BUMPS.length)?findBump(la,lo,head,kmh>50?250:150):null;
