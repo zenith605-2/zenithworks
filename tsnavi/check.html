@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>카메라 방향 확인</title>
+<style>
+/* 카메라 방향 확인 도구 (11/22): 카카오 로드뷰를 사람이 보고 단속 방향을 버튼으로 고른다. 이미지는 저장하지 않고 방향 값만 보냄 */
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111;--mut:#6b7280;--line:#e5e7eb;--acc:#2563eb;--ok:#16a34a;--warn:#dc2626}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--mut:#9ca3af;--line:#2a2f37}}
+[hidden]{display:none!important}*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+#app{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+header{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
+#views{display:grid;grid-template-columns:2fr 1fr;min-height:0}
+#rv,#map{width:100%;height:100%;min-height:260px}
+#info{padding:10px 14px;background:var(--card);border-top:1px solid var(--line)}
+#info .t{font-weight:700;font-size:16px}#info .s{color:var(--mut);font-size:13px;margin-top:2px}
+#pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);gap:6px}
+#pad button,#more button{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-size:22px;font-weight:700;cursor:pointer}
+#pad button:active,#more button:active{background:var(--acc);color:#fff}
+#pad .c{font-size:12px;color:var(--mut);border:0;background:transparent;cursor:default}
+#more{display:flex;flex-direction:column;gap:6px}
+#more button{font-size:15px;padding:10px 14px}
+#ctl{display:flex;gap:16px;align-items:center;padding:10px 14px;background:var(--card);border-top:1px solid var(--line);flex-wrap:wrap}
+#help{color:var(--mut);font-size:13px;max-width:340px}
+#keyBox{display:none;padding:20px;max-width:560px;margin:40px auto;background:var(--card);border-radius:14px;border:1px solid var(--line)}
+#keyBox input{width:100%;font-size:15px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+#keyBox button{margin-top:10px;padding:10px 16px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:15px}
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
+@media (max-width:760px){#views{grid-template-columns:1fr;grid-template-rows:2fr 1fr}#ctl{justify-content:center}}
+</style>
+</head>
+<body>
+<div id="keyBox">
+  <b>카카오 지도 JavaScript 키가 필요합니다</b>
+  <p class="mut">카카오 개발자 콘솔 → 내 애플리케이션 → 앱 키의 <b>JavaScript 키</b>를 붙여 넣으세요. 플랫폼(Web)에 이 주소(https://zenithworks.app)가 등록돼 있어야 합니다. 키는 이 브라우저에만 저장됩니다.</p>
+  <input id="kIn" placeholder="JavaScript 키"><button id="kSave">저장</button>
+</div>
+<div id="app" hidden>
+  <header><b>카메라 방향 확인</b><span class="mut" id="stat">불러오는 중…</span><span class="mut" id="who"></span></header>
+  <div id="views"><div id="rv"></div><div id="map"></div></div>
+  <div id="info"><div class="t" id="cTitle">-</div><div class="s" id="cSub">-</div></div>
+  <div id="ctl">
+    <div id="pad">
+      <button data-b="315">↖</button><button data-b="0">↑</button><button data-b="45">↗</button>
+      <button data-b="270">←</button><button class="c" disabled>찍는 차<br>가는 쪽</button><button data-b="90">→</button>
+      <button data-b="225">↙</button><button data-b="180">↓</button><button data-b="135">↘</button>
+    </div>
+    <div id="more"><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
+    <div id="help">지도 화살표는 북쪽이 위입니다. 카메라가 <b>어느 쪽으로 가는 차를 찍는지</b> 골라 주세요. 기둥이 서 있는 쪽 차선 = 그 차선 차들이 가는 방향입니다. 로드뷰는 끌어서 돌려 볼 수 있습니다.</div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+var RELAY='https://tsnavi-relay.zenithworks.workers.dev/',DATA='https://actparty.app/tesla-webnav/';
+var $=function(i){return document.getElementById(i)},LS=localStorage;
+function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none'},1800)}
+/* 키: ?me= 기록 키(보내기 권한), ?kjs= 카카오 JS 키 → 이 브라우저에 저장 */
+(function(){var q=new URLSearchParams(location.search);if(q.get('me'))LS.setItem('logKey',q.get('me'));if(q.get('kjs'))LS.setItem('kakaoJs',q.get('kjs'))})();
+var ME=LS.getItem('logKey')||'',KJS=LS.getItem('kakaoJs')||'';
+if(!KJS){$('keyBox').style.display='block';$('kSave').onclick=function(){var v=$('kIn').value.trim();if(v){LS.setItem('kakaoJs',v);location.reload()}}}
+else{var s=document.createElement('script');s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey='+encodeURIComponent(KJS);s.onload=function(){kakao.maps.load(start)};s.onerror=function(){alert('카카오 지도 키를 불러오지 못했습니다. 키나 도메인 등록을 확인하세요.');LS.removeItem('kakaoJs')};document.head.appendChild(s)}
+function dist(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320;return Math.hypot(x,(c-a)*111320)}
+function brg(a,b,c,d){var R=Math.PI/180,y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360}
+var CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
+function start(){$('app').hidden=false;$('who').textContent=ME?'':'· 보내기 권한 없음(주소에 ?me= 필요)';
+  map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(37.8,127.07),level:3});rv=new kakao.maps.Roadview($('rv'));rvc=new kakao.maps.RoadviewClient();
+  Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}})]).then(function(a){
+    CAMS=a[0];DONE=a[1]||{};
+    var c0=JSON.parse(LS.getItem('ckCenter')||'null');
+    var go=function(la,lo){center=[la,lo];LS.setItem('ckCenter',JSON.stringify(center));build()};
+    if(c0)go(c0[0],c0[1]);else if(navigator.geolocation)navigator.geolocation.getCurrentPosition(function(p){go(p.coords.latitude,p.coords.longitude)},function(){go(37.8,127.07)},{timeout:6000});else go(37.8,127.07)})}
+/* 확인할 차례: 방향 모르는 카메라를 기준점에서 가까운 순으로 (이미 확인한 것 빼고) */
+function build(){Q=[];CAMS.forEach(function(c,i){if(c[7]!==-1)return;var k=c[0]+','+c[1];if(DONE[k])return;Q.push([dist(center[0],center[1],c[0],c[1]),i])});Q.sort(function(a,b){return a[0]-b[0]});qi=0;show()}
+function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤어요';return}
+  var c=CAMS[Q[qi][1]],pos=new kakao.maps.LatLng(c[0],c[1]);
+  $('stat').textContent='남은 '+(Q.length-qi).toLocaleString()+'곳 · 기준점에서 '+(Q[qi][0]/1000).toFixed(1)+'km';
+  $('cTitle').textContent=(c[6]||'도로명 없음')+' · 제한 '+c[2]+(c[3]==='X'?' · 신호과속':c[3]==='R'?' · 신호':' · 과속')+(c[5]===2?' · 어린이보호':'')+(c[4]===1?' · 구간 시작':c[4]===2?' · 구간 끝':'');
+  $('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5);
+  map.setCenter(pos);if(mk)mk.setMap(null);mk=new kakao.maps.Marker({position:pos,map:map});
+  rvc.getNearestPanoId(pos,60,function(id){if(!id){$('cSub').textContent+=' · 근처 로드뷰 없음';return}rv.setPanoId(id,pos);
+    kakao.maps.event.addListener(rv,'init',function f(){kakao.maps.event.removeListener(rv,'init',f);var p=rv.getPosition();var b=dist(p.getLat(),p.getLng(),c[0],c[1])<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]);rv.setViewpoint({pan:b,tilt:0,zoom:0})})})}
+function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push([k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
+function flush(){if(!BUF.length||!ME)return;var b=BUF;BUF=[];fetch(RELAY+'camdir',{method:'POST',headers:{'Content-Type':'application/json','x-log':ME},body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw 0;toast(b.length+'곳 보냈어요')}).catch(function(){BUF=b.concat(BUF);toast('보내지 못했어요 · 다음에 다시')})}
+Array.prototype.forEach.call(document.querySelectorAll('#pad button[data-b]'),function(b){b.onclick=function(){pick(+b.dataset.b)}});
+Array.prototype.forEach.call(document.querySelectorAll('#more button[data-v]'),function(b){b.onclick=function(){pick(b.dataset.v)}});
+$('undo').onclick=function(){if(!HIST.length)return;qi=HIST.pop();var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];delete DONE[k];BUF=BUF.filter(function(x){return x[0]!==k});show()};
+addEventListener('keydown',function(e){var m={'8':0,'9':45,'6':90,'3':135,'2':180,'1':225,'4':270,'7':315};if(m[e.key]!=null)pick(m[e.key]);else if(e.key==='b')pick('both');else if(e.key==='n')pick('none');else if(e.key===' '){e.preventDefault();pick('skip')}});
+addEventListener('pagehide',flush);setInterval(flush,30000);
+</script>
+</body>
+</html>
