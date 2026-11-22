@@ -35,6 +35,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
 #rvNone{display:none;position:absolute;inset:0;z-index:5;background:#1f2937;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:16px;line-height:1.6;padding:20px}
 #go:disabled{opacity:.35}
+#more.far #fixB{order:-1;flex-basis:100%;background:#f59e0b;color:#111;border:0;font-weight:800}
 #more.far button[data-v="badpos"]{order:-1;flex-basis:100%;background:#dc2626;color:#fff;border:0;font-size:17px;font-weight:800;padding:14px}
 #more.far button[data-v="badpos"]::after{content:" (카메라가 길 밖에 찍혀 있음)";font-weight:600;font-size:13px}
 #two{display:none;gap:8px;flex-basis:100%}#two.on{display:flex}#two.on~#pad{display:none}
@@ -64,7 +65,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
       <button data-b="270">←</button><button class="c" disabled>찍는 차<br>가는 쪽</button><button data-b="90">→</button>
       <button data-b="225">↙</button><button data-b="180">↓</button><button data-b="135">↘</button>
     </div>
-    <div id="more"><button id="go">지금 보는 방향으로 가는 차</button><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="badpos">위치 틀림</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
+    <div id="more"><button id="go">지금 보는 방향으로 가는 차</button><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="badpos">위치 틀림</button><button id="fixB">📍 위치 고치기</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
     <div id="help">(맥: 엔터 = 지금 보는 방향, 숫자 8·6·2·4 등 = 지도 기준 방향) 지도 화살표는 북쪽이 위입니다. 카메라가 <b>어느 쪽으로 가는 차를 찍는지</b> 골라 주세요. 기둥이 서 있는 쪽 차선 = 그 차선 차들이 가는 방향입니다. 로드뷰는 끌어서 돌려 볼 수 있습니다.</div>
   </div>
 </div>
@@ -81,11 +82,13 @@ if(!KJS){$('keyBox').style.display='block';$('kSave').onclick=function(){var v=$
 else{var s=document.createElement('script');s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey='+encodeURIComponent(KJS);s.onload=function(){kakao.maps.load(start)};s.onerror=function(){alert('카카오 지도 키를 불러오지 못했습니다. 키나 도메인 등록을 확인하세요.');LS.removeItem('kakaoJs')};document.head.appendChild(s)}
 function dist(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320;return Math.hypot(x,(c-a)*111320)}
 function brg(a,b,c,d){var R=Math.PI/180,y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360}
-var DIRS=null,ROAD={},rA=[],CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
+var FIXM=false,FIXP=null,DIRS=null,ROAD={},rA=[],CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
 function start(){$('app').hidden=false;$('who').textContent=ME?'':'· 보내기 권한 없음(주소에 ?me= 필요)';
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(37.8,127.07),level:3});rv=new kakao.maps.Roadview($('rv'));rvc=new kakao.maps.RoadviewClient();
   var relay=function(){try{rv.relayout();map.relayout()}catch(e){}};addEventListener('resize',relay);setTimeout(relay,300);
-  var tg=function(){$('map').classList.toggle('big');setTimeout(function(){try{map.relayout();map.setCenter(mk?mk.getPosition():map.getCenter())}catch(e){}},250)};
+  kakao.maps.event.addListener(map,'click',function(e){if(!FIXM)return;var ll=e.latLng;FIXP=[+ll.getLat().toFixed(6),+ll.getLng().toFixed(6)];mk.setPosition(ll);FIXM=false;$('fixB').textContent='📍 위치 고침 ✓';
+    $('map').classList.remove('big');setTimeout(function(){map.relayout();map.setCenter(ll)},250);toast('위치를 옮겼어요 · 이제 방향을 누르세요');$('go').disabled=false});
+  var tg=function(){if(FIXM)return;$('map').classList.toggle('big');setTimeout(function(){try{map.relayout();map.setCenter(mk?mk.getPosition():map.getCenter())}catch(e){}},250)};
   kakao.maps.event.addListener(map,'click',tg);
   kakao.maps.event.addListener(rv,'viewpoint_changed',function(){drawView();labelLR()});kakao.maps.event.addListener(rv,'position_changed',drawView);
   Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}}),
@@ -110,7 +113,7 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
     DIRS=dirs;labelLR();$('dA').onclick=function(){pick(dirs[0])};$('dB').onclick=function(){pick(dirs[1])};
     $('two').classList.add('on')}else $('two').classList.remove('on');
   /* 로드뷰: 20m→40→80→160m 순으로 찾고, 없으면 화면을 가림(앞 카메라 로드뷰가 남아 엉뚱한 방향을 고르던 문제, 11/22) */
-  $('rvNone').style.display='none';$('go').disabled=false;$('more').classList.remove('far');
+  $('rvNone').style.display='none';$('go').disabled=false;FIXM=false;FIXP=null;$('fixB').textContent='📍 위치 고치기';$('more').classList.remove('far');
   var near=function(r,cb){rvc.getNearestPanoId(pos,r,function(id){if(id||r>=160)cb(id);else near(r*2,cb)})};
   near(20,function(id){if(!id){$('more').classList.add('far');$('rvNone').style.display='flex';$('go').disabled=true;$('two').classList.remove('on');if(vline)vline.setMap(null);return}
     /* 'init' 은 처음 한 번만 와서 두 번째 카메라부터 방향을 못 돌리던 문제 → 위치 바뀜 이벤트 + 예비 타이머 (11/22) */
@@ -137,8 +140,12 @@ function labelLR(){if(!DIRS)return;var pan=0;try{pan=rv.getViewpoint().pan}catch
   var rA=((DIRS[0]-pan)%360+540)%360-180;$('dA').style.order=rA<0?0:1;$('dB').style.order=rA<0?1:0}
 function nameOf(b){return['북','북동','동','남동','남','남서','서','북서'][Math.round(b/45)%8]}
 function arrowOf(b){return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(b/45)%8]}
-function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push([k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
+function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push(FIXP?[k,v,FIXP[0],FIXP[1]]:[k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
 function flush(){if(!BUF.length||!ME)return;var b=BUF;BUF=[];fetch(RELAY+'camdir',{method:'POST',headers:{'Content-Type':'application/json','x-log':ME},body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw 0;toast(b.length+'곳 보냈어요')}).catch(function(){BUF=b.concat(BUF);toast('보내지 못했어요 · 다음에 다시')})}
+/* [위치 고치기]: 한 번 누르면 지금 로드뷰 자리로 옮김(카메라가 로드뷰 바로 옆에 보일 때), 그다음 지도를 누르면 더 정확히 (11/22) */
+$('fixB').onclick=function(){var p=null;try{p=rv.getPosition()}catch(e){}
+  if(p&&!FIXP){FIXP=[+p.getLat().toFixed(6),+p.getLng().toFixed(6)];mk.setPosition(p);map.setCenter(p);$('fixB').textContent='📍 로드뷰 자리로 옮김 ✓ (지도 누르면 더 정확히)';FIXM=true;$('go').disabled=false;toast('로드뷰 자리로 옮겼어요 · 이제 방향을 누르세요');return}
+  FIXM=true;$('map').classList.add('big');setTimeout(function(){try{map.relayout()}catch(e){}},250);toast('지도에서 실제 카메라 자리를 누르세요')};
 $('go').onclick=function(){if($('go').disabled)return;try{pick(Math.round((rv.getViewpoint().pan%360+360)%360))}catch(e){}};
 Array.prototype.forEach.call(document.querySelectorAll('#pad button[data-b]'),function(b){b.onclick=function(){pick(+b.dataset.b)}});
 Array.prototype.forEach.call(document.querySelectorAll('#more button[data-v]'),function(b){b.onclick=function(){pick(b.dataset.v)}});
