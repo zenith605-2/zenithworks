@@ -1527,13 +1527,19 @@ $('cctvBtn').onclick=function(){if($('cctvBar').classList.contains('on'))cctvClo
   row.addEventListener('pointerdown',function(e){st={x:e.clientX,l:row.scrollLeft};row._dragged=false;Array.prototype.forEach.call(row.querySelectorAll('video'),function(v){if(v.paused&&(v.src||v.currentSrc||v.srcObject||v.readyState)){var p=v.play();if(p&&p.catch)p.catch(function(){})}})});
   row.addEventListener('pointermove',function(e){if(!st)return;var dx=e.clientX-st.x;if(Math.abs(dx)>6){row._dragged=true;row.scrollLeft=st.l-dx}});
   ['pointerup','pointercancel','pointerleave'].forEach(function(n){row.addEventListener(n,function(){st=null;setTimeout(function(){row._dragged=false},50)})})})();
+/* 제한속도 저장소: 한 번 받은 자리(약 30m 칸)는 다시 묻지 않음. 티맵 도로 API 하루 200번 한도 (11/22 재탐색 많던 날 80% 알림) */
+var LIMC={};try{LIMC=JSON.parse(LS.getItem('limc')||'{}')}catch(e){LIMC={}}
+function limKey(la,lo){return Math.round(la*3000)+'_'+Math.round(lo*3000)}
+function limSave(){try{var ks=Object.keys(LIMC);if(ks.length>30000)ks.slice(0,ks.length-30000).forEach(function(k){delete LIMC[k]});LS.setItem('limc',JSON.stringify(LIMC))}catch(e){}}
+function limFill(N,idx,at){var R=N.R,n=R.length,L=new Array(n),cur=at[0]||0,k=0;for(var i=0;i<n;i++){while(k<idx.length-1&&idx[k+1]<=i){k++;if(at[k]!=null)cur=at[k]}L[i]=cur}N.LIM=L}
 function limRoute(N){var R=N.R,n=R.length,step=Math.max(1,Math.ceil(n/480)),idx=[];for(var i=0;i<n;i+=step)idx.push(i);if(idx[idx.length-1]!==n-1)idx.push(n-1);
+  var cat={},hit=0;idx.forEach(function(i,k){var v=LIMC[limKey(R[i][0],R[i][1])];if(v!=null){cat[k]=v;hit++}});
+  if(hit>=idx.length*0.9){limFill(N,idx,cat);return}
   var body='responseType=1&coords='+idx.map(function(i){return R[i][1].toFixed(6)+','+R[i][0].toFixed(6)}).join('|');
   api('road/matchToRoads500?version=1',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body}).then(function(d){if(!(NAV&&NAV.R===R))return;
-    var M=((d||{}).resultData||{}).matchedPoints||[],at={};M.forEach(function(m){if(m.sourceIndex!=null){var v=+m.speed||0;at[m.sourceIndex]=(m.roadCategory>=11||v<20)?0:v}});
-    var L=new Array(n),cur=at[0]||0,k=0;for(var i=0;i<n;i++){while(k<idx.length-1&&idx[k+1]<=i){k++;if(at[k]!=null)cur=at[k]}L[i]=cur}
-    NAV.LIM=L}).catch(function(){if(NAV&&NAV.R===R)NAV.LIMFAIL=1})}
-function limNear(la,lo){if(LIMN.busy)return;LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.road=h.roadName&&!/^(일반도로|도로)$/.test(h.roadName)?h.roadName:'';LIMN.cat=h.roadCategory==null?99:+h.roadCategory;LIMN.rt=Date.now();LIMN.rla=la;LIMN.rlo=lo;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
+    var M=((d||{}).resultData||{}).matchedPoints||[],at={};M.forEach(function(m){if(m.sourceIndex!=null){var v=+m.speed||0;at[m.sourceIndex]=(m.roadCategory>=11||v<20)?0:v;var q=R[idx[m.sourceIndex]];if(q)LIMC[limKey(q[0],q[1])]=at[m.sourceIndex]}});limSave();
+    limFill(NAV,idx,at)}).catch(function(){if(NAV&&NAV.R===R)NAV.LIMFAIL=1})}
+function limNear(la,lo){if(LIMN.busy)return;var cv=LIMC[limKey(la,lo)];if(cv!=null){LIMN.v=cv;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now();return} /* 저장된 칸이면 묻지 않음 */LIMN.busy=1;api('road/nearToRoad?version=1&lat='+la.toFixed(6)+'&lon='+lo.toFixed(6)).then(function(d){var h=((d||{}).resultData||{}).header||{},v=+h.speed||0;LIMN.road=h.roadName&&!/^(일반도로|도로)$/.test(h.roadName)?h.roadName:'';LIMN.cat=h.roadCategory==null?99:+h.roadCategory;LIMN.rt=Date.now();LIMN.rla=la;LIMN.rlo=lo;LIMN.v=(h.roadCategory>=11||v<20)?0:v;LIMC[limKey(la,lo)]=LIMN.v;LIMN.la=la;LIMN.lo=lo;LIMN.h=head;LIMN.t=Date.now()}).catch(function(){LIMN.t=Date.now()}).then(function(){LIMN.busy=0})}
 function limNow(la,lo,kmh,now){var v=0;
   if(NAV&&NAV.R){if(!PREV&&NAV.R!==LIMR&&now-LIMT>5000&&now-(NAV.t0||0)>1500){LIMR=NAV.R;LIMT=now;NAV.LIM=null;limRoute(NAV)}if(NAV.LIM)v=NAV.LIM[Math.max(0,Math.min(NAV.LIM.length-1,NAV.idx))]||0}
   if(!NAV||!NAV.R||NAV.LIMFAIL){if(kmh>10&&((now-LIMN.t>90000&&dist(la,lo,LIMN.la,LIMN.lo)>500)||(!NAV&&now-LIMN.t>10000&&(dist(la,lo,LIMN.la,LIMN.lo)>250||(head!=null&&LIMN.h!=null&&Math.abs(adiff(head,LIMN.h))>50)))))limNear(la,lo);if(now-LIMN.t<150000&&dist(la,lo,LIMN.la,LIMN.lo)<1200)v=LIMN.v}
