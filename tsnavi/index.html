@@ -984,7 +984,7 @@ function renderFav(){
     box.appendChild(b)});
 }
 /* 오늘 남은 무료 길 안내 (전체 이용자 합계, 안내 한 번에 경로 계산 약 2번으로 셈). 1분마다·패널 열 때 갱신 */
-var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota').then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(Math.max(left,Math.max(0,(q.limit.kakao||0)-(q.used.kakao||0)),Math.min(2000,Math.max(0,(q.limit.naverMonth||0)-(q.used.naverMonth||0))))/2) /* 검색 한 번에 세 곳을 같이 쓰므로 합이 아니라 가장 오래 버티는 곳 기준, 안내 1번 ≈ 검색+재탐색 2회 */,e=$('quota');
+var QT=0;function quotaLoad(){if(KEY||Date.now()-QT<60000)return;QT=Date.now();fetch(RELAY+'quota',{headers:ownH()}).then(function(r){return r.json()}).then(function(q){var left=Math.max(0,q.limit.routes-q.used.routes),n=Math.floor(Math.max(left,Math.max(0,(q.limit.kakao||0)-(q.used.kakao||0)),Math.min(2000,Math.max(0,(q.limit.naverMonth||0)-(q.used.naverMonth||0))))/2) /* 검색 한 번에 세 곳을 같이 쓰므로 합이 아니라 가장 오래 버티는 곳 기준, 안내 1번 ≈ 검색+재탐색 2회 */,e=$('quota');
   e.className=n<=0?'out':'low';e.innerHTML=n<=0?'오늘 무료 길 안내를 다 썼어요 · 내일 다시 열려요':n<1000?'오늘 무료 길 안내가 얼마 안 남았어요 <b>약 '+n+'번</b>':'' /* 평소엔 숨김, 1,000번 아래에서만 (11/21) */}).catch(function(){})}
 setInterval(function(){if($('fav').classList.contains('show'))quotaLoad()},60000);
 function showFav(){quotaLoad();if(NAV||favDismissed||ARR)return;renderFav();show('fav',1)}
@@ -1117,8 +1117,10 @@ $('wxClose').onclick=function(){show('wxSheet',0)};$('wxSheet').onclick=function
 
 /* 길 안내 */
 var NAV=null;
-function errText(e){var m=String(e&&e.message||e);return /429|quota|LIMIT|한도|초과/i.test(m)?'오늘 무료 길 안내를 모두 썼어요 · 단속카메라 경고는 계속됩니다':m}
-function api(path,opt){opt=opt||{};opt.headers=Object.assign(KEY?{'appKey':KEY,'Accept':'application/json'}:{'Accept':'application/json'},opt.headers||{});return fetch((KEY?'https://apis.openapi.sk.com/tmap/':RELAY+'tmap/')+path,opt).then(function(r){if(r.status===204)return{};if(!r.ok)return r.text().then(function(t){var m=t;try{m=JSON.parse(t).error||t}catch(e){}throw new Error((r.status===429?'':'HTTP '+r.status+' ')+String(m).slice(0,120))});return r.json()})}
+function errText(e){var m=String(e&&e.message||e);return /이용자가 많아/.test(m)?'오늘은 이용자가 많아 길 안내가 잠시 멈췄어요 · 지도·단속카메라 경고는 계속됩니다':/429|quota|LIMIT|한도|초과/i.test(m)?'오늘 무료 길 안내를 모두 썼어요 · 단속카메라 경고는 계속됩니다':m}
+/* 주인 차(개발 모드 기록 키)는 무료 한도 마지막 10%까지 쓴다 (11/22) */
+function ownH(){return LOGK?{'x-log':LOGK}:{}}
+function api(path,opt){opt=opt||{};opt.headers=Object.assign(KEY?{'appKey':KEY,'Accept':'application/json'}:Object.assign({'Accept':'application/json'},ownH()),opt.headers||{});return fetch((KEY?'https://apis.openapi.sk.com/tmap/':RELAY+'tmap/')+path,opt).then(function(r){if(r.status===204)return{};if(!r.ok)return r.text().then(function(t){var m=t;try{m=JSON.parse(t).error||t}catch(e){}throw new Error((r.status===429?'':'HTTP '+r.status+' ')+String(m).slice(0,120))});return r.json()})}
 $('navBtn').onclick=function(){hideFav();show('navSheet',1);renderRecent();renderQuick();$('sbar').classList.toggle('has',!!$('q').value);$('results').innerHTML='';setTimeout(function(){$('q').focus()},50)};
 $('navClose').onclick=function(){show('navSheet',0);showFav()};
 /* 차 키보드 [입력]: 한글 조합 중이면 Enter 가 글자 확정에 먹히므로 여러 길로 받는다 (0.6초 안 같은 검색은 한 번만) */
@@ -1267,7 +1269,7 @@ function kakaoTurn(g){var t=KTT[g.type];if(t!=null)return t;var m=g.guidance||''
   if(/회전교차로/.test(m))return 131;if(/유턴/.test(m))return 14;if(/좌회전/.test(m))return 12;if(/우회전/.test(m))return 13;if(/출구/.test(m))return /왼쪽/.test(m)?105:104;if(/입구|진입/.test(m)&&/고속/.test(m))return /왼쪽/.test(m)?102:101;if(/터널/.test(m))return 121;if(/지하차도/.test(m))return 119;if(/왼쪽/.test(m))return 118;if(/오른쪽/.test(m))return 117;return null}
 function kakaoRoute(c,dest,via){var q='origin='+c.lo+','+c.la+(head!=null&&v>2?',angle='+Math.round(head):'')+'&destination='+dest.lo+','+dest.la+'&priority=RECOMMEND';
   if(via&&via.length)q+='&waypoints='+via.map(function(p){return p.lo+','+p.la}).join('|');
-  return fetch(RELAY+'kakao/directions?'+q).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
+  return fetch(RELAY+'kakao/directions?'+q,{headers:ownH()}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
     var rt=(d.routes||[])[0];if(!rt||rt.result_code!==0)throw new Error((rt&&rt.result_msg)||'경로 없음');
     var R=[],C=[],T=[],F=[],V=[],G=[],CM={1:4,2:3,3:2,4:1};
     rt.sections.forEach(function(sec){sec.roads.forEach(function(rd){var vx=rd.vertexes;for(var i=0;i<vx.length;i+=2){var la=vx[i+1],lo=vx[i];if(R.length){var L=R[R.length-1];if(L[0]===la&&L[1]===lo)continue}R.push([la,lo]);C.push(CM[rd.traffic_state]||0);T.push(-1);F.push(0);V.push(rd.traffic_speed||0)}});
@@ -1282,7 +1284,7 @@ var NTT={1:11,2:12,3:13,4:118,5:117,6:14,41:118,42:117,55:120,56:119,66:101,69:1
 function naverTurn(g){var t=NTT[g.type];if(t!=null)return t;var m=g.instructions||'';if(/톨게이트|요금소|분기도로 진입/.test(m))return null;
   if(/회전교차로/.test(m))return 131;if(/유턴/.test(m))return 14;if(/좌회전/.test(m))return 12;if(/우회전/.test(m))return 13;if(/출구/.test(m))return /왼쪽/.test(m)?105:104;if(/진입/.test(m)&&/고속/.test(m))return /왼쪽/.test(m)?102:101;if(/터널/.test(m))return 121;if(/지하차도/.test(m))return 119;if(/고가/.test(m))return 120;if(/왼쪽/.test(m))return 118;if(/오른쪽/.test(m))return 117;return null}
 function naverRoute(c,dest,via){var q='start='+c.lo+','+c.la+'&goal='+dest.lo+','+dest.la+'&option=trafast';if(via&&via.length)q+='&waypoints='+via.slice(0,5).map(function(p){return p.lo+','+p.la}).join('|');
-  return fetch(RELAY+'naver/driving?'+q).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
+  return fetch(RELAY+'naver/driving?'+q,{headers:ownH()}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error((d&&d.error)||('HTTP '+r.status));return d})}).then(function(d){
     if(d.code!==0)throw new Error(d.message||'경로 없음');var rt=((d.route||{}).trafast||[])[0];if(!rt)throw new Error('경로 없음');
     var P=rt.path,R=[],C=[],T=[],F=[],V=[],G=[],idx=[],CM={1:1,2:2,3:4};
     P.forEach(function(xy,i){if(R.length){var L=R[R.length-1];if(L[0]===xy[1]&&L[1]===xy[0]){idx.push(R.length-1);return}}idx.push(R.length);R.push([xy[1],xy[0]]);C.push(0);T.push(-1);F.push(0);V.push(0)});
