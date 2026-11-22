@@ -756,11 +756,13 @@ $('oddBtn').onclick=function(e){e.stopPropagation();if(!target||!fix)return;var 
 $('mMiss').onclick=function(){try{$('mClose').onclick()}catch(e){}if(!fix){toast('위치를 기다리는 중이에요');return}camReport('miss',{la:fix.la,lo:fix.lo},null,null)};
 /* 왼쪽 카메라 버튼 (11/22 사용자): 한 번 누르면 그 순간 위치·방향·속도를 바로 보냄. 창 없이 토스트로만 알림 */
 $('qcBtn').onclick=function(e){e.stopPropagation();if(!fix){toast('위치를 기다리는 중이에요');return}var ch=carHeading(),b=this;
-  var body={kind:'miss',la:fix.la,lo:fix.lo,lim:null,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',src:'qc',cam:null};
-  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},600);toast('📷 카메라 위치 저장했어요');
+  /* 제한속도: 그 순간 화면의 도로 제한속도(티맵 도로 정보). 카메라 제한속도는 대부분 도로 제한속도와 같음 (11/22 사용자 '속도를 모르자나') */
+  var rl=+($('limNow').classList.contains('show')&&$('limNow').textContent)||0;
+  var body={kind:rl?'add':'miss',la:fix.la,lo:fix.lo,lim:rl||null,limSrc:rl?'road':null,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',src:'qc',cam:null};
+  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},600);toast(rl?'📷 '+rl+' 카메라 저장했어요 (도로 제한속도 기준)':'📷 카메라 위치 저장했어요');
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)toast('저장은 했지만 보내지 못했어요')}).catch(function(){toast('저장은 했지만 보내지 못했어요')});
-  try{var q=JSON.parse(LS.getItem('qcList')||'[]');q.push([Date.now(),+fix.la.toFixed(6),+fix.lo.toFixed(6),ch.h==null?-1:Math.round(ch.h),Math.round(v*3.6)]);LS.setItem('qcList',JSON.stringify(q.slice(-200)))}catch(e){}
-  lg(['camfix',Date.now(),'miss',null,null,'qc'])};
+  try{var q=JSON.parse(LS.getItem('qcList')||'[]');q.push([Date.now(),+fix.la.toFixed(6),+fix.lo.toFixed(6),ch.h==null?-1:Math.round(ch.h),Math.round(v*3.6),rl]);LS.setItem('qcList',JSON.stringify(q.slice(-200)))}catch(e){}
+  lg(['camfix',Date.now(),body.kind,null,rl||null,'qc'])};
 function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':'신고했어요. 데이터 고칠 때 반영할게요')}).catch(function(){toast('보내지 못했어요')});
   lg(['camfix',Date.now(),kind,id,lim]);
