@@ -1702,7 +1702,9 @@ function tickBody(){
   if(NAV&&NAV.R&&NAV.R.length>1){var sp=project(la,lo);if(sp&&sp.d<30){var A=NAV.R[sp.i],B=NAV.R[sp.i+1];mla=A[0]+(B[0]-A[0])*sp.t;mlo=A[1]+(B[1]-A[1])*sp.t;if(v>2){var sh=brg(A[0],A[1],B[0],B[1]);if(head==null||Math.abs(adiff(head,sh))<45)mh=sh}}}
   /* 화면용 위치·방향은 부드럽게: 지금 속도로 앞으로 밀고 GPS 쪽으로 천천히(0.7초) 당김. 새 GPS 가 올 때마다 툭 튀던 것 방지 (80m 넘게 벌어지거나 1.5초 넘게 멈췄으면 바로 맞춤) */
   if(!DSP||dist(DSP.la,DSP.lo,mla,mlo)>80||now-DSP.t>1500)DSP={la:mla,lo:mlo,h:mh,t:now};
-  else{var sdt=Math.min(0.2,(now-DSP.t)/1000),sap=1-Math.exp(-sdt/0.7),sah=1-Math.exp(-sdt/0.3);if(v>1&&DSP.h!=null){var adv=move(DSP.la,DSP.lo,DSP.h,v*sdt);DSP.la=adv[0];DSP.lo=adv[1]}DSP.la+=(mla-DSP.la)*sap;DSP.lo+=(mlo-DSP.lo)*sap;DSP.h=mh==null?null:DSP.h==null?mh:(DSP.h+adiff(DSP.h,mh)*sah+360)%360;DSP.t=now}
+  else{var sdt=Math.min(0.2,(now-DSP.t)/1000),sap=1-Math.exp(-sdt/0.7),sah=1-Math.exp(-sdt/0.8); /* 11/22 "회전도 부드럽게": 방향은 1초에 한 번 오는데 0.3초 만에 따라가 멈칫멈칫 → 0.8초로 늘리고, 직전 회전 속도만큼 미리 돌린다 */if(v>1&&DSP.h!=null){var adv=move(DSP.la,DSP.lo,DSP.h,v*sdt);DSP.la=adv[0];DSP.lo=adv[1]}DSP.la+=(mla-DSP.la)*sap;DSP.lo+=(mlo-DSP.lo)*sap;if(mh!=null&&DSP.mh!=null&&mh!==DSP.mh){var rdt=Math.max(0.3,(now-(DSP.mt||now))/1000);DSP.rr=Math.max(-40,Math.min(40,adiff(DSP.mh,mh)/rdt));DSP.mt=now}else if(mh!=null&&DSP.mh==null)DSP.mt=now;if(mh!=null)DSP.mh=mh;if(now-(DSP.mt||0)>1500||v<2)DSP.rr=0;
+    var mhp=mh==null?null:(mh+(DSP.rr||0)*Math.min(1,(now-(DSP.mt||now))/1000)+360)%360;
+    DSP.h=mhp==null?null:DSP.h==null?mhp:(DSP.h+adiff(DSP.h,mhp)*sah+360)%360;DSP.t=now}
   mla=DSP.la;mlo=DSP.lo;mh=DSP.h;
   if(FREE&&Date.now()-FREE>12000&&!Object.keys(PT).length)setFree(false);
   if(FREE&&mapReady&&mapOn){var fz=zCur+zoff;if(TMM){if(tmZ==null||Math.abs(fz-tmZ)>0.01){TMM.setZoom(fz);tmZ=fz}}else if(map){map.setZoom(fz);var fq=map.project([mlo,mla]);$('carMk').style.left=fq.x+'px';$('carMk').style.top=fq.y+'px'}}
