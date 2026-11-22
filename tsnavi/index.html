@@ -1418,7 +1418,8 @@ function codecOf(sps){return 'avc1.'+[sps[1],sps[2],sps[3]].map(function(x){retu
 function fullN(){var n=0;for(var k in SN)if(SN[k].fm)n++;return n}
 async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
   try{
-    if(!o.pl){var r=await fetch(o.url),t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href}
+    if(!o.pl&&CCPL[o.url]&&Date.now()-CCPL[o.url].t<600000)o.pl=CCPL[o.url].u;
+    if(!o.pl){var r=await fetch(o.url);if(r.status===401||r.status===403){o.dead=1;throw new Error('주소 만료 '+r.status)}var t=await r.text();var v=lines(t)[0];o.pl=/#EXTINF/.test(t)?r.url:new URL(v,r.url).href;CCPL[o.url]={u:o.pl,t:Date.now()}}
     var r2=await fetch(o.pl,{cache:'no-store'});if(!r2.ok){o.pl=null;throw new Error('pl '+r2.status)}var t2=await r2.text(),L2=lines(t2),seg=L2.pop(),dur=+((/#EXTINF:([\d.]+)/g.exec(t2.slice(t2.lastIndexOf('#EXTINF')))||[0,3])[1])||3;
     var full=!o.once&&(o.force||window.ccStill&&ccStill()&&(o.fm||fullN()<3));o.fm=full;
     if(seg&&seg!==o.last){o.last=seg;var su=new URL(seg,r2.url).href;
@@ -1436,9 +1437,11 @@ async function loop(id){var o=SN[id];if(!o)return;var t0=Date.now(),wait=2500;
         /* 보이는 칸이 많으면 차례로: 칸 수에 맞춰 간격을 늘림 */
         var n=Object.keys(SN).length;wait=n>3?2500*n/3:2500}}
     else if(full)wait=Math.max(300,dur*500);
-    o.fail=0}catch(e){o.fail++;o.err=String(e&&e.message||e);o.pl=null;o.noRange=o.fail>=2;if(o.onerr)o.onerr(o.fail,o.err)} /* 실패하면 재생 주소(세션)부터 다시 받고, 두 번째부턴 Range 없이 (11/21 실차 Failed to fetch) */
+    o.fail=0}catch(e){o.fail++;if(o.dead)o.fail=Math.max(o.fail,3);o.err=String(e&&e.message||e);o.pl=null;delete CCPL[o.url];o.noRange=o.fail>=2;if(o.onerr)o.onerr(o.fail,o.err)} /* 실패하면 재생 주소(세션)부터 다시 받고, 두 번째부턴 Range 없이 (11/21 실차 Failed to fetch) */
   if(o.once&&o.n>0){o.done=1;if(o.dec){try{o.dec.close()}catch(e){}o.dec=null}return} /* 해독기도 바로 닫음(차 하드웨어 해독기 자원) */ /* 작은 칸은 한 장 그리면 끝(SN 에 남겨 다시 받지 않음) */
-  if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?Math.min(10000,2000*o.fail):wait)}
+  if(o.dead)return; /* 만료된 주소는 다시 받아도 401 (목록이 새로 와야 함) */
+  if(SN[id]===o)o.t=setTimeout(function(){loop(id)},o.fail?(o.fail===1?600:Math.min(10000,2000*o.fail)):wait)}
+var CCPL={};
 window.ccSnapOk=typeof VideoDecoder==='function'&&typeof EncodedVideoChunk==='function';
 window.ccSnapStart=function(cv,url,id,cb){if(SN[id])return SN[id];var o=SN[id]={cv:cv,url:url,n:0,ts:0,fail:0};if(cb){o.onframe=cb.frame;o.onerr=cb.err;o.once=cb.once;o.force=cb.full}loop(id);return o};
 window.ccSnapStop=function(id){var o=SN[id];if(!o)return;delete SN[id];clearTimeout(o.t);if(o.dec)try{o.dec.close()}catch(e){}};
@@ -1459,7 +1462,12 @@ function ccPlay(v,url,id,tries){if(CC.hls[id])return;tries=tries||0;v.muted=true
 function ccStop(id){ccSnapStop(id);var h=CC.hls[id];if(h){try{h.destroy()}catch(e){}delete CC.hls[id]}}
 function ccStopAll2(){Object.keys(ccSnapAll()).forEach(ccSnapStop)}
 /* 작은 화면 = 캔버스 스냅샷(주행 중에도 바뀜). 못 쓰는 브라우저면 예전 영상 */
-function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id];if(!o)ccSnapStart(cv,CC.list[id].u,id,{once:1,frame:function(){var i=c.querySelector('i');if(i)i.style.display='none'},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
+/* CCTV 장면 기억 (11/22 실차 "불러오는 중 오래 걸림"): 받은 장면을 작은 그림으로 두고, 패널을 다시 열면 바로 그린다. 1분 지난 것만 새로 받음 */
+var CCIMG={};function ccKey(id){var c=CC.list[id];return c?c.n+'|'+c.la.toFixed(4):''}
+function ccTile(c,id){var cv=c.querySelector('canvas');if(cv&&ccSnapOk){var o=ccSnapAll()[id],ky=ccKey(id),im=CCIMG[ky];
+    if(im&&!c.dataset.im){c.dataset.im=1;var g=new Image();g.onload=function(){try{cv.getContext('2d').drawImage(g,0,0,cv.width,cv.height);var i=c.querySelector('i');if(i)i.style.display='none'}catch(e){}};g.src=im.d}
+    if(im&&Date.now()-im.t<60000)return;
+    if(!o)ccSnapStart(cv,CC.list[id].u,id,{once:1,frame:function(){var i=c.querySelector('i');if(i)i.style.display='none';setTimeout(function(){try{CCIMG[ky]={d:cv.toDataURL('image/jpeg',0.75),t:Date.now()};var ks=Object.keys(CCIMG);if(ks.length>40)delete CCIMG[ks[0]]}catch(e){}},60)},err:function(n,e){if(n===1)lg(['cc','snapErr',id,e]);if(n>=3){var i=c.querySelector('i');if(i){i.textContent='영상 없음';i.style.display=''}}}});return}ccPlay(c.querySelector('video'),CC.list[id].u,id)}
 function ccStopAll(){Object.keys(CC.hls).forEach(ccStop);ccStopAll2()}
 function ccVisible(){var row=$('cctvRow'),r=row.getBoundingClientRect();Array.prototype.forEach.call(row.querySelectorAll('.cc'),function(c){var b=c.getBoundingClientRect(),on=b.right>r.left-40&&b.left<r.right+40,id=c.dataset.i;if(on&&!$('cctvBig').classList.contains('on')&&Object.keys(CC.hls).length+Object.keys(ccSnapAll()).filter(function(k){return !ccSnapAll()[k].done}).length<(ccSnapOk?6:3))ccTile(c,id);else if(!on&&!(ccSnapAll()[id]&&ccSnapAll()[id].done))ccStop(id)})}
 function jamList(){if(!NAV||!NAV.C||!NAV.S)return[];var C=NAV.C,S=NAV.S,R=NAV.R,G=NAV.G||[],out=[],i=Math.max(0,NAV.idx);
@@ -1479,7 +1487,10 @@ function cctvOpen(){if(!NAV){toast('길 안내 중에 볼 수 있어요');return
   var bb='&minX='+(x0-0.01).toFixed(4)+'&maxX='+(x1+0.01).toFixed(4)+'&minY='+(y0-0.01).toFixed(4)+'&maxY='+(y1+0.01).toFixed(4),IK=LS.getItem('itsKey');
   /* 1순위: 집 맥이 하루 한 번 받아 올리는 전국 목록(0.5° 칸 파일). 키·호출 한도 필요 없음 */
   var tk=[];for(var ty=Math.floor((y0-0.01)*2)/2;ty<=y1+0.01;ty+=0.5)for(var tx=Math.floor((x0-0.01)*2)/2;tx<=x1+0.01;tx+=0.5)tk.push(ty.toFixed(1)+'_'+tx.toFixed(1));
-  var stat=fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/600000)).then(function(r){return r.json()}).then(function(vj){return Promise.all(tk.map(function(k){return fetch(DATA+'cctv/'+k+'.json?v='+vj.ver).then(function(r){return r.ok?r.json():[]}).catch(function(){return[]})}))}).then(function(a){var L=[].concat.apply([],a).filter(function(c){return c[0]>=y0-0.01&&c[0]<=y1+0.01&&c[1]>=x0-0.01&&c[1]<=x1+0.01});if(!L.length&&!a.length)throw 0;return{st:200,d:{list:L}}});
+  /* 11/22: 영상 주소가 하루 안에 만료돼(401) 집 맥이 3시간마다 중계 KV 로 올린 목록(cctv2)을 먼저, 안 되면 예전 GitHub 칸 파일 */
+  var tiles=function(base,vj){return Promise.all(tk.map(function(k){return fetch(base+k+'.json?v='+vj.ver).then(function(r){return r.ok?r.json():[]}).catch(function(){return[]})}))};
+  var stat=fetch(RELAY+'cctv2/ver').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(vj){return tiles(RELAY+'cctv2/',vj)})
+    .catch(function(){return fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/600000)).then(function(r){return r.json()}).then(function(vj){return tiles(DATA+'cctv/',vj)})}).then(function(a){var L=[].concat.apply([],a).filter(function(c){return c[0]>=y0-0.01&&c[0]<=y1+0.01&&c[1]>=x0-0.01&&c[1]<=x1+0.01});if(!L.length&&!a.length)throw 0;return{st:200,d:{list:L}}});
   var src=stat.catch(function(){return IK?Promise.all(['ex','its'].map(function(t){return fetch('https://openapi.its.go.kr:9443/cctvInfo?apiKey='+IK+'&type='+t+'&cctvType=4&getType=json'+bb).then(function(r){return r.json()}).then(function(d){return((d.response||{}).data||[]).map(function(c){return[+c.coordy,+c.coordx,String(c.cctvname||'').trim(),c.cctvurl,t]})}).catch(function(){return[]})})).then(function(a){return{st:200,d:{list:a[0].concat(a[1])}}})
     :fetch(RELAY+'cctv?'+bb.slice(1)).then(function(r){return r.json().then(function(d){return{st:r.status,d:d}})})});
   src.then(function(o){
