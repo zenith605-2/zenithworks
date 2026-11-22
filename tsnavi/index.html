@@ -388,7 +388,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 </head>
 <body>
 <button id="kbSink" tabindex="-1" aria-hidden="true" style="position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0"></button><div id="snd">화면을 한 번 누르면 경고음이 켜집니다</div><span id="loadMsg" hidden></span>
-<div id="agree"><div class="ag"><b>시작하기 전에</b><ul><li>참고용 안내입니다. 실제 표지판과 법규를 따르세요.</li><li>운전 중에는 화면을 조작하지 마세요.</li><li>단속카메라 정보는 늦게 반영될 수 있습니다.</li><li>위치는 이 차 안에서만 쓰고 저장하지 않습니다.</li></ul><button type="button" id="agreeOk">확인하고 시작</button><a href="about.html">정보·출처</a></div></div>
+<div id="agree"><div class="ag"><b>시작하기 전에</b><ul><li>참고용 안내입니다. 실제 표지판과 법규를 따르세요.</li><li>운전 중에는 화면을 조작하지 마세요.</li><li>단속카메라 정보는 늦게 반영될 수 있습니다.</li><li>위치는 이 차 안에서만 쓰고 저장하지 않습니다(설정에서 주행 기록 보내기를 켠 경우만 전송).</li></ul><button type="button" id="agreeOk">확인하고 시작</button><a href="about.html">정보·출처</a></div></div>
 <div id="boot"><div class="bx"><div class="sp"></div><div class="bt">지도를 불러오는 중</div></div></div><script>setTimeout(function(){var b=document.getElementById('boot');if(b)b.style.display='none'},15000)</script>
 <div id="map"></div>
 <div id="poiLayer"></div>
@@ -513,6 +513,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <div class="devOnly"><h2 style="font-size:20px;margin-top:22px">티맵 키 (지도 인증용 · 이 차에만 저장)</h2><div class="keyRow"><input id="keyIn" placeholder="앱 키 붙여 넣기" autocomplete="off"><button id="keySave">저장</button></div><p class="muted" id="keyState"></p>
   <h2 style="font-size:20px;margin-top:18px">CCTV 키 (국가교통정보센터 · 이 차에만 저장)</h2><div class="keyRow"><input id="itsIn" placeholder="인증키 붙여 넣기" autocomplete="off"><button id="itsSave">저장</button></div><p class="muted" id="itsState"></p></div>
   <h2 style="font-size:20px;margin-top:22px" id="fbH">의견 보내기</h2><div class="fbType"><button type="button" data-t="카메라 없어짐">카메라 없어짐</button><button type="button" data-t="새 카메라">새 카메라</button><button type="button" data-t="위치·속도 틀림">위치·속도 틀림</button><button type="button" data-t="길 안내 문제">길 안내 문제</button><button type="button" data-t="의견" class="on">의견</button></div><label class="fbLoc"><input type="checkbox" id="fbLoc"> 지금 위치 함께 보내기 (선택 · 이번 한 번만)</label><textarea id="fbText" maxlength="1000" rows="3" style="width:100%;box-sizing:border-box;font-size:17px;padding:10px;border-radius:10px;border:1px solid #ccd2da;background:inherit;color:inherit" placeholder="예) ○○ 사거리 카메라가 없어졌어요"></textarea><div class="keyRow" style="justify-content:flex-end;margin-top:6px"><button id="fbSend" type="button">보내기</button></div><p class="muted" id="fbState"></p>
+  <h2 style="font-size:20px;margin-top:22px">주행 기록 보내기 (개선 돕기)</h2><div class="opt"><button id="shareBtn">꺼짐</button></div><p class="muted">켜 두면 달리는 동안 위치·속도·카메라 안내 기록이 익명으로 전송됩니다. 카메라·길 안내 개선에만 쓰고 60일 뒤 지웁니다. 언제든 끌 수 있습니다.</p>
   <h2 style="font-size:20px;margin-top:22px"><a href="about.html" style="color:inherit">정보·출처·개인정보 ›</a></h2>
   <h2 style="font-size:20px;margin-top:22px">진단 정보 표시</h2><div class="opt"><button id="diagBtn">켜짐</button></div>
 </div></div>
@@ -575,6 +576,7 @@ function renderSet(){
   optRow('nightOpts',[['auto','자동 (19시~6시)'],['on','항상'],['off','사용 안 함']],CFG.night,function(v){CFG.night=v;LS.setItem('night',v);applyNight(true)});
   $('effIn').value=CFG.eff;$('kwhIn').value=CFG.kwh;
   $('keyState').textContent=KEY?'내 키 사용 중 ('+KEY.slice(0,4)+'…'+KEY.slice(-3)+') · 비우고 [저장]을 누르면 중계 서버로 바뀝니다':'중계 서버 사용 중 — 키를 넣지 않아도 됩니다';
+  $('shareBtn').textContent=SHARE?'켜짐 · 보내는 중':'꺼짐';$('shareBtn').classList.toggle('sel',SHARE);
   $('diagBtn').textContent=CFG.diag?'켜짐':'꺼짐';$('diag').style.display=CFG.diag?'':'none';
 }
 function onOffRows(box,list){var TB=$(box);TB.innerHTML='';list.forEach(function(o){var row=document.createElement('div');row.className='row';row.innerHTML='<span></span><i></i>';row.querySelector('span').textContent=o[1];row.querySelector('i').textContent=CFG[o[0]]?'켬':'끔';row.querySelector('i').style.color=CFG[o[0]]?'#2b7bff':'#999';row.onclick=function(){CFG[o[0]]=!CFG[o[0]];LS.setItem(o[0],CFG[o[0]]?'1':'0');renderSet()};TB.appendChild(row)})}
@@ -640,6 +642,7 @@ $('itsSave').onclick=function(){var k=$('itsIn').value.trim().replace(/\s/g,'');
 try{if(LS.getItem('itsKey'))$('itsState').textContent='저장됨'}catch(e){}
 try{if(LS.getItem('agreed')!=='1')$('agree').classList.add('on')}catch(e){}
 $('agreeOk').onclick=function(){try{LS.setItem('agreed','1')}catch(e){}$('agree').classList.remove('on');try{unlockAudio()}catch(e){}};
+$('shareBtn').onclick=function(){setShare(!SHARE);renderSet()};
 $('diagBtn').onclick=function(){CFG.diag=!CFG.diag;LS.setItem('diagOff',CFG.diag?'0':'1');renderSet()};
 $('effIn').onchange=function(){var x=Number(this.value);if(x>=2&&x<=12){CFG.eff=x;LS.setItem('eff',String(x))}};$('kwhIn').onchange=function(){var x=Number(this.value);if(x>=0&&x<=1000){CFG.kwh=x;LS.setItem('kwh',String(x))}};
 $('setClose').onclick=function(){show('setSheet',0)};
@@ -1746,10 +1749,13 @@ function tickBody(){
 /* 주행 기록(시험용): 주소에 ?log=1 로 한 번 열면 이 차에서만 켜짐(?log=0 끄기). 위치·추정 상태를 1분마다 중계 서버(비공개 저장소)로 */
 var LOGON=false,LOGB=[],LOGSID=Math.random().toString(36).slice(2,10),LOGT=Date.now(),LOGLS=0;
 var LOGK='';try{var lq=/[?&](?:log|me)=([0-9a-z]+)/i.exec(location.search);if(lq){if(lq[1]==='0'){LS.removeItem('devLog');LS.removeItem('logKey');LS.removeItem('dev')}else if(lq[1].length>=6){LS.setItem('devLog','1');LS.setItem('logKey',lq[1]);LS.setItem('dev','1')}}LOGK=LS.getItem('logKey')||'';LOGON=LS.getItem('devLog')==='1'&&!!LOGK}catch(e){}
+var SHARE=false;try{SHARE=LS0.getItem('shareLog')==='1'}catch(e){}if(!LOGON&&SHARE){LOGON=true;LOGK=''}
 function lg(a){if(LOGON&&LOGB.length<20000)LOGB.push(a)}
-function logFlush(beacon){if(!LOGON||!LOGB.length)return;var body=JSON.stringify({sid:LOGSID,ua:navigator.userAgent,from:LOGT,to:Date.now(),rows:LOGB});LOGB=[];LOGT=Date.now();var u=RELAY+'log?sid='+LOGSID+'&k='+LOGK;
+function logFlush(beacon){if(!LOGON||!LOGB.length)return;var body=JSON.stringify({sid:LOGSID,ua:navigator.userAgent,from:LOGT,to:Date.now(),rows:LOGB});LOGB=[];LOGT=Date.now();var u=RELAY+'log?sid='+LOGSID+(LOGK?'&k='+LOGK:'');
   if(beacon&&navigator.sendBeacon){try{navigator.sendBeacon(u,new Blob([body],{type:'text/plain'}));return}catch(e){}}fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:body,keepalive:body.length<60000}).catch(function(){})}
-if(LOGON){setInterval(function(){logFlush(false)},60000);addEventListener('pagehide',function(){logFlush(true)});document.addEventListener('visibilitychange',function(){lg(['v',Date.now(),document.hidden?1:0]);if(document.hidden)logFlush(true)})}
+var LOGSET=0;function logStart(){if(LOGSET)return;LOGSET=1;setInterval(function(){logFlush(false)},60000);addEventListener('pagehide',function(){logFlush(true)});document.addEventListener('visibilitychange',function(){lg(['v',Date.now(),document.hidden?1:0]);if(document.hidden)logFlush(true)})}
+if(LOGON)logStart();
+function setShare(on){try{LS0.setItem('shareLog',on?'1':'0')}catch(e){}SHARE=on;if(LS.getItem('devLog')==='1'&&LS.getItem('logKey'))return;if(on){LOGON=true;LOGK='';LOGT=Date.now();logStart()}else{logFlush(false);LOGON=false;LOGB=[]}}
 var TL={on:false},tunNear=false,LIMR=null,LIMT=0,LIMN={v:0,la:0,lo:0,t:0,busy:0},lastErr='',errN=0,bootT0=Date.now(),DSP=null,DR={fix:null,s:null,on:false};
 /* 후진 카메라 등으로 브라우저가 가려지면 requestAnimationFrame 이 멈출 수 있어, 가려진 동안은 1초마다 직접 돌려 경고를 이어 간다. 가려진 시간·그동안 받은 위치 수는 진단 줄에 */
 var HID={t:0,f:0,ticks:0,last:''};
