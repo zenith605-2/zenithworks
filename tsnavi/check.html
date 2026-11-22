@@ -31,9 +31,13 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
 #rvNone{display:none;position:absolute;inset:0;z-index:5;background:#1f2937;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:16px;line-height:1.6;padding:20px}
 #go:disabled{opacity:.35}
+#two{display:none;gap:8px;width:100%}#two.on{display:flex}
+#two button{flex:1;border:0;border-radius:14px;padding:16px 8px;font-size:19px;font-weight:800;color:#fff;cursor:pointer}
+#dA{background:#2563eb}#dB{background:#16a34a}
+#two.on~#more #go{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;font-size:15px!important;padding:10px 14px!important}
 #go{font-size:18px!important;font-weight:800!important;background:var(--acc)!important;color:#fff!important;border:0!important;padding:14px 16px!important}
 #steps{font-size:14px;color:var(--mut);padding:8px 14px 0;background:var(--card)}#steps b{color:var(--ink)}
-@media (max-width:760px){#views{grid-template-columns:1fr;grid-template-rows:3fr 2fr;height:52vh}#ctl{justify-content:center;padding:8px}#pad{display:none}#help{display:none}#more{flex-direction:row;flex-wrap:wrap;justify-content:center}#more button{flex:1 1 40%}#go{flex-basis:100%!important}}
+@media (max-width:760px){#two{order:-1}#views{grid-template-columns:1fr;grid-template-rows:3fr 2fr;height:52vh}#ctl{justify-content:center;padding:8px}#pad{display:none}#help{display:none}#more{flex-direction:row;flex-wrap:wrap;justify-content:center}#more button{flex:1 1 40%}#go{flex-basis:100%!important}}
 </style>
 </head>
 <body>
@@ -45,7 +49,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 <div id="app" hidden>
   <header><b>카메라 방향 확인</b><span class="mut" id="stat">불러오는 중…</span><span class="mut" id="who"></span></header>
   <div id="views"><div style="position:relative"><div id="rv"></div><div id="rvNone">이 카메라 근처(160m)에 로드뷰가 없어요<br>지도를 보고 [위치 틀림]이나 [모르겠음]을 눌러 주세요</div></div><div id="map"></div></div>
-  <div id="steps">① 로드뷰를 끌어 돌려 <b>단속카메라</b>를 찾고 ② 같이 달린 <b>제한속도 표지판 앞면(숫자)이 보이는 쪽</b>을 바라본 채 ③ <b>[이 방향으로 가는 차를 찍음]</b>. 후면단속도 똑같습니다. 지도의 빨간 화살표가 지금 보는 방향입니다.</div>
+  <div id="steps">로드뷰에서 <b>카메라와 제한속도 표지판</b>을 보고, <b>표지판 앞면(숫자)이 보이는 쪽</b>과 같은 색 버튼(지도 화살표 파랑·초록)을 누르세요. 후면단속도 똑같습니다. 빨간 화살표는 지금 로드뷰로 보는 방향.</div>
   <div id="info"><div class="t" id="cTitle">-</div><div class="s" id="cSub">-</div></div>
   <div id="ctl">
     <div id="pad">
@@ -53,7 +57,8 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
       <button data-b="270">←</button><button class="c" disabled>찍는 차<br>가는 쪽</button><button data-b="90">→</button>
       <button data-b="225">↙</button><button data-b="180">↓</button><button data-b="135">↘</button>
     </div>
-    <div id="more"><button id="go">이 방향으로 가는 차를 찍음</button><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="badpos">위치 틀림</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
+    <div id="two"><button id="dA"></button><button id="dB"></button></div>
+    <div id="more"><button id="go">지금 보는 방향으로 가는 차</button><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="badpos">위치 틀림</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
     <div id="help">(맥: 엔터 = 지금 보는 방향, 숫자 8·6·2·4 등 = 지도 기준 방향) 지도 화살표는 북쪽이 위입니다. 카메라가 <b>어느 쪽으로 가는 차를 찍는지</b> 골라 주세요. 기둥이 서 있는 쪽 차선 = 그 차선 차들이 가는 방향입니다. 로드뷰는 끌어서 돌려 볼 수 있습니다.</div>
   </div>
 </div>
@@ -70,13 +75,14 @@ if(!KJS){$('keyBox').style.display='block';$('kSave').onclick=function(){var v=$
 else{var s=document.createElement('script');s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey='+encodeURIComponent(KJS);s.onload=function(){kakao.maps.load(start)};s.onerror=function(){alert('카카오 지도 키를 불러오지 못했습니다. 키나 도메인 등록을 확인하세요.');LS.removeItem('kakaoJs')};document.head.appendChild(s)}
 function dist(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320;return Math.hypot(x,(c-a)*111320)}
 function brg(a,b,c,d){var R=Math.PI/180,y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360}
-var CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
+var ROAD={},rA=[],CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
 function start(){$('app').hidden=false;$('who').textContent=ME?'':'· 보내기 권한 없음(주소에 ?me= 필요)';
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(37.8,127.07),level:3});rv=new kakao.maps.Roadview($('rv'));rvc=new kakao.maps.RoadviewClient();
   var relay=function(){try{rv.relayout();map.relayout()}catch(e){}};addEventListener('resize',relay);setTimeout(relay,300);
   kakao.maps.event.addListener(rv,'viewpoint_changed',drawView);kakao.maps.event.addListener(rv,'position_changed',drawView);
-  Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}})]).then(function(a){
-    CAMS=a[0];DONE=a[1]||{};
+  Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}}),
+    fetch(DATA+'cam_road.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}})]).then(function(a){
+    CAMS=a[0];DONE=a[1]||{};ROAD=a[2]||{};
     var c0=JSON.parse(LS.getItem('ckCenter')||'null');
     var go=function(la,lo){center=[la,lo];LS.setItem('ckCenter',JSON.stringify(center));build()};
     if(c0)go(c0[0],c0[1]);else if(navigator.geolocation)navigator.geolocation.getCurrentPosition(function(p){go(p.coords.latitude,p.coords.longitude)},function(){go(37.8,127.07)},{timeout:6000});else go(37.8,127.07)})}
@@ -88,10 +94,18 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
   $('cTitle').textContent=(c[6]||'도로명 없음')+' · 제한 '+c[2]+(c[3]==='X'?' · 신호과속':c[3]==='R'?' · 신호':' · 과속')+(c[5]===2?' · 어린이보호':'')+(c[4]===1?' · 구간 시작':c[4]===2?' · 구간 끝':'');
   $('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5);
   map.setCenter(pos);if(mk)mk.setMap(null);mk=new kakao.maps.Marker({position:pos,map:map});
+  /* 도로 두 방향 버튼 (오픈스트리트맵으로 미리 계산한 도로 축, docs/cam_road.json) */
+  rA.forEach(function(l){l.setMap(null)});rA=[];var ax=ROAD[c[0]+','+c[1]];
+  if(ax!=null){var dirs=[ax,(ax+180)%360],cols=['#2563eb','#16a34a'];
+    dirs.forEach(function(b,i){var R=Math.PI/180,L=0.0006,e=new kakao.maps.LatLng(c[0]+L*Math.cos(b*R),c[1]+L*Math.sin(b*R)/Math.cos(c[0]*R));
+      var l=new kakao.maps.Polyline({path:[pos,e],strokeWeight:7,strokeColor:cols[i],strokeOpacity:.9,endArrow:true});l.setMap(map);rA.push(l)});
+    $('dA').textContent=arrowOf(dirs[0])+' '+nameOf(dirs[0])+'쪽으로 가는 차';$('dA').onclick=function(){pick(dirs[0])};
+    $('dB').textContent=arrowOf(dirs[1])+' '+nameOf(dirs[1])+'쪽으로 가는 차';$('dB').onclick=function(){pick(dirs[1])};
+    $('two').classList.add('on')}else $('two').classList.remove('on');
   /* 로드뷰: 20m→40→80→160m 순으로 찾고, 없으면 화면을 가림(앞 카메라 로드뷰가 남아 엉뚱한 방향을 고르던 문제, 11/22) */
   $('rvNone').style.display='none';$('go').disabled=false;
   var near=function(r,cb){rvc.getNearestPanoId(pos,r,function(id){if(id||r>=160)cb(id);else near(r*2,cb)})};
-  near(20,function(id){if(!id){$('rvNone').style.display='flex';$('go').disabled=true;if(vline)vline.setMap(null);return}
+  near(20,function(id){if(!id){$('rvNone').style.display='flex';$('go').disabled=true;$('two').classList.remove('on');if(vline)vline.setMap(null);return}
     /* 'init' 은 처음 한 번만 와서 두 번째 카메라부터 방향을 못 돌리던 문제 → 위치 바뀜 이벤트 + 예비 타이머 (11/22) */
     var gen=(window._gen=(window._gen||0)+1),done=false;
     var aim=function(){if(done||gen!==window._gen)return;var p=rv.getPosition();if(!p||(rv.getPanoId&&rv.getPanoId()!==id))return;done=true;
@@ -104,13 +118,15 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
 var vline=null;function drawView(){try{var p=rv.getPosition(),vp=rv.getViewpoint();if(!p)return;var la=p.getLat(),lo=p.getLng(),b=vp.pan*Math.PI/180,L=0.00035;
   var e=new kakao.maps.LatLng(la+L*Math.cos(b),lo+L*Math.sin(b)/Math.cos(la*Math.PI/180));if(vline)vline.setMap(null);
   vline=new kakao.maps.Polyline({path:[p,e],strokeWeight:5,strokeColor:'#e11d48',strokeOpacity:.9,endArrow:true});vline.setMap(map)}catch(x){}}
+function nameOf(b){return['북','북동','동','남동','남','남서','서','북서'][Math.round(b/45)%8]}
+function arrowOf(b){return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(b/45)%8]}
 function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push([k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
 function flush(){if(!BUF.length||!ME)return;var b=BUF;BUF=[];fetch(RELAY+'camdir',{method:'POST',headers:{'Content-Type':'application/json','x-log':ME},body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw 0;toast(b.length+'곳 보냈어요')}).catch(function(){BUF=b.concat(BUF);toast('보내지 못했어요 · 다음에 다시')})}
 $('go').onclick=function(){if($('go').disabled)return;try{pick(Math.round((rv.getViewpoint().pan%360+360)%360))}catch(e){}};
 Array.prototype.forEach.call(document.querySelectorAll('#pad button[data-b]'),function(b){b.onclick=function(){pick(+b.dataset.b)}});
 Array.prototype.forEach.call(document.querySelectorAll('#more button[data-v]'),function(b){b.onclick=function(){pick(b.dataset.v)}});
 $('undo').onclick=function(){if(!HIST.length)return;qi=HIST.pop();var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];delete DONE[k];BUF=BUF.filter(function(x){return x[0]!==k});show()};
-addEventListener('keydown',function(e){var m={'8':0,'9':45,'6':90,'3':135,'2':180,'1':225,'4':270,'7':315};if(m[e.key]!=null)pick(m[e.key]);else if(e.key==='Enter'||e.key==='0')$('go').onclick();else if(e.key==='b')pick('both');else if(e.key==='n')pick('none');else if(e.key===' '){e.preventDefault();pick('skip')}});
+addEventListener('keydown',function(e){var m={'8':0,'9':45,'6':90,'3':135,'2':180,'1':225,'4':270,'7':315};if(m[e.key]!=null)pick(m[e.key]);else if((e.key==='q'||e.key==='a')&&$('two').classList.contains('on'))$('dA').onclick();else if((e.key==='w'||e.key==='s')&&$('two').classList.contains('on'))$('dB').onclick();else if(e.key==='Enter'||e.key==='0')$('go').onclick();else if(e.key==='b')pick('both');else if(e.key==='n')pick('none');else if(e.key===' '){e.preventDefault();pick('skip')}});
 addEventListener('pagehide',flush);setInterval(flush,30000);
 </script>
 </body>
