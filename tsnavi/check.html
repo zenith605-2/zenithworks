@@ -59,7 +59,8 @@ var $=function(i){return document.getElementById(i)},LS=localStorage;
 function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none'},1800)}
 /* 키: ?me= 기록 키(보내기 권한), ?kjs= 카카오 JS 키 → 이 브라우저에 저장 */
 (function(){var q=new URLSearchParams(location.search);if(q.get('me'))LS.setItem('logKey',q.get('me'));if(q.get('kjs'))LS.setItem('kakaoJs',q.get('kjs'))})();
-var ME=LS.getItem('logKey')||'',KJS=LS.getItem('kakaoJs')||'';
+/* 카카오 지도 JavaScript 키는 웹페이지용 공개 키(등록 도메인에서만 작동) → 기본값으로 둠 (11/22) */
+var ME=LS.getItem('logKey')||'',KJS=LS.getItem('kakaoJs')||'1831090cb9799ccc957bc4887ceb3101';
 if(!KJS){$('keyBox').style.display='block';$('kSave').onclick=function(){var v=$('kIn').value.trim();if(v){LS.setItem('kakaoJs',v);location.reload()}}}
 else{var s=document.createElement('script');s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey='+encodeURIComponent(KJS);s.onload=function(){kakao.maps.load(start)};s.onerror=function(){alert('카카오 지도 키를 불러오지 못했습니다. 키나 도메인 등록을 확인하세요.');LS.removeItem('kakaoJs')};document.head.appendChild(s)}
 function dist(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320;return Math.hypot(x,(c-a)*111320)}
