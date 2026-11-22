@@ -51,7 +51,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 <div id="app" hidden>
   <header><b>카메라 방향 확인</b><span class="mut" id="stat">불러오는 중…</span><span class="mut" id="who"></span></header>
   <div id="views"><div style="position:relative"><div id="rv"></div><div id="rvNone">이 카메라 근처(160m)에 로드뷰가 없어요<br>지도를 보고 [위치 틀림]이나 [모르겠음]을 눌러 주세요</div></div><div id="map"></div></div>
-  <div id="steps">로드뷰에서 <b>카메라와 제한속도 표지판</b>을 보고, <b>표지판 앞면(숫자)이 보이는 쪽</b>과 같은 색 버튼(지도 화살표 파랑·초록)을 누르세요. 후면단속도 똑같습니다. 빨간 화살표는 지금 로드뷰로 보는 방향.</div>
+  <div id="steps">로드뷰는 길을 가로질러 카메라 쪽을 봅니다. 길가에서 길을 바라보면 <b>가까운 차선 차는 왼쪽</b>, <b>건너편 차선 차는 오른쪽</b>으로 갑니다. 카메라가 <b>어느 차선 위에 달렸는지</b> 보고 누르세요. 후면단속도 똑같습니다. 빨간 화살표는 지금 로드뷰로 보는 방향.</div>
   <div id="info"><div class="t" id="cTitle">-</div><div class="s" id="cSub">-</div></div>
   <div id="ctl">
     <div id="two"><button id="dA"></button><button id="dB"></button></div>
@@ -77,11 +77,11 @@ if(!KJS){$('keyBox').style.display='block';$('kSave').onclick=function(){var v=$
 else{var s=document.createElement('script');s.src='https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey='+encodeURIComponent(KJS);s.onload=function(){kakao.maps.load(start)};s.onerror=function(){alert('카카오 지도 키를 불러오지 못했습니다. 키나 도메인 등록을 확인하세요.');LS.removeItem('kakaoJs')};document.head.appendChild(s)}
 function dist(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320;return Math.hypot(x,(c-a)*111320)}
 function brg(a,b,c,d){var R=Math.PI/180,y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360}
-var ROAD={},rA=[],CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
+var DIRS=null,ROAD={},rA=[],CAMS=[],Q=[],qi=0,DONE={},BUF=[],HIST=[],rv,rvc,map,mk,center=null;
 function start(){$('app').hidden=false;$('who').textContent=ME?'':'· 보내기 권한 없음(주소에 ?me= 필요)';
   map=new kakao.maps.Map($('map'),{center:new kakao.maps.LatLng(37.8,127.07),level:3});rv=new kakao.maps.Roadview($('rv'));rvc=new kakao.maps.RoadviewClient();
   var relay=function(){try{rv.relayout();map.relayout()}catch(e){}};addEventListener('resize',relay);setTimeout(relay,300);
-  kakao.maps.event.addListener(rv,'viewpoint_changed',drawView);kakao.maps.event.addListener(rv,'position_changed',drawView);
+  kakao.maps.event.addListener(rv,'viewpoint_changed',function(){drawView();labelLR()});kakao.maps.event.addListener(rv,'position_changed',drawView);
   Promise.all([fetch(DATA+'cams.json?t='+Date.now()).then(function(r){return r.json()}),fetch(RELAY+'camdir',{headers:ME?{'x-log':ME}:{}}).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}}),
     fetch(DATA+'cam_road.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.ok?r.json():{}}).catch(function(){return{}})]).then(function(a){
     CAMS=a[0];DONE=a[1]||{};ROAD=a[2]||{};
@@ -98,11 +98,10 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
   map.setCenter(pos);if(mk)mk.setMap(null);mk=new kakao.maps.Marker({position:pos,map:map});
   /* 도로 두 방향 버튼 (오픈스트리트맵으로 미리 계산한 도로 축, docs/cam_road.json) */
   rA.forEach(function(l){l.setMap(null)});rA=[];var ax=ROAD[c[0]+','+c[1]];
-  if(ax!=null){var dirs=[ax,(ax+180)%360],cols=['#2563eb','#16a34a'];
+  DIRS=null;if(ax!=null){var dirs=[ax,(ax+180)%360],cols=['#2563eb','#16a34a'];
     dirs.forEach(function(b,i){var R=Math.PI/180,L=0.0006,e=new kakao.maps.LatLng(c[0]+L*Math.cos(b*R),c[1]+L*Math.sin(b*R)/Math.cos(c[0]*R));
       var l=new kakao.maps.Polyline({path:[pos,e],strokeWeight:7,strokeColor:cols[i],strokeOpacity:.9,endArrow:true});l.setMap(map);rA.push(l)});
-    $('dA').textContent=arrowOf(dirs[0])+' '+nameOf(dirs[0])+'쪽으로 가는 차';$('dA').onclick=function(){pick(dirs[0])};
-    $('dB').textContent=arrowOf(dirs[1])+' '+nameOf(dirs[1])+'쪽으로 가는 차';$('dB').onclick=function(){pick(dirs[1])};
+    DIRS=dirs;labelLR();$('dA').onclick=function(){pick(dirs[0])};$('dB').onclick=function(){pick(dirs[1])};
     $('two').classList.add('on')}else $('two').classList.remove('on');
   /* 로드뷰: 20m→40→80→160m 순으로 찾고, 없으면 화면을 가림(앞 카메라 로드뷰가 남아 엉뚱한 방향을 고르던 문제, 11/22) */
   $('rvNone').style.display='none';$('go').disabled=false;$('more').classList.remove('far');
@@ -115,13 +114,20 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
       if(far>40)$('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5)+' · 로드뷰가 카메라에서 '+Math.round(far)+'m 떨어져 있음';
       /* 60m 넘게 떨어지면 좌표가 길 밖일 가능성이 큼 → [위치 틀림]을 빨갛게 맨 위로 (11/22 구리-포천 산책로 사례) */
       $('more').classList.toggle('far',far>60);
-      rv.setViewpoint({pan:far<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]),tilt:0,zoom:0});drawView()};
+      var toCam=far<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]),pan=toCam;
+      if(DIRS){var p1=(DIRS[0]+90)%360,p2=(DIRS[0]+270)%360,d1=Math.abs(((p1-toCam)%360+540)%360-180),d2=Math.abs(((p2-toCam)%360+540)%360-180);pan=far<8?(d1<d2?p1:p2):(d1<d2?p1:p2)}
+      rv.setViewpoint({pan:pan,tilt:0,zoom:0});drawView();labelLR()};
     if(!window._aimL){window._aimL=1;kakao.maps.event.addListener(rv,'position_changed',function(){window._aimF&&window._aimF()});kakao.maps.event.addListener(rv,'init',function(){window._aimF&&window._aimF()})}
     window._aimF=aim;rv.setPanoId(id,pos);setTimeout(aim,1500);setTimeout(aim,4000)})}
 /* 지도에 로드뷰 위치와 지금 보는 방향(빨간 화살표) */
 var vline=null;function drawView(){try{var p=rv.getPosition(),vp=rv.getViewpoint();if(!p)return;var la=p.getLat(),lo=p.getLng(),b=vp.pan*Math.PI/180,L=0.00035;
   var e=new kakao.maps.LatLng(la+L*Math.cos(b),lo+L*Math.sin(b)/Math.cos(la*Math.PI/180));if(vline)vline.setMap(null);
   vline=new kakao.maps.Polyline({path:[p,e],strokeWeight:5,strokeColor:'#e11d48',strokeOpacity:.9,endArrow:true});vline.setMap(map)}catch(x){}}
+/* 로드뷰로 보는 방향 기준 왼쪽·오른쪽 (11/22 "좌우로 해줘"). 길을 따라 보고 있으면 앞쪽·뒤쪽 */
+function labelLR(){if(!DIRS)return;var pan=0;try{pan=rv.getViewpoint().pan}catch(e){}
+  var one=function(d){var r=((d-pan)%360+540)%360-180,a=Math.abs(r);var w=a<35?['↑','앞쪽으로']:a>145?['↓','뒤쪽으로']:r<0?['←','왼쪽으로']:['→','오른쪽으로'];
+    return w[0]==='→'?w[1]+' 가는 차 →':w[0]+' '+w[1]+' 가는 차'};
+  $('dA').textContent=one(DIRS[0]);$('dB').textContent=one(DIRS[1])}
 function nameOf(b){return['북','북동','동','남동','남','남서','서','북서'][Math.round(b/45)%8]}
 function arrowOf(b){return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(b/45)%8]}
 function pick(v){if(qi>=Q.length)return;var c=CAMS[Q[qi][1]],k=c[0]+','+c[1];if(v!=='skip'){BUF.push([k,v]);DONE[k]=v}HIST.push(qi);qi++;show();if(BUF.length>=10)flush()}
