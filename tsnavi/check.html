@@ -31,6 +31,8 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
 #rvNone{display:none;position:absolute;inset:0;z-index:5;background:#1f2937;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:16px;line-height:1.6;padding:20px}
 #go:disabled{opacity:.35}
+#more.far button[data-v="badpos"]{order:-1;flex-basis:100%;background:#dc2626;color:#fff;border:0;font-size:17px;font-weight:800;padding:14px}
+#more.far button[data-v="badpos"]::after{content:" (카메라가 길 밖에 찍혀 있음)";font-weight:600;font-size:13px}
 #two{display:none;gap:8px;flex-basis:100%}#two.on{display:flex}#two.on~#pad{display:none}
 #two button{flex:1;border:0;border-radius:14px;padding:16px 8px;font-size:19px;font-weight:800;color:#fff;cursor:pointer}
 #dA{background:#2563eb}#dB{background:#16a34a}
@@ -103,14 +105,16 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
     $('dB').textContent=arrowOf(dirs[1])+' '+nameOf(dirs[1])+'쪽으로 가는 차';$('dB').onclick=function(){pick(dirs[1])};
     $('two').classList.add('on')}else $('two').classList.remove('on');
   /* 로드뷰: 20m→40→80→160m 순으로 찾고, 없으면 화면을 가림(앞 카메라 로드뷰가 남아 엉뚱한 방향을 고르던 문제, 11/22) */
-  $('rvNone').style.display='none';$('go').disabled=false;
+  $('rvNone').style.display='none';$('go').disabled=false;$('more').classList.remove('far');
   var near=function(r,cb){rvc.getNearestPanoId(pos,r,function(id){if(id||r>=160)cb(id);else near(r*2,cb)})};
-  near(20,function(id){if(!id){$('rvNone').style.display='flex';$('go').disabled=true;$('two').classList.remove('on');if(vline)vline.setMap(null);return}
+  near(20,function(id){if(!id){$('more').classList.add('far');$('rvNone').style.display='flex';$('go').disabled=true;$('two').classList.remove('on');if(vline)vline.setMap(null);return}
     /* 'init' 은 처음 한 번만 와서 두 번째 카메라부터 방향을 못 돌리던 문제 → 위치 바뀜 이벤트 + 예비 타이머 (11/22) */
     var gen=(window._gen=(window._gen||0)+1),done=false;
     var aim=function(){if(done||gen!==window._gen)return;var p=rv.getPosition();if(!p||(rv.getPanoId&&rv.getPanoId()!==id))return;done=true;
       try{rv.relayout()}catch(e){}var far=dist(p.getLat(),p.getLng(),c[0],c[1]);
       if(far>40)$('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5)+' · 로드뷰가 카메라에서 '+Math.round(far)+'m 떨어져 있음';
+      /* 60m 넘게 떨어지면 좌표가 길 밖일 가능성이 큼 → [위치 틀림]을 빨갛게 맨 위로 (11/22 구리-포천 산책로 사례) */
+      $('more').classList.toggle('far',far>60);
       rv.setViewpoint({pan:far<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]),tilt:0,zoom:0});drawView()};
     if(!window._aimL){window._aimL=1;kakao.maps.event.addListener(rv,'position_changed',function(){window._aimF&&window._aimF()});kakao.maps.event.addListener(rv,'init',function(){window._aimF&&window._aimF()})}
     window._aimF=aim;rv.setPanoId(id,pos);setTimeout(aim,1500);setTimeout(aim,4000)})}
