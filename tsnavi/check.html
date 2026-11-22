@@ -31,7 +31,7 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
 #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#111e;color:#fff;padding:8px 14px;border-radius:18px;display:none;z-index:9}
 #rvNone{display:none;position:absolute;inset:0;z-index:5;background:#1f2937;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:16px;line-height:1.6;padding:20px}
 #go:disabled{opacity:.35}
-#two{display:none;gap:8px;width:100%}#two.on{display:flex}
+#two{display:none;gap:8px;flex-basis:100%}#two.on{display:flex}#two.on~#pad{display:none}
 #two button{flex:1;border:0;border-radius:14px;padding:16px 8px;font-size:19px;font-weight:800;color:#fff;cursor:pointer}
 #dA{background:#2563eb}#dB{background:#16a34a}
 #two.on~#more #go{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;font-size:15px!important;padding:10px 14px!important}
@@ -52,12 +52,12 @@ header b{font-size:17px}header .mut{color:var(--mut);font-size:13px}
   <div id="steps">로드뷰에서 <b>카메라와 제한속도 표지판</b>을 보고, <b>표지판 앞면(숫자)이 보이는 쪽</b>과 같은 색 버튼(지도 화살표 파랑·초록)을 누르세요. 후면단속도 똑같습니다. 빨간 화살표는 지금 로드뷰로 보는 방향.</div>
   <div id="info"><div class="t" id="cTitle">-</div><div class="s" id="cSub">-</div></div>
   <div id="ctl">
+    <div id="two"><button id="dA"></button><button id="dB"></button></div>
     <div id="pad">
       <button data-b="315">↖</button><button data-b="0">↑</button><button data-b="45">↗</button>
       <button data-b="270">←</button><button class="c" disabled>찍는 차<br>가는 쪽</button><button data-b="90">→</button>
       <button data-b="225">↙</button><button data-b="180">↓</button><button data-b="135">↘</button>
     </div>
-    <div id="two"><button id="dA"></button><button id="dB"></button></div>
     <div id="more"><button id="go">지금 보는 방향으로 가는 차</button><button data-v="both">양방향</button><button data-v="none">카메라 없음</button><button data-v="badpos">위치 틀림</button><button data-v="skip">모르겠음 · 넘기기</button><button id="undo">되돌리기</button></div>
     <div id="help">(맥: 엔터 = 지금 보는 방향, 숫자 8·6·2·4 등 = 지도 기준 방향) 지도 화살표는 북쪽이 위입니다. 카메라가 <b>어느 쪽으로 가는 차를 찍는지</b> 골라 주세요. 기둥이 서 있는 쪽 차선 = 그 차선 차들이 가는 방향입니다. 로드뷰는 끌어서 돌려 볼 수 있습니다.</div>
   </div>
