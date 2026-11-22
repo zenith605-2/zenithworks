@@ -91,8 +91,15 @@ function show(){if(qi>=Q.length){$('cTitle').textContent='이 근처는 다 봤�
   /* 로드뷰: 20m→40→80→160m 순으로 찾고, 없으면 화면을 가림(앞 카메라 로드뷰가 남아 엉뚱한 방향을 고르던 문제, 11/22) */
   $('rvNone').style.display='none';$('go').disabled=false;
   var near=function(r,cb){rvc.getNearestPanoId(pos,r,function(id){if(id||r>=160)cb(id);else near(r*2,cb)})};
-  near(20,function(id){if(!id){$('rvNone').style.display='flex';$('go').disabled=true;if(vline)vline.setMap(null);return}rv.setPanoId(id,pos);
-    kakao.maps.event.addListener(rv,'init',function f(){kakao.maps.event.removeListener(rv,'init',f);try{rv.relayout()}catch(e){}var p=rv.getPosition(),far=dist(p.getLat(),p.getLng(),c[0],c[1]);if(far>40)$('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5)+' · 로드뷰가 카메라에서 '+Math.round(far)+'m 떨어져 있음';var b=dist(p.getLat(),p.getLng(),c[0],c[1])<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]);rv.setViewpoint({pan:b,tilt:0,zoom:0})})})}
+  near(20,function(id){if(!id){$('rvNone').style.display='flex';$('go').disabled=true;if(vline)vline.setMap(null);return}
+    /* 'init' 은 처음 한 번만 와서 두 번째 카메라부터 방향을 못 돌리던 문제 → 위치 바뀜 이벤트 + 예비 타이머 (11/22) */
+    var gen=(window._gen=(window._gen||0)+1),done=false;
+    var aim=function(){if(done||gen!==window._gen)return;var p=rv.getPosition();if(!p||(rv.getPanoId&&rv.getPanoId()!==id))return;done=true;
+      try{rv.relayout()}catch(e){}var far=dist(p.getLat(),p.getLng(),c[0],c[1]);
+      if(far>40)$('cSub').textContent=c[0].toFixed(5)+', '+c[1].toFixed(5)+' · 로드뷰가 카메라에서 '+Math.round(far)+'m 떨어져 있음';
+      rv.setViewpoint({pan:far<3?0:brg(p.getLat(),p.getLng(),c[0],c[1]),tilt:0,zoom:0});drawView()};
+    if(!window._aimL){window._aimL=1;kakao.maps.event.addListener(rv,'position_changed',function(){window._aimF&&window._aimF()});kakao.maps.event.addListener(rv,'init',function(){window._aimF&&window._aimF()})}
+    window._aimF=aim;rv.setPanoId(id,pos);setTimeout(aim,1500);setTimeout(aim,4000)})}
 /* 지도에 로드뷰 위치와 지금 보는 방향(빨간 화살표) */
 var vline=null;function drawView(){try{var p=rv.getPosition(),vp=rv.getViewpoint();if(!p)return;var la=p.getLat(),lo=p.getLng(),b=vp.pan*Math.PI/180,L=0.00035;
   var e=new kakao.maps.LatLng(la+L*Math.cos(b),lo+L*Math.sin(b)/Math.cos(la*Math.PI/180));if(vline)vline.setMap(null);
