@@ -50,6 +50,8 @@
   body.over #pill{animation:blink .55s steps(2,jump-none) infinite}
   #tag{display:none;background:#ffc81e;color:#111;font-size:16px;font-weight:800;border-radius:7px;padding:2px 9px;min-width:70px;text-align:center;box-shadow:0 3px 10px #0004;margin-top:-4px}
   #alertBox.on #tag{display:block}
+#oddBtn{display:none;margin-top:2px;font-size:16px;font-weight:800;padding:9px 16px;border-radius:20px;border:2px solid #fff;background:#111d;color:#fff;pointer-events:auto}
+#alertBox.on #oddBtn{display:block}
   #alertBox.sec #tag{background:#1f5fd6;color:#fff}
   #spd{margin-bottom:4px;font-size:40px;font-weight:900;line-height:1;margin-top:2px;color:#111;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 8px #fff}
   body.nomap #alertBox{left:50%;transform:translateX(-50%);bottom:120px}
@@ -416,7 +418,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
     <svg id="sgSig" viewBox="0 0 60 100"><rect x="10" y="4" width="40" height="92" rx="10" fill="#222" stroke="#fff" stroke-width="4"/><circle cx="30" cy="25" r="10" fill="#ff3030"/><circle cx="30" cy="50" r="10" fill="#ffc400"/><circle cx="30" cy="75" r="10" fill="#22c55e"/></svg>
   </div>
   <div id="pill">-</div>
-  <div id="tag"></div>
+  <div id="tag"></div><button id="oddBtn" type="button">이상해요</button>
   <div id="secBar" style="display:none"><span></span><i><u></u></i></div>
 </div>
 
@@ -478,7 +480,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <h2>안내음성 크기</h2><input type="range" min="0" max="1" step="0.05" id="volG" style="width:100%">
   <h2>경고음 크기</h2><input type="range" min="0" max="1" step="0.05" id="volW" style="width:100%">
   <h2 style="margin-top:22px">메뉴</h2>
-  <div class="grid mg"><button id="mTrips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 2"/></svg><span>주행 기록</span></button><button id="mFb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span>의견 보내기</span></button><button id="mSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>설정</span></button><button id="mInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><span>정보</span></button><button id="mLink" class="devOnly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M3 9.5a6 6 0 0 0 0 5M21 9.5a6 6 0 0 1 0 5"/></svg><span>차량 연동</span></button><button id="mClose" style="display:none">닫기</button></div>
+  <div class="grid mg"><button id="mTrips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 2"/></svg><span>주행 기록</span></button><button id="mMiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 10l5-3v10l-5-3"/><path d="M4 4l16 16"/></svg><span>카메라 놓침</span></button><button id="mFb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span>의견 보내기</span></button><button id="mSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>설정</span></button><button id="mInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><span>정보</span></button><button id="mLink" class="devOnly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M3 9.5a6 6 0 0 0 0 5M21 9.5a6 6 0 0 1 0 5"/></svg><span>차량 연동</span></button><button id="mClose" style="display:none">닫기</button></div>
   <div class="devOnly devTools">개발 · <button id="mDemo">시연</button><button id="mFix">카메라 여기</button><button id="mMap">지도 끄기</button></div>
   <p class="muted nowrap2">기록·즐겨찾기·설정은 이 차에만 저장돼요<br>캐시를 지우면 모두 사라져요</p>
   <button class="wide" id="clearVia" style="display:none;background:#eceff3;color:#111">경유지 빼기</button>
@@ -742,8 +744,12 @@ function camNear(la,lo,R){var best=null,bd=R,c0=Math.floor(la*100),c1=Math.floor
 var MOVH=null,MOVHT=0;
 function carHeading(){var n=Date.now();if(head!=null&&v>2.5){MOVH=head;MOVHT=n}return MOVH!=null&&n-MOVHT<120000?{h:MOVH,ok:true}:{h:head,ok:false}}
 setInterval(carHeading,1000);
+/* 한 번 누르기 신고 (11/22 "매번 캡처해서 보내기 어려워"): 경고 카드 [이상해요] = 지금 경고하는 카메라가 틀림(반대편·없음),
+   메뉴 [카메라 놓침] = 방금 티맵은 울렸는데 여긴 안 울림 → 지금 위치·진행 방향을 보냄. 주행 기록에도 남김 */
+$('oddBtn').onclick=function(e){e.stopPropagation();if(!target||!fix)return;var id=target.id;camReport('odd',{la:fix.la,lo:fix.lo},id,null);passed[id]=Date.now()+480000;target=null;setAlert('','','')};
+$('mMiss').onclick=function(){try{$('mClose').onclick()}catch(e){}if(!fix){toast('위치를 기다리는 중이에요');return}camReport('miss',{la:fix.la,lo:fix.lo},null,null)};
 function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
-  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(r.ok?'신고했어요. 데이터 고칠 때 반영할게요':'지금은 보낼 수 없어요')}).catch(function(){toast('보내지 못했어요')});
+  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':'신고했어요. 데이터 고칠 때 반영할게요')}).catch(function(){toast('보내지 못했어요')});
   lg(['camfix',Date.now(),kind,id,lim]);
   if(kind==='wrong'&&c){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[c._k]='x';LS.setItem('camfix4',JSON.stringify(fx));indexCams(CAMS);if(NAV)routeHits(NAV);if(target&&target.id===id)target=null}
   lpClose()}
