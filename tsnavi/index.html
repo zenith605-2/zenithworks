@@ -1757,7 +1757,7 @@ function tickBody(){
     if(target&&(!t||t.id!==target.id)){var tc=CAMS[target.id];var dNow=dist(la,lo,tc[0],tc[1]);var behind=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])))>90;
       /* 회전·서행으로 카메라가 옆으로 빠지면(진행 방향 40° 밖, 안내 중엔 경로 위가 아니면) 대상에서 놓아 준다 — 옆 도로 카메라를 붙잡고 있던 문제 */
       var dfT=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])));if(!behind&&dNow>40&&(dfT>40||(NAV&&NAV.cams&&NAV.cams[target.id]==null))){target=null;setAlert('','','')}else 
-      if(behind||dNow>target.d+40){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 방금 구간이 끝난 자리 400m 안의 '시작'은 반대 방향 카메라로 봄 (11/21 실차) */if(!(secEndAt&&dist(secEndAt[0],secEndAt[1],la,lo)<400))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2){secEndAt=[la,lo]}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}target=null}}
+      var hold=tc[4]===0?80:0; /* 점 카메라는 지난 뒤 80m 까지 경고 유지: 경찰청 좌표가 실제보다 앞에 찍힌 곳이 있음 (11/22 신평화로 80, 티맵보다 82m 앞) */if((behind&&dNow>hold)||dNow>Math.max(target.d+40,hold)){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 방금 구간이 끝난 자리 400m 안의 '시작'은 반대 방향 카메라로 봄 (11/21 실차) */if(!(secEndAt&&dist(secEndAt[0],secEndAt[1],la,lo)<400))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2){secEndAt=[la,lo]}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}target=null}}
     if(t&&(!target||t.d<target.d+40)){if(!target||target.id!==t.id)lg(['al',Date.now(),t.id,Math.round(t.d),CAMS[t.id][2],CAMS[t.id][7]]);target=t} /* 경고 시작을 기록 (11/22: 놓쳤는지 주행 기록으로 확인) */
   }
   for(var k in passed)if(now-passed[k]>120000)delete passed[k];
@@ -1767,7 +1767,7 @@ function tickBody(){
   if(section&&NAV&&section.end!=null&&NAV.s>section.end+50){section=null;secEndAt=[la,lo];sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}
   if(section){var sdt2=section.lt?Math.min(3,Math.max(0,(now-section.lt)/1000)):0;section.lt=now;section.m+=v*sdt2; /* 거리 = 속도×시간 (위치 흔들림으로 평균이 높게 나오던 것) */section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(Math.round(avg)>section.lim)over=true;if(section.m>30000)section=null}
   if(target&&target.d<alertD+30){var c=target.c,d=dist(la,lo,c[0],c[1]);target.d=Math.min(target.d,d);
-    setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',fmtD(d),camTag(c));
+    setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',(head!=null&&Math.abs(adiff(head,brg(la,lo,c[0],c[1])))>90)?'지금':fmtD(d),camTag(c));
     zone=c[5]>0&&d<alertD;
     if(d<alertD&&!announced[target.id]){announced[target.id]=1;if(TRIP)TRIP.alerts++;var r=Math.round(d/50)*50;
       sayParts([c[5]===2?'child':null,'d'+dk(d),(c[2]&&c[2]%10===0&&c[2]>=20&&c[2]<=120)?'lim'+c[2]:null,c[4]===1?'sec_start':(c[3]==='R'?'cam_sig':c[3]==='X'?'cam_sx':'cam_s')],false,(c[5]===2?'어린이보호구역, ':'')+'전방 '+r+'미터, '+(c[2]?'제한속도 '+c[2]+', ':'')+(c[4]===1?'구간단속 시작입니다':'단속 카메라입니다'),880,2)}
