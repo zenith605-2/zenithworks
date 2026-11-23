@@ -69,7 +69,7 @@
   /* 11/23 실차 '어린이보호 표지·아이콘이 단속카메라 같다' → 어린이보호는 세모 표지 하나(sg_kid), 둥근 제한 표지·작은 아이 아이콘·신호등은 빼고 숫자는 세모 아래 검은 판 */
   #alertBox.child #sgChild{display:none!important}
   .lim.z,.lim.x.z{background:url(img/sg_kid.png?v=2) center top/84px auto no-repeat;justify-content:flex-end}
-  .lim.z b,.lim.x.z b{margin:0 0 -20px;font-size:25px;background:#111;color:#fff;border-radius:7px;padding:2px 10px 3px;box-shadow:0 2px 5px #0006}
+  .lim.z b,.lim.x.z b{margin:0 0 -20px;font-size:25px;background:#fff;color:#111;border:2.5px solid #111;border-radius:4px;padding:1px 10px 2px;box-shadow:0 2px 5px #0006} /* 보조표지: 흰 바탕·검은 테·검은 글자 (별표 6) */
   #alertBox.child #signWrap{margin-bottom:18px}
   #spd{margin-bottom:4px;font-size:40px;font-weight:900;line-height:1;margin-top:2px;color:#111;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 8px #fff}
   body.nomap #alertBox{left:50%;transform:translateX(-50%);bottom:120px}
@@ -897,12 +897,14 @@ function ptEnd(e){delete PT[e.pointerId];if(!Object.keys(PT).length)drag=null;if
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,ptEnd,true)});
 $('map').addEventListener('wheel',function(e){e.preventDefault();setZ(e.deltaY>0?-0.25:0.25)},{passive:false});
 $('zIn').onclick=function(){setZ(0.5)};$('zOut').onclick=function(){setZ(-0.5)};
-var SGI={};['lim','limx','limz','limxz','bump'].forEach(function(n){var i=new Image();i.onload=function(){tmIconC={}};i.src='img/sg_'+n+'.png';SGI[n]=i});
+var SGI={};['lim','limx','limz','limxz','bump','kid'].forEach(function(n){var i=new Image();i.onload=function(){tmIconC={}};i.src='img/sg_'+n+'.png'+(n==='kid'?'?v=2':'');SGI[n]=i});
 function sgOk(n){var i=SGI[n];return i&&i.complete&&i.naturalWidth>0}
 function iconCanvas(id){
   var cv=document.createElement('canvas'),x=cv.getContext('2d'),R=2;
   if(id==='sig'&&sgOk('limx')){cv.width=40*R;cv.height=40*R;x.scale(R,R);x.drawImage(SGI.limx,0,0,40,40);return cv}
   if(id==='bump'&&sgOk('bump')){cv.width=24*R;cv.height=21*R;x.scale(R,R);x.drawImage(SGI.bump,0,0,24,21);return cv}
+  /* 11/23 사용자 '표준대로': 어린이보호 카메라는 주의표지 133(세모) + 보조표지(흰 바탕·검은 테·검은 글자) 숫자 판, 노란 테 원은 표준에 없어 안 씀 */
+  if(/^limx?z-/.test(id)&&sgOk('kid')){var nz=id.split('-')[1];cv.width=40*R;cv.height=52*R;x.scale(R,R);x.drawImage(SGI.kid,0,0,40,35);x.fillStyle='#fff';x.strokeStyle='#111';x.lineWidth=1.6;x.beginPath();x.roundRect(8,35,24,16,2.5);x.fill();x.stroke();x.fillStyle='#111';x.font='800 '+(nz.length>2?10:12.5)+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(nz,20,43.5);return cv}
   if(/^limx?z?-/.test(id)){var n0=id.split('-')[1],k0=id.split('-')[0];if(sgOk(k0)){var S0=46,xx0=/x/.test(k0),z0=/z/.test(k0);cv.width=S0*R;cv.height=S0*R;x.scale(R,R);x.drawImage(SGI[k0],0,0,S0,S0);x.fillStyle='#111';x.font='800 '+(n0.length>2?(z0?10:12):(xx0?(z0?12:14):(z0?14:16)))+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(n0,S0/2,S0/2+(xx0?6:1));return cv}}
   if(id==='sig'){cv.width=22*R;cv.height=40*R;x.scale(R,R);x.fillStyle='#222';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.roundRect(2,2,18,36,5);x.fill();x.stroke();['#ff3030','#ffc400','#22c55e'].forEach(function(c,i){x.fillStyle=c;x.beginPath();x.arc(11,10+i*10,3.6,0,7);x.fill()})}
   else if(id==='chev'){cv.width=14*R;cv.height=14*R;x.scale(R,R);x.strokeStyle='#fff';x.lineWidth=3;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(4,2);x.lineTo(10,7);x.lineTo(4,12);x.stroke()}
