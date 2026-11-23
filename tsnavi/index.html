@@ -428,6 +428,12 @@ body.jvon #turn{display:none!important}body.jvon #jv{margin-top:0;border-top-lef
 #hpBox{display:none;margin:6px 0 0 10px;background:#1c1f24ee;color:#e8eaed;border-radius:12px;padding:0;overflow:hidden;min-width:250px;max-width:340px;box-shadow:0 2px 8px #0009;pointer-events:none}#hpBox.show{display:block}#hpBox img{display:block;width:100%;height:auto}#hpBox .hb{padding:6px 10px 8px} /* 그림: 제미나이 톨게이트(art/tollgate_v1.png) */
 #hpBox .ht{font-size:13px;color:#aab1ba;margin-bottom:4px;white-space:nowrap}#hpBox .ht b{color:#6fb0ff;margin-right:4px}#hpBox .ht em{font-style:normal;color:#4fd08a}#hpBox .hl+.hl{margin-top:4px}#hpBox .hl u{text-decoration:none;font-size:14px;color:#cfd4da;min-width:58px;margin-right:2px;white-space:nowrap}
 #hpBox .hl{display:flex;gap:4px;align-items:center}#hpBox .hl b{min-width:28px;height:32px;padding:0 3px;box-sizing:border-box;border-radius:6px;background:#1d5fd6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800}#hpBox .hl b.m{background:#0f9d58}#hpBox .hl i{font-style:normal;color:#6b7280;font-size:18px;font-weight:800;padding:0 3px}
+/* 11/23 사용자: 위 회전 카드와 폭 맞추고 차로 번호는 톨게이트 그림 아래(노면) 위에 */
+#hpBox{position:relative;margin:6px 0 0 0;border-radius:0 12px 12px 0;min-width:0;max-width:none;background:#2a2f36}
+#hpBox .hb{position:absolute;inset:0;padding:8px 10px;display:flex;flex-direction:column}
+#hpBox .ht{color:#0d2340;font-size:15px;font-weight:700}#hpBox .ht b{color:#1d5fd6}#hpBox .ht span{font-weight:900}
+#hpBox .ht{margin-bottom:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#hpBox .hl{flex-wrap:wrap;row-gap:4px}#hpBox .hl u{color:#fff;background:#1c1f24cc;border-radius:6px;padding:4px 6px;min-width:0;font-size:13px}#hpBox .hl i{color:#fff;text-shadow:0 1px 3px #000}
+#hpBox .hl b{box-shadow:0 2px 4px #0006}#hpBox .ht em{color:#0b7a3e}
 </style>
 </head>
 <body>
@@ -629,7 +635,7 @@ function hpRoute(N){N.tg=[];if(!HP||!N.R||!N.S)return;var R=N.R,S=N.S,T=N.T||[],
  N.tg.sort(function(a,b){return a.s-b.s})}
 function hpLanes(l){var o='',gap=0;for(var i=0;i<l.length;i++){var c=l[i];if(c==='X')continue;if(c==='H'||c==='B'||c==='M'){if(gap){o+='<i>–</i>';gap=0}o+='<b'+(c==='M'?' class="m"':'')+'>'+(i+1)+'</b>'}else gap=1}if(gap)o+='<i>–</i>';return o}
 function hpTick(){var e=$('hpBox');if(!NAV||!NAV.tg||!CFG.hipass){e.classList.remove('show');return}var g=null;for(var i=0;i<NAV.tg.length;i++){var d=NAV.tg[i].s-NAV.s;if(d>-30&&d<1500){g=NAV.tg[i];break}}
- if(!g){e.classList.remove('show');return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<img src="img/tg.jpg" alt=""><div class="hb"><div class="ht"><b>하이패스</b>'+jvEsc(g.n)+' 요금소 · <span></span>'+(/M/.test(all)?' · <em>초록 다차로</em>':'')+'</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}e.querySelector('.ht span').textContent=fmtD(d);e.classList.add('show')}
+ if(!g){e.classList.remove('show');return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<img src="img/tg.jpg" alt=""><div class="hb"><div class="ht"><b>하이패스</b><span></span> · '+jvEsc(g.n)+'</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}e.querySelector('.ht span').textContent=fmtD(d);e.classList.add('show');var tw=0;['turn','jv'].forEach(function(id){var x=$(id);if(x&&x.offsetWidth)tw=Math.max(tw,x.getBoundingClientRect().width)});e.style.width=Math.max(170,Math.round(tw||260))+'px'}
 setInterval(hpTick,1000);
 function setAr(id,k){var e=$(id);if(e._k!==k){e._k=k;e.innerHTML=AR[k]}}
 function arrowKind(t){if(t===201||(t>=182&&t<=189))return'dest';if(t===12)return'left';if(t===13)return'right';if(t===16)return'hleft';if(t===19)return'hright';if(t===14)return'uturn';if(t===17)return'sleft';if(t===18)return'sright';if([102,105,112,115,118].indexOf(t)>=0)return'exitL';if([101,104,111,114,117].indexOf(t)>=0)return'exitR';if(t>=131&&t<=142)return'round';return'straight'}
