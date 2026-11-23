@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSnavi PiP 시험</title>
+<style>
+body{margin:0;background:#111;color:#eee;font:18px/1.5 system-ui,sans-serif;padding:16px}
+button{font:900 26px system-ui;padding:16px 28px;border-radius:14px;border:0;background:#1d5fd6;color:#fff;margin:6px 8px 6px 0}
+#log{white-space:pre-wrap;font:14px/1.4 ui-monospace,monospace;background:#000;padding:10px;border-radius:8px;margin-top:12px;max-height:40vh;overflow:auto}
+video{width:320px;height:180px;background:#000;border-radius:8px;display:block;margin-top:10px}
+</style></head><body>
+<h2>PiP 시험 (테슬라 브라우저)</h2>
+<div>1) [영상 PiP] 2) [문서 PiP] 눌러 보고, 떠 있는 창이 내비 위에 남는지·시간이 계속 가는지 보세요.</div>
+<div>
+<button id="b1">영상 PiP</button><button id="b2">문서 PiP</button><button id="b3">소리 켜기</button><button id="b4">기록 보내기</button>
+</div>
+<video id="v" muted playsinline></video>
+<canvas id="c" width="320" height="180" style="display:none"></canvas>
+<div id="log"></div>
+<script>
+var L=[],fixN=0,tick=0,hidT=0,hidTicks=0,lastT=Date.now(),gaps=[];
+function lg(s){var t=new Date().toTimeString().slice(0,8);L.push(t+' '+s);document.getElementById('log').textContent=L.slice(-40).join('\n')}
+lg('지원: 영상PiP='+(!!document.pictureInPictureEnabled)+' 문서PiP='+('documentPictureInPicture' in window)+' captureStream='+('captureStream' in HTMLCanvasElement.prototype)+' wakeLock='+('wakeLock' in navigator));
+lg('화면 '+innerWidth+'x'+innerHeight+' UA '+navigator.userAgent.slice(0,80));
+var c=document.getElementById('c'),x=c.getContext('2d'),v=document.getElementById('v');
+function draw(){tick++;var now=Date.now();var gap=now-lastT;lastT=now;if(gap>1500)gaps.push(Math.round(gap/1000));if(document.hidden)hidTicks++;
+  x.fillStyle='#102a5c';x.fillRect(0,0,320,180);x.fillStyle='#fff';x.font='900 56px system-ui';x.fillText(new Date().toTimeString().slice(0,8),20,80);
+  x.font='700 22px system-ui';x.fillText('GPS '+fixN+'회 · 틱 '+tick+(document.hidden?' · 가려짐':''),20,125);x.fillText('멈춤 '+gaps.length+'번 '+gaps.slice(-5).join(','),20,160)}
+setInterval(draw,1000);draw();
+try{var st=c.captureStream(2);v.srcObject=st;v.play().catch(function(e){lg('재생 실패 '+e.message)})}catch(e){lg('captureStream 실패 '+e.message)}
+document.getElementById('b1').onclick=function(){v.requestPictureInPicture().then(function(w){lg('영상 PiP 켜짐 '+w.width+'x'+w.height)}).catch(function(e){lg('영상 PiP 실패: '+e.name+' '+e.message)})};
+document.getElementById('b2').onclick=function(){if(!('documentPictureInPicture' in window)){lg('문서 PiP 없음');return}
+  documentPictureInPicture.requestWindow({width:360,height:200}).then(function(w){lg('문서 PiP 켜짐');var d=w.document;d.body.style.cssText='margin:0;background:#102a5c;color:#fff;font:900 48px system-ui;padding:16px';var p=d.createElement('div');d.body.appendChild(p);setInterval(function(){p.textContent=new Date().toTimeString().slice(0,8)+' GPS '+fixN},1000)}).catch(function(e){lg('문서 PiP 실패: '+e.name+' '+e.message)})};
+var ac;document.getElementById('b3').onclick=function(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.001;o.connect(g);g.connect(ac.destination);o.start();lg('무음 소리 켜짐 (탭 유지용)')}catch(e){lg('소리 실패 '+e.message)}};
+if(navigator.geolocation)navigator.geolocation.watchPosition(function(p){fixN++;if(fixN%10===1)lg('GPS '+fixN+' 정확도 '+Math.round(p.coords.accuracy)+'m')},function(e){lg('GPS 오류 '+e.message)},{enableHighAccuracy:true,maximumAge:0});
+document.addEventListener('visibilitychange',function(){if(document.hidden){hidT=Date.now();hidTicks=0;var f0=fixN;window._f0=f0;lg('가려짐 시작')}else if(hidT){lg('다시 보임: '+Math.round((Date.now()-hidT)/1000)+'초 동안 틱 '+hidTicks+'회 GPS '+(fixN-window._f0)+'회');hidT=0}});
+v.addEventListener('leavepictureinpicture',function(){lg('영상 PiP 닫힘')});
+document.getElementById('b4').onclick=function(){fetch('https://tsnavi-relay.zenithworks.workers.dev/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'[PiP시험] '+L.join(' | ').slice(0,900)})}).then(function(r){lg(r.ok?'보냈어요':'전송 실패 '+r.status)}).catch(function(e){lg('전송 실패')})};
+</script></body></html>
