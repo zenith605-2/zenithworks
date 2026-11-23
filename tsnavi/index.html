@@ -1023,8 +1023,9 @@ function projSeg(la,lo,A,B){var kx=111320*Math.cos(la*D2R),ky=111320,ax=(A[1]-lo
 function routeHits(N){var cpos={},cam={},bmp={},R=N.R,S=N.S,last=-1e9;
   for(var i=0;i<R.length-1;i++){if(S[i]-last<20)continue;last=S[i];var h=brg(R[i][0],R[i][1],R[i+1][0],R[i+1][1]),c0=Math.floor(R[i][0]*100),c1=Math.floor(R[i][1]*100);
     for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var k=(c0+a)+'_'+(c1+b),ids=GRID[k];
-      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id],d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<(c[2]>=80?50:35)&&camDirOk(h,R[i][0],R[i][1],c)&&(!N.RN||camRoadOk(N.RN[i],c,N.T&&N.T[i]>=0&&N.T[i]<=2))){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
-      var bs=BGRID[k];if(bs)bs.forEach(function(id){if(bmp[id]!=null)return;var p=BUMPS[id];if(dist(R[i][0],R[i][1],p[0],p[1])<18)bmp[id]=S[i]})}}
+      var hw=N.T&&(N.T[i]===0||N.T[i]===1); /* 11/23 실차: 고속(티맵 도로 분류 0 고속국도·1 도시고속)이 지상 길과 겹치는 곳(지하·고가)에서 아래 문정로 어린이보호 30 카메라·방지턱을 잡음 → 고속 구간에선 40 이하·어린이보호 카메라와 방지턱 안 받음 */
+      if(ids)ids.forEach(function(id){if(cam[id]!=null)return;var c=CAMS[id];if(hw&&(c[2]<=40||c[5]===2))return;var d=dist(R[i][0],R[i][1],c[0],c[1]);if(d<(c[2]>=80?50:35)&&camDirOk(h,R[i][0],R[i][1],c)&&(!N.RN||camRoadOk(N.RN[i],c,N.T&&N.T[i]>=0&&N.T[i]<=2))){cam[id]=S[i];var bp=null,bd=1e9;for(var q=Math.max(0,i-3);q<Math.min(R.length-1,i+3);q++){var pp=projSeg(c[0],c[1],R[q],R[q+1]),dd=dist(c[0],c[1],pp[0],pp[1]);if(dd<bd){bd=dd;bp=pp}}cpos[id]=bp}});
+      var bs=hw?null:BGRID[k];if(bs)bs.forEach(function(id){if(bmp[id]!=null)return;var p=BUMPS[id];if(dist(R[i][0],R[i][1],p[0],p[1])<18)bmp[id]=S[i]})}}
   N.cams=cam;N.bumps=bmp;N.camPos=cpos}
 var camSrcT=0,camSrcH=null;
 /* 지도에 그릴 '앞쪽' 판정: 멀수록 옆으로 넓게 봄 (11/21: 굽은 길에서 경고는 320m 부터인데 아이콘은 늦게 나오던 것) */
@@ -1907,7 +1908,8 @@ function tickBody(){
     if(c[2]&&d<alertD&&!(head!=null&&d>15&&Math.abs(adiff(head,brg(la,lo,c[0],c[1])))>90)&&Math.round(kmh)>c[2]+(c[5]===2?0:CFG.tol))over=true; /* 11/23 실차: 카메라 지난 뒤 80m 표시 유지 동안 과속음도 계속 울림 → 지난 뒤엔 안 울림 */ /* 어린이 보호구역은 여유 없이 바로 */ /* 화면 속도(반올림)가 제한보다 클 때만 (11/22 실차: '딱 100인데 울리네' — 100.4 를 넘었다고 봄) */
   }else if(section){setAlert('on sec',section.lim,'평균 '+Math.round(avg||0),'구간단속 중')}
   else setAlert('','','');
-  var bp=(CFG.bumpOn&&head!=null&&kmh>20&&BUMPS.length)?findBump(la,lo,head,kmh>50?250:150):null;
+  var onHw=NAV&&NAV.T&&NAV.idx>=0&&(NAV.T[NAV.idx]===0||NAV.T[NAV.idx]===1); /* 11/23: 고속 구간(지하·고가)에선 아래 길 방지턱 안 울림 */
+  var bp=(CFG.bumpOn&&!onHw&&head!=null&&kmh>20&&BUMPS.length)?findBump(la,lo,head,kmh>50?250:150):null;
   if(bp){$('bumpD').textContent=fmtD(bp.d);$('bumpBox').className='on';if(!bAnn[bp.i]){bAnn[bp.i]=now;beep(420,0.1,2)}}else $('bumpBox').className='';
   for(var bk in bAnn)if(now-bAnn[bk]>60000)delete bAnn[bk];
   /* 사고 다발 지역(도로교통공단): 앞 250m, 진행 방향 ±35°, 옆 60m 안. 방지턱 경고가 떠 있으면 그 위로 올림 */
