@@ -566,24 +566,11 @@ function show(id,on){$(id).classList.toggle('show',!!on)}
 
 /* 화살표 그림 */
 /* 방향 그림(11/23 제미나이, img/ar_*.png). 왼쪽 출구는 오른쪽 출구 좌우 반전 */
-var ARK=['straight','left','right','uturn','sleft','sright','hleft','hright','exitL','exitR','round','dest'],AR={};ARK.forEach(function(k){AR[k]='<image href="img/ar_'+k+'.png" x="0" y="0" width="100" height="100"/>';var i=new Image();i.src='img/ar_'+k+'.png'});
+var ARK=['straight','left','right','uturn','sleft','sright','hleft','hright','exitL','exitR','round','dest'],AR={};ARK.forEach(function(k){AR[k]='<image href="img/ar_'+k+'.png" x="0" y="0" width="100" height="100"/>';var i=new Image();i.src='img/ar_'+k+'.png'});(new Image()).src='img/jv_r.jpg';
 function bigTurn(nx,dd,kmh){var t=$('turn');if(!nx){t.classList.remove('near');return}var k=arrowKind(nx.t),thr=kmh>70?600:300;if(k==='straight'||dd>thr||dd<0){t.classList.remove('near');return}t.style.setProperty('--p',Math.round(Math.min(1,Math.max(0,1-dd/thr))*100)+'%');t.classList.add('near')}
 /* 갈림길 그림 (11/23 사용자 요청): 출구·분기 앞 800m(고속)/400m 부터 갈림길 모양을 그려 우리 쪽 길을 파랑으로. 티맵 API엔 갈림길 그림·차로 정보가 없어 모양은 코드로 */
 function jvEsc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function jvSvg(side,dir){var B='#2f6fe0',G='#4a5058',L='#fff';
- var road='<g'+(side<0?' transform="translate(340 0) scale(-1 1)"':'')+'>'+
- '<rect x="0" y="0" width="340" height="190" fill="#9cb6cf"/><rect x="0" y="78" width="340" height="112" fill="#7d9a6e"/>'+
- '<path d="M20 190 L178 190 L170 128 L104 128 Z" fill="'+G+'"/>'+
- '<path d="M178 190 L330 190 L262 128 L170 128 Z" fill="'+B+'"/>'+
- '<path d="M104 128 L158 128 L150 78 L128 78 Z" fill="'+G+'"/>'+
- '<path d="M170 128 L262 128 Q272 100 318 78 L282 78 Q232 98 178 128 Z" fill="'+B+'"/>'+
- '<path d="M158 128 L178 128 Q200 108 236 92 L156 92 Z" fill="#7d9a6e"/>'+
- '<path d="M131 190 L141 128 M141 128 L140 78" stroke="'+L+'" stroke-width="3" stroke-dasharray="12 10" fill="none" opacity=".8"/>'+
- '<path d="M226 190 L218 128" stroke="'+L+'" stroke-width="3" stroke-dasharray="12 10" fill="none" opacity=".8"/>'+
- '<path d="M20 190 L104 128 L128 78 M330 190 L262 128 Q272 100 318 78" stroke="'+L+'" stroke-width="3" fill="none"/>'+
- '<path d="M206 180 L214 150 Q220 136 236 128 L230 121 L252 120 L244 140 L239 133 Q226 140 222 152 L216 180 Z" fill="'+L+'"/>'+
- '<path d="M264 180 L270 152 Q276 138 292 130 L286 123 L308 122 L300 142 L295 135 Q282 142 278 154 L274 180 Z" fill="'+L+'"/>'+
- '</g>';
+function jvSvg(side,dir){var road='<image href="img/jv_r.jpg" x="0" y="0" width="340" height="190"'+(side<0?' transform="translate(340 0) scale(-1 1)"':'')+'/>'; /* 11/23 제미나이 그림(art/junction_r_v1.png), 왼쪽은 좌우 반전 */
  var sx=side>0?196:12,ax=side>0?'M300 44 L316 28 M306 28 L316 28 L316 38':'M40 44 L24 28 M34 28 L24 28 L24 38',t=jvEsc(dir||'');
  var sign='<rect x="'+sx+'" y="8" width="132" height="48" rx="6" fill="#1b7a44" stroke="#fff" stroke-width="2.5"/>'+
  '<text x="'+(sx+66+(side>0?-10:10))+'" y="41" text-anchor="middle" font-size="'+(t.length>5?17:22)+'" font-weight="800" fill="#fff">'+t+'</text>'+
