@@ -70,7 +70,13 @@
   #alertBox.child #sgChild{display:none!important}
   .lim.z,.lim.x.z{background:url(img/sg_kid.png?v=2) center top/84px auto no-repeat;justify-content:flex-end}
   .lim.z b,.lim.x.z b{margin:0 0 -20px;font-size:25px;background:#fff;color:#111;border:2.5px solid #111;border-radius:4px;padding:1px 10px 2px;box-shadow:0 2px 5px #0006} /* 보조표지: 흰 바탕·검은 테·검은 글자 (별표 6) */
-  #alertBox.child #signWrap{margin-bottom:18px}
+  /* 11/23 '속도가 안 이쁘다' → 어린이보호는 세모 아래로 숫자 판·거리·어린이보호를 틈 없이 한 덩어리 (폭 84 맞춤) */
+  #alertBox.child{row-gap:0!important}
+  #alertBox.child #signWrap{height:74px;margin-bottom:46px}
+  .lim.z,.lim.x.z{background-size:84px auto;inset:0;overflow:visible}
+  .lim.z b,.lim.x.z b{position:absolute;left:0;top:72px;width:84px;height:46px;margin:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#fff;color:#111;border:2.5px solid #111;border-bottom:0;border-radius:9px 9px 0 0;padding:0;font-size:36px!important;font-weight:900;letter-spacing:-1px;font-family:system-ui,sans-serif;box-shadow:none}
+  #alertBox.child #pill{width:84px;box-sizing:border-box;border-radius:0;min-width:0;padding:2px 0;font-size:23px}
+  #alertBox.child #tag{width:84px;box-sizing:border-box;border-radius:0 0 9px 9px;min-width:0;padding:3px 0 4px;margin-top:0}
   #spd{margin-bottom:4px;font-size:40px;font-weight:900;line-height:1;margin-top:2px;color:#111;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 8px #fff}
   body.nomap #alertBox{left:50%;transform:translateX(-50%);bottom:120px}
   body.nomap #spd{color:#fff;text-shadow:none;font-size:110px}
