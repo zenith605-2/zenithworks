@@ -641,7 +641,7 @@ function jv(nx,dd,kmh){var e=$('jv');var off=function(){e.classList.remove('on')
 /* 11/23: 창이 낮으면 왼쪽 위 안내 묶음이 아래 속도 묶음과 겹침 → 공간 모자라면 정체·쉼터·공사 알림 순으로 숨기고 갈림길 그림을 줄인다 */
 function fitLeft(){try{var a=$('alertBox'),ab=a.getBoundingClientRect();if(!ab.height)return;var top=ab.top-8,L=['jamChip','restChip','incChip'];L.forEach(function(id){$(id).classList.remove('fitHide')});$('jv').classList.remove('fitSm');
  for(var i=0;i<=L.length;i++){if($('left').getBoundingClientRect().bottom<=top)break;if(i<L.length)$(L[i]).classList.add('fitHide');else $('jv').classList.add('fitSm')}}catch(e){}}
-setInterval(fitLeft,700);try{var B=$('bottom');B.insertBefore($('qcBtn'),B.firstChild)}catch(e){} /* 11/23: 카메라 알리기는 아래 줄 맨 왼쪽 (오른쪽 버튼 줄에서 겹침) */addEventListener('resize',fitLeft);setTimeout(function(){try{if(LOGON)lg(['vp',Date.now(),innerWidth,innerHeight,devicePixelRatio,document.body.className])}catch(e){}},15000); /* 차 화면 크기 기록 */
+setInterval(fitLeft,700);try{var B=$('bottom');B.insertBefore($('qcBtn'),B.firstChild)}catch(e){} /* 11/23: 카메라 알리기는 아래 줄 맨 왼쪽 (오른쪽 버튼 줄에서 겹침) */addEventListener('resize',fitLeft);var vpT=0;addEventListener('resize',function(){clearTimeout(vpT);vpT=setTimeout(function(){try{if(LOGON)lg(['vp',Date.now(),innerWidth,innerHeight,devicePixelRatio,document.body.className])}catch(e){}},2500)}); /* 11/23: 브라우저 창 크기를 줄였을 때 크기도 기록 (작은 창 모드 설계용) */setTimeout(function(){try{if(LOGON)lg(['vp',Date.now(),innerWidth,innerHeight,devicePixelRatio,document.body.className])}catch(e){}},15000); /* 차 화면 크기 기록 */
 /* 톨게이트 하이패스 차로 (11/23 사용자 요청): 한국도로공사 영업소 차로 운영현황(tesla-webnav/tools/hipass_build.py, 매달). 민자 영업소는 자료 없음.
    차로 글자: H 하이패스, M 다차로 하이패스, B 하이패스+현금 / T 현금, F 화물 하이패스, G 화물 현금, S 정산기, X 미운영 */
 var HP=null,HPG={},HPD={};
