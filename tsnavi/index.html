@@ -50,7 +50,7 @@
   .lim b{font-weight:900;line-height:1}
   .tl{display:flex;gap:3px;background:#222;border-radius:7px;padding:3px 5px;margin-bottom:2px}
   .tl i{display:block;width:8px;height:8px;border-radius:50%}
-  #alertBox.sx .lim b{font-size:28px}
+  #alertBox.sx .lim b{font-size:34px}
   #alertBox.sig .tl{transform:scale(1.4)}
   #pill{display:none;background:#e3151a;color:#fff;font-size:24px;font-weight:800;border-radius:7px;padding:1px 10px;min-width:70px;text-align:center;box-shadow:0 3px 10px #0004}
   #alertBox.on #pill{display:block}
@@ -74,7 +74,7 @@
   #alertBox.child{row-gap:0!important}
   #alertBox.child #signWrap{height:74px;margin-bottom:0}
   .lim.z b,.lim.x.z b{display:none!important}
-  #alertBox.child #tag .tz{display:flex;align-items:center;justify-content:center;height:46px;margin:4px -0px -4px;background:#fff;color:#111;border:2.5px solid #111;border-top:0;border-radius:0 0 9px 9px;font-size:36px;font-weight:900;letter-spacing:-1px;box-sizing:border-box}
+  #alertBox.child #tag .tz{display:flex;align-items:center;justify-content:center;height:46px;margin:2px 0 -4px;background:#ffc81e;color:#111;border:0;border-top:1.5px solid #0002;border-radius:0 0 9px 9px;font-size:38px;font-weight:900;letter-spacing:-1px;box-sizing:border-box}
   #alertBox.child #tag{border-radius:0;padding-bottom:4px}
   .lim.z,.lim.x.z{background-size:84px auto;inset:0;overflow:visible;border-radius:0} /* 둥근 표지 칸의 50% 둥근 모서리가 세모 아래 모서리를 깎았음 */
   .lim.z b,.lim.x.z b{position:absolute;left:0;top:72px;width:84px;height:46px;margin:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#fff;color:#111;border:2.5px solid #111;border-bottom:0;border-radius:9px 9px 0 0;padding:0;font-size:36px!important;font-weight:900;letter-spacing:-1px;font-family:system-ui,sans-serif;box-shadow:none}
@@ -913,8 +913,8 @@ function iconCanvas(id){
   if(id==='sig'&&sgOk('limx')){cv.width=40*R;cv.height=40*R;x.scale(R,R);x.drawImage(SGI.limx,0,0,40,40);return cv}
   if(id==='bump'&&sgOk('bump')){cv.width=24*R;cv.height=21*R;x.scale(R,R);x.drawImage(SGI.bump,0,0,24,21);return cv}
   /* 11/23 사용자 '표준대로': 어린이보호 카메라는 주의표지 133(세모) + 보조표지(흰 바탕·검은 테·검은 글자) 숫자 판, 노란 테 원은 표준에 없어 안 씀 */
-  if(/^limx?z-/.test(id)&&sgOk('kid')){var nz=id.split('-')[1];cv.width=40*R;cv.height=52*R;x.scale(R,R);x.drawImage(SGI.kid,0,0,40,35);x.fillStyle='#fff';x.strokeStyle='#111';x.lineWidth=1.6;x.beginPath();x.roundRect(8,35,24,16,2.5);x.fill();x.stroke();x.fillStyle='#111';x.font='800 '+(nz.length>2?10:12.5)+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(nz,20,43.5);return cv}
-  if(/^limx?z?-/.test(id)){var n0=id.split('-')[1],k0=id.split('-')[0];if(sgOk(k0)){var S0=46,xx0=/x/.test(k0),z0=/z/.test(k0);cv.width=S0*R;cv.height=S0*R;x.scale(R,R);x.drawImage(SGI[k0],0,0,S0,S0);x.fillStyle='#111';x.font='800 '+(n0.length>2?(z0?10:12):(xx0?(z0?12:14):(z0?14:16)))+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(n0,S0/2,S0/2+(xx0?6:1));return cv}}
+  if(/^limx?z-/.test(id)&&sgOk('kid')){var nz=id.split('-')[1];cv.width=40*R;cv.height=52*R;x.scale(R,R);x.drawImage(SGI.kid,0,0,40,35);x.fillStyle='#ffc81e';x.strokeStyle='#111';x.lineWidth=1.2;x.beginPath();x.roundRect(8,35,24,16,3);x.fill();x.stroke();x.fillStyle='#111';x.font='800 '+(nz.length>2?10:12.5)+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(nz,20,43.5);return cv}
+  if(/^limx?z?-/.test(id)){var n0=id.split('-')[1],k0=id.split('-')[0].replace('x','');if(sgOk(k0)){var S0=46,xx0=/x/.test(k0),z0=/z/.test(k0);cv.width=S0*R;cv.height=S0*R;x.scale(R,R);x.drawImage(SGI[k0],0,0,S0,S0);x.fillStyle='#111';x.font='800 '+(n0.length>2?(z0?10:12):(xx0?(z0?12:14):(z0?14:16)))+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(n0,S0/2,S0/2+(xx0?6:1));return cv}}
   if(id==='sig'){cv.width=22*R;cv.height=40*R;x.scale(R,R);x.fillStyle='#222';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.roundRect(2,2,18,36,5);x.fill();x.stroke();['#ff3030','#ffc400','#22c55e'].forEach(function(c,i){x.fillStyle=c;x.beginPath();x.arc(11,10+i*10,3.6,0,7);x.fill()})}
   else if(id==='chev'){cv.width=14*R;cv.height=14*R;x.scale(R,R);x.strokeStyle='#fff';x.lineWidth=3;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(4,2);x.lineTo(10,7);x.lineTo(4,12);x.stroke()}
   else if(id==='dest'){cv.width=56*R;cv.height=66*R;x.scale(R,R);x.fillStyle='#2b7bff';x.beginPath();x.moveTo(28,64);x.bezierCurveTo(14,46,4,36,4,24);x.arc(28,24,24,Math.PI,0);x.bezierCurveTo(52,36,42,46,28,64);x.fill();x.fillStyle='#fff';x.font='800 15px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('도착',28,24)}
@@ -1817,7 +1817,7 @@ function findAhead(la,lo,h){
   return best;
 }
 var TLH='<span class="tl"><i style="background:#ff3030"></i><i style="background:#ffc400"></i><i style="background:#22c55e"></i></span>';
-function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;$('lim').innerHTML=(/sx|sig/.test(cls)?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(/sx|sig/.test(cls)?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||'';if(/child/.test(cls)&&lim){var z=document.createElement('b');z.className='tz';z.textContent=lim;$('tag').appendChild(z)}} /* 11/23 사용자: 노란 어린이보호 밑에 속도 */
+function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;var tlx=/sx|sig/.test(cls)&&!lim; /* 11/23 사용자: 신호등 그림 빼기(표준 표지에 없음) → 숫자 없는 신호 전용 카메라만 신호등 */$('lim').innerHTML=(tlx?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(tlx?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||'';if(/child/.test(cls)&&lim){var z=document.createElement('b');z.className='tz';z.textContent=lim;$('tag').appendChild(z)}} /* 11/23 사용자: 노란 어린이보호 밑에 속도 */
 var bAnn={},aAnn={},restAt=0;
 /* 주의운전구간(국가교통정보센터, 집 맥이 하루 한 번 올림): 고속도로 사고잦은구간 등. 앞 700m, ±30°, 옆 80m 안 */
 (function(){fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.json()}).then(function(vj){return fetch(DATA+'caution.json?v='+vj.ver)}).then(function(r){return r.json()}).then(function(a){CAU=a;CGRID={};a.forEach(function(p,i){var k=Math.floor(p[0]*100)+'_'+Math.floor(p[1]*100);(CGRID[k]=CGRID[k]||[]).push(i)})}).catch(function(){})})();
