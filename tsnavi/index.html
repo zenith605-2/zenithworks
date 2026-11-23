@@ -426,7 +426,7 @@ body.nav #tripStat{display:none!important}
 #jv .jvP{position:absolute;left:12px;right:12px;bottom:8px;height:6px;border-radius:3px;background:#ffffff55}#jv .jvP i{display:block;height:100%;border-radius:3px;background:#fff}
 body.jvon #turn{display:none!important}body.jvon #jv{margin-top:0;border-top-left-radius:0}
 #hpBox{display:none;margin:6px 0 0 10px;background:#1c1f24ee;color:#e8eaed;border-radius:12px;padding:6px 10px 8px;box-shadow:0 2px 8px #0009;pointer-events:none}#hpBox.show{display:block}
-#hpBox .ht{font-size:13px;color:#aab1ba;margin-bottom:4px;white-space:nowrap}#hpBox .ht b{color:#6fb0ff;margin-right:4px}#hpBox .ht em{font-style:normal;color:#4fd08a}
+#hpBox .ht{font-size:13px;color:#aab1ba;margin-bottom:4px;white-space:nowrap}#hpBox .ht b{color:#6fb0ff;margin-right:4px}#hpBox .ht em{font-style:normal;color:#4fd08a}#hpBox .hl+.hl{margin-top:4px}#hpBox .hl u{text-decoration:none;font-size:14px;color:#cfd4da;min-width:58px;margin-right:2px;white-space:nowrap}
 #hpBox .hl{display:flex;gap:4px;align-items:center}#hpBox .hl b{min-width:28px;height:32px;padding:0 3px;box-sizing:border-box;border-radius:6px;background:#1d5fd6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800}#hpBox .hl b.m{background:#0f9d58}#hpBox .hl i{font-style:normal;color:#6b7280;font-size:18px;font-weight:800;padding:0 3px}
 </style>
 </head>
@@ -611,20 +611,25 @@ setInterval(fitLeft,700);try{var B=$('bottom');B.insertBefore($('qcBtn'),B.first
 /* 톨게이트 하이패스 차로 (11/23 사용자 요청): 한국도로공사 영업소 차로 운영현황(tesla-webnav/tools/hipass_build.py, 매달). 민자 영업소는 자료 없음.
    차로 글자: H 하이패스, M 다차로 하이패스, B 하이패스+현금 / T 현금, F 화물 하이패스, G 화물 현금, S 정산기, X 미운영 */
 var HP=null,HPG={},HPD={};
-setTimeout(function(){fetch(DATA+'hipass.json?d='+Math.floor(Date.now()/86400000)).then(function(r){return r.json()}).then(function(d){HP=d.tg||[];HPD=d.dirc||{};HP.forEach(function(t,i){var k=Math.floor(t[0]*100)+'_'+Math.floor(t[1]*100);(HPG[k]=HPG[k]||[]).push(i)});if(NAV)hpRoute(NAV)}).catch(function(){})},2000);
+setTimeout(function(){fetch(DATA+'hipass.json?v=2&d='+Math.floor(Date.now()/86400000)).then(function(r){return r.json()}).then(function(d){HP=d.tg||[];HPD=d.dirc||{};HP.forEach(function(t,i){var k=Math.floor(t[0]*100)+'_'+Math.floor(t[1]*100);(HPG[k]=HPG[k]||[]).push(i)});if(NAV)hpRoute(NAV)}).catch(function(){})},2000);
 function hpRoute(N){N.tg=[];if(!HP||!N.R||!N.S)return;var R=N.R,S=N.S,T=N.T||[],seen={},last=-1e9;
  function hw(a,b){var m=0;for(var j=0;j<R.length-1;j++){if(S[j]<a||S[j]>b)continue;if(T[j]===0||T[j]===1)m+=S[j+1]-S[j]}return m}
  for(var i=0;i<R.length;i++){if(S[i]-last<40&&i<R.length-1)continue;last=S[i];var c0=Math.floor(R[i][0]*100),c1=Math.floor(R[i][1]*100);
   for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){(HPG[(c0+a)+'_'+(c1+b)]||[]).forEach(function(ti){var t=HP[ti],d=dist(R[i][0],R[i][1],t[0],t[1]);if(d>150)return;if(!seen[ti]||d<seen[ti].d)seen[ti]={d:d,i:i}})}}
  Object.keys(seen).forEach(function(ti){var t=HP[ti],h=seen[ti],s0=S[h.i],j=Math.min(h.i,R.length-2),br=brg(R[j][0],R[j][1],R[Math.min(R.length-1,j+3)][0],R[Math.min(R.length-1,j+3)][1]),dirs=t[4],key=null;
   if(t[3]==='C'){var bf=hw(s0-1500,s0),af=hw(s0,s0+1500);if(af-bf>600)key='입구';else if(bf-af>600)key='출구';else return}
-  else{if(h.d>80)return;var best=1e9;Object.keys(dirs).forEach(function(k){var c=HPD[k];if(k==='하행')return;if(!c)return;var df=Math.abs(adiff(br,brg(t[0],t[1],c[0],c[1])));if(df<best){best=df;key=k}});
-   if(key==='상행'&&best>90)key=dirs['하행']?'하행':null;else if(best>100){var o=Object.keys(dirs).filter(function(k){return k!==key});key=o.length===1?o[0]:null}}
-  if(!key||!dirs[key])return;N.tg.push({s:s0,n:t[2],l:dirs[key]})});
+  else{if(h.d>80)return;var best=1e9;Object.keys(dirs).forEach(function(k){k=k.split('|')[0];var c=HPD[k];if(k==='하행')return;if(!c)return;var df=Math.abs(adiff(br,brg(t[0],t[1],c[0],c[1])));if(df<best){best=df;key=k}});
+   if(key==='상행'&&best>90)key=dirs['하행']?'하행':null;else if(best>100){var o=Object.keys(dirs).map(function(k){return k.split('|')[0]}).filter(function(k,i,A){return k!==key&&A.indexOf(k)===i});key=o.length===1?o[0]:null}}
+  if(!key)return;
+  /* 갈래 영업소 (11/23): '입구|강릉'·'입구|인천' 처럼 갈래마다 차로가 따로 → 요금소 뒤 8km 안내 지점 방면·이름에 갈래 이름이 있으면 그 갈래, 모르면 모두 */
+  var ks=Object.keys(dirs).filter(function(k){return k===key||k.indexOf(key+'|')===0});if(!ks.length)return;var ls=ks.map(function(k){return[k.split('|')[1]||'',dirs[k]]});
+  if(ls.length>1){var txt='';(N.G||[]).forEach(function(g){if(g.s>s0-50&&g.s<s0+8000)txt+=' '+(g.dir||'')+' '+(g.name||'')+' '+(g.pname||'')});
+   var hit=ls.filter(function(x){return x[0]&&x[0].split('-').some(function(w){return w&&txt.indexOf(w)>=0})});if(hit.length===1)ls=hit;else ls=ls.filter(function(x){return x[0]})}
+  N.tg.push({s:s0,n:t[2],ls:ls})});
  N.tg.sort(function(a,b){return a.s-b.s})}
 function hpLanes(l){var o='',gap=0;for(var i=0;i<l.length;i++){var c=l[i];if(c==='X')continue;if(c==='H'||c==='B'||c==='M'){if(gap){o+='<i>–</i>';gap=0}o+='<b'+(c==='M'?' class="m"':'')+'>'+(i+1)+'</b>'}else gap=1}if(gap)o+='<i>–</i>';return o}
 function hpTick(){var e=$('hpBox');if(!NAV||!NAV.tg||!CFG.hipass){e.classList.remove('show');return}var g=null;for(var i=0;i<NAV.tg.length;i++){var d=NAV.tg[i].s-NAV.s;if(d>-30&&d<1500){g=NAV.tg[i];break}}
- if(!g){e.classList.remove('show');return}var d=Math.max(0,g.s-NAV.s);if(e._k!==g.s){e._k=g.s;e.innerHTML='<div class="ht"><b>하이패스</b>'+jvEsc(g.n)+' 요금소 · <span></span>'+(/M/.test(g.l)?' · <em>초록 다차로</em>':'')+'</div><div class="hl">'+hpLanes(g.l)+'</div>'}e.querySelector('.ht span').textContent=fmtD(d);e.classList.add('show')}
+ if(!g){e.classList.remove('show');return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<div class="ht"><b>하이패스</b>'+jvEsc(g.n)+' 요금소 · <span></span>'+(/M/.test(all)?' · <em>초록 다차로</em>':'')+'</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')}e.querySelector('.ht span').textContent=fmtD(d);e.classList.add('show')}
 setInterval(hpTick,1000);
 function setAr(id,k){var e=$(id);if(e._k!==k){e._k=k;e.innerHTML=AR[k]}}
 function arrowKind(t){if(t===201||(t>=182&&t<=189))return'dest';if(t===12)return'left';if(t===13)return'right';if(t===16)return'hleft';if(t===19)return'hright';if(t===14)return'uturn';if(t===17)return'sleft';if(t===18)return'sright';if([102,105,112,115,118].indexOf(t)>=0)return'exitL';if([101,104,111,114,117].indexOf(t)>=0)return'exitR';if(t>=131&&t<=142)return'round';return'straight'}
