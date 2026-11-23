@@ -1825,8 +1825,8 @@ function tickBody(){
   for(var bk in bAnn)if(now-bAnn[bk]>60000)delete bAnn[bk];
   /* 사고 다발 지역(도로교통공단): 앞 250m, 진행 방향 ±35°, 옆 60m 안. 방지턱 경고가 떠 있으면 그 위로 올림 */
   var ap=(head!=null&&kmh>10&&ACC.length)?findAcc(la,lo,head):null,cp=(!ap&&head!=null&&kmh>30&&CAU.length)?findCau(la,lo,head):null;
-  if(cp){$('accD').textContent=fmtD(cp.d);$('accT').textContent=cp.p[3].replace(/\s*주의$/,' 주의');$('accBox').className='on';$('accBox').style.bottom=bp?'160px':'';if(!cAnn[cp.i]){cAnn[cp.i]=now;beep(600,0.12,1)}}else
-  if(ap){$('accD').textContent=fmtD(ap.d);$('accT').textContent=accName(ap.p[2]);$('accBox').className='on';$('accBox').style.bottom=bp?'160px':'';if(!aAnn[ap.i]){aAnn[ap.i]=now;beep(600,0.12,1)}}else $('accBox').className='';
+  if(cp){$('accD').textContent=fmtD(cp.d);$('accT').textContent=cp.p[3].replace(/\s*주의$/,' 주의');$('accBox').className='on';$('accBox').style.bottom=bp?'160px':'';if(!cAnn[cp.i]){cAnn[cp.i]=now} /* 11/23 실차: 고속도로 사고잦은구간이 1~2분마다 울려 소리 뺌, 화면 표시만 */}else
+  if(ap){$('accD').textContent=fmtD(ap.d);$('accT').textContent=accName(ap.p[2]);$('accBox').className='on';$('accBox').style.bottom=bp?'160px':'';if(!aAnn[ap.i]){aAnn[ap.i]=now}}else $('accBox').className='';
   for(var ak in aAnn)if(now-aAnn[ak]>120000)delete aAnn[ak];
   if(now-restAt>2000){restAt=now;var rc=null;if(NAV&&NAV.rp&&kmh>50)for(var ri=0;ri<NAV.rp.length;ri++){var rq=NAV.rp[ri];if(rq.k==='rest'&&rq.s>NAV.s+300&&rq.s-NAV.s<60000){rc=rq;break}}
     var hw=hwRows(kmh,now);if(hw){$('hwBox').innerHTML=hw;show('hwBox',1);show('restChip',0)}else{show('hwBox',0);if(rc){$('restChip').innerHTML='<b>'+(rc.p[3]==='R'?'졸음쉼터':'휴게소')+'</b> '+rc.p[2].replace(/</g,'')+' · '+fmtD(rc.s-NAV.s);show('restChip',1)}else show('restChip',0)}
