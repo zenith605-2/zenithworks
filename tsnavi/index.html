@@ -415,7 +415,7 @@ body:not(.nomap) #left #alertBox{position:fixed;left:14px;bottom:84px;margin:0;t
 #alertBox #spd{grid-column:2;grid-row:1;margin:0;font-size:64px}
 #alertBox #oddBtn{grid-column:2;grid-row:2/4;margin:0}
 #alertBox #secBar{grid-column:1/3}
-#rightBtns #qcBtn{position:static;width:46px;height:46px;margin-top:4px}#rightBtns #qcBtn svg{width:22px;height:22px}#rightBtns #qcBtn b{font-size:9px}
+#bottom #qcBtn{position:static;flex:0 0 auto;width:54px;height:54px;box-shadow:none;background:#2a2e35}#bottom #qcBtn svg{width:24px;height:24px}#bottom #qcBtn b{font-size:10px}
 body.nav #tripStat{display:none!important}
 #tripStat{left:50%;transform:translateX(-50%);bottom:80px}
 #left #restChip,#left #incChip,#left #jamChip{margin:6px 0 0 10px}
@@ -603,7 +603,7 @@ function jv(nx,dd,kmh){var e=$('jv');var off=function(){e.classList.remove('on')
 /* 11/23: 창이 낮으면 왼쪽 위 안내 묶음이 아래 속도 묶음과 겹침 → 공간 모자라면 정체·쉼터·공사 알림 순으로 숨기고 갈림길 그림을 줄인다 */
 function fitLeft(){try{var a=$('alertBox'),ab=a.getBoundingClientRect();if(!ab.height)return;var top=ab.top-8,L=['jamChip','restChip','incChip'];L.forEach(function(id){$(id).classList.remove('fitHide')});$('jv').classList.remove('fitSm');
  for(var i=0;i<=L.length;i++){if($('left').getBoundingClientRect().bottom<=top)break;if(i<L.length)$(L[i]).classList.add('fitHide');else $('jv').classList.add('fitSm')}}catch(e){}}
-setInterval(fitLeft,700);try{$('rightBtns').appendChild($('qcBtn'))}catch(e){} /* 카메라 알리기는 오른쪽 버튼 줄 맨 아래 (창이 낮아도 안 겹치게) */addEventListener('resize',fitLeft);setTimeout(function(){try{if(LOGON)lg(['vp',Date.now(),innerWidth,innerHeight,devicePixelRatio,document.body.className])}catch(e){}},15000); /* 차 화면 크기 기록 */
+setInterval(fitLeft,700);try{var B=$('bottom');B.insertBefore($('qcBtn'),B.firstChild)}catch(e){} /* 11/23: 카메라 알리기는 아래 줄 맨 왼쪽 (오른쪽 버튼 줄에서 겹침) */addEventListener('resize',fitLeft);setTimeout(function(){try{if(LOGON)lg(['vp',Date.now(),innerWidth,innerHeight,devicePixelRatio,document.body.className])}catch(e){}},15000); /* 차 화면 크기 기록 */
 function setAr(id,k){var e=$(id);if(e._k!==k){e._k=k;e.innerHTML=AR[k]}}
 function arrowKind(t){if(t===201||(t>=182&&t<=189))return'dest';if(t===12)return'left';if(t===13)return'right';if(t===16)return'hleft';if(t===19)return'hright';if(t===14)return'uturn';if(t===17)return'sleft';if(t===18)return'sright';if([102,105,112,115,118].indexOf(t)>=0)return'exitL';if([101,104,111,114,117].indexOf(t)>=0)return'exitR';if(t>=131&&t<=142)return'round';return'straight'}
 var TT={11:'직진',12:'좌회전',13:'우회전',14:'유턴',16:'8시 방향 좌회전',17:'10시 방향 좌회전',18:'2시 방향 우회전',19:'4시 방향 우회전',101:'오른쪽 고속도로 입구',102:'왼쪽 고속도로 입구',103:'고속도로 입구',104:'오른쪽 고속도로 출구',105:'왼쪽 고속도로 출구',106:'고속도로 출구',111:'오른쪽 도시고속도로 입구',112:'왼쪽 도시고속도로 입구',113:'도시고속도로 입구',114:'오른쪽 도시고속도로 출구',115:'왼쪽 도시고속도로 출구',116:'도시고속도로 출구',117:'오른쪽 방향',118:'왼쪽 방향',119:'지하차도',120:'고가도로',121:'터널',122:'교량',123:'지하차도 옆길',124:'고가도로 옆길',201:'목적지'};
