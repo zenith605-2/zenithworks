@@ -794,7 +794,13 @@ $('endBtn').onclick=function(){var b=this;if(b.classList.contains('arm')){clearT
 var CAMS=[],GRID={};
 function cellKey(la,lo){return Math.floor(la*100)+'_'+Math.floor(lo*100)}
 /* 내가 고친 카메라(이 차에만): '카메라 여기'로 옮김 [위도,경도], 꾹 눌러 '카메라 없음' 신고 'x'(숨김). 키는 원본 좌표. 6번 칸이 도로 이름이 된 뒤 키가 도로 이름이 돼 같은 도로 카메라가 다 같이 옮겨지던 버그(camfix3) 고침 (11/21) */
-function indexCams(arr){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0._k==null)a0._k=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0._k];a0.hid=f0==='x'?1:0;if(f0&&f0!=='x'){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){if(arr[i].hid)continue;var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
+/* 11/23 공용 신고(서버 /community): 있음 → 모두에게 바로 카메라(_q, 도로 이름 '신고'), 없음 → 2명 이상이면 숨김. 받은 목록은 원본 카메라 뒤에 붙임 */
+var COMM={add:[],hide:{}};
+function commCams(arr){arr=arr.filter(function(x){return !x._q});var out=arr;COMM.add.forEach(function(q){var dup=false,ca=Math.floor(q[0]*100),co=Math.floor(q[1]*100);for(var i=0;i<arr.length&&!dup;i++){var c=arr[i];if(Math.abs(c[0]-q[0])<0.0006&&Math.abs(c[1]-q[1])<0.0008&&c[2]===q[2])dup=true}if(!dup){var e=[q[0],q[1],q[2],'S',0,0,'신고',q[3]];e._q=1;out.push(e)}});return out}
+function commMine(la,lo,lim,h){COMM.mine=(COMM.mine||[]).concat([[+la.toFixed(5),+lo.toFixed(5),lim,Math.round(h)%360,1]]);COMM.add=COMM.add.concat(COMM.mine.slice(-1));COMM._k=null;indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}
+function loadComm(){fetch(RELAY+'community').then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.add)return;var h={};(d.hide||[]).forEach(function(k){h[k]=1});var key=JSON.stringify(d);if(key===COMM._k)return;COMM={add:d.add.concat(COMM.mine||[]),hide:h,mine:COMM.mine,_k:key};if(CAMS&&CAMS.length){indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}}).catch(function(){})}
+setTimeout(loadComm,3000);setInterval(loadComm,600000);
+function indexCams(arr){arr=commCams(arr);var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0._k==null)a0._k=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0._k];a0.hid=(f0==='x'||COMM.hide[a0._k])?1:0;if(f0&&f0!=='x'){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){if(arr[i].hid)continue;var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
 var DATA='https://actparty.app/tesla-webnav/';
 function loadCams(){
   var cur=LS.getItem('camsVer'),have=null;
@@ -872,13 +878,14 @@ $('qcBtn').onclick=function(e){e.stopPropagation();if(!fix){toast('위치를 기
   /* 제한속도: 그 순간 화면의 도로 제한속도(티맵 도로 정보). 카메라 제한속도는 대부분 도로 제한속도와 같음 (11/22 사용자 '속도를 모르자나') */
   var rl=+($('limNow').classList.contains('show')&&$('limNow').textContent)||0;
   var body={kind:rl?'add':'miss',la:fix.la,lo:fix.lo,lim:rl||null,limSrc:rl?'road':null,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',src:'qc',cam:null};
-  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},600);toast(rl?'📷 '+rl+' 카메라 저장했어요 (도로 제한속도 기준)':'📷 카메라 위치 저장했어요');
+  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},600);var pub=rl&&ch.ok&&ch.h!=null&&v*3.6<=rl+10;if(pub)commMine(fix.la,fix.lo,rl,ch.h);toast(pub?'📷 '+rl+' 카메라 넣었어요 · 모두에게 바로 보여요':rl?'📷 '+rl+' 카메라 저장했어요 (확인 뒤 반영)':'📷 카메라 위치 저장했어요 (확인 뒤 반영)');
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)toast('저장은 했지만 보내지 못했어요')}).catch(function(){toast('저장은 했지만 보내지 못했어요')});
   try{var q=JSON.parse(LS.getItem('qcList')||'[]');q.push([Date.now(),+fix.la.toFixed(6),+fix.lo.toFixed(6),ch.h==null?-1:Math.round(ch.h),Math.round(v*3.6),rl]);LS.setItem('qcList',JSON.stringify(q.slice(-200)))}catch(e){}
   lg(['camfix',Date.now(),body.kind,null,rl||null,'qc'])};
 function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
-  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':'신고했어요. 데이터 고칠 때 반영할게요')}).catch(function(){toast('보내지 못했어요')});
+  fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':kind==='wrong'?'이 차에선 바로 숨겼어요 · 다른 분도 신고하면 모두에게서 숨겨요':'신고했어요 · 모두에게 바로 보여요')}).catch(function(){toast('보내지 못했어요')});
   lg(['camfix',Date.now(),kind,id,lim]);
+  if(kind==='add'&&lim>=20&&ch.ok&&ch.h!=null)commMine(ll.la,ll.lo,lim,ch.h);
   if(kind==='wrong'&&c){var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[c._k]='x';LS.setItem('camfix4',JSON.stringify(fx));indexCams(CAMS);if(NAV)routeHits(NAV);if(target&&target.id===id)target=null}
   lpClose()}
 /* 카메라 신고 3번 안에: ① 지도 꾹 누르기 → ② 제한속도(또는 '신호'·'없음') → ③ 신고 (11/21 사용자) */
@@ -1855,7 +1862,7 @@ function incInfo(la,lo,h,now){var it=null,d=0;
   else if(h!=null){INC.forEach(function(q){var dd=dist(la,lo,q[0],q[1]);if(dd>1500||(it&&dd>=d))return;var df=adiff(h,brg(la,lo,q[0],q[1]));if(Math.abs(df)>25||Math.abs(dd*Math.sin(df*D2R))>40)return;it=q;d=dd})}
   if(!it)return null;var k=it[0]+','+it[1];if(d<1000&&!incAnn[k]){incAnn[k]=now;beep(520,0.18,2,CFG.volW)}
   return'<b>'+(d>30?fmtD(d)+' 앞 ':'')+(it[2]||'돌발')+(it[3]&&it[3]!==it[2]?' · '+it[3]:'')+'</b><small></small>'+'\u0000'+it[4]}
-function camTag(c){if(c[4]===1)return'구간단속 시작';if(c[4]===2)return'구간단속 끝';if(c[5]===2)return'어린이보호';if(c[3]==='R')return'신호단속';if(c[3]==='X')return'신호과속';return'과속단속'}
+function camTag(c){if(c._q)return'신고 카메라';if(c[4]===1)return'구간단속 시작';if(c[4]===2)return'구간단속 끝';if(c[5]===2)return'어린이보호';if(c[3]==='R')return'신호단속';if(c[3]==='X')return'신호과속';return'과속단속'}
 var bInfoH='';
 $('bMid').addEventListener('click',function(){if(!NAV)$('navBtn').onclick()});
 function tickBody(){
