@@ -996,7 +996,7 @@ var MUTE_OFF='<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 
 $('muteIc').innerHTML=MUTE_ON;
 function voicesReady(){if('speechSynthesis' in window)KO=speechSynthesis.getVoices().some(function(x){return /ko/i.test(x.lang)})}
 if('speechSynthesis' in window){voicesReady();speechSynthesis.onvoiceschanged=voicesReady}
-function beep(f,len,n,vol){if(muted||!ac)return;try{if(LOGON&&(f!==1400||Date.now()-(window._bpL||0)>5000)){window._bpL=Date.now();lg(['bp',Date.now(),f,n||1])}}catch(e){} /* 11/23: 어떤 경고음인지 주행 기록으로 (1400 과속·420 방지턱·600 사고주의·520 돌발·760 빠른길·880 음성없음) */var gv=0.5*(vol==null?CFG.volW:vol);for(var i=0;i<(n||1);i++){var o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime+i*(len+0.08);o.frequency.value=f;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(gv,t0);g.gain.setValueAtTime(0,t0+len);o.start(t0);o.stop(t0+len)}}
+function beep(f,len,n,vol){if(muted||!ac)return;try{if(LOGON&&(f!==1400||Date.now()-(window._bpL||0)>5000)){window._bpL=Date.now();lg(['bp',Date.now(),f,n||1])}}catch(e){} /* 11/23: 어떤 경고음인지 주행 기록으로 (1400 과속·420 방지턱·600 사고주의·520 돌발·760 빠른길·880 음성없음) */var gv=0.6*(vol==null?CFG.volW:vol); /* 11/23 실차: 네모난 '삐-'가 차 경고음과 비슷 → 띵-동 두 음, 삼각파, 끝이 잦아듦 */var f0=Math.min(f,1100),step=Math.max(0.2,len+0.1);for(var i=0;i<(n||1);i++){var tb=ac.currentTime+i*(step*2+0.06);[[f0,0],[f0*0.75,step]].forEach(function(q){var o=ac.createOscillator(),g=ac.createGain(),t0=tb+q[1];o.type='triangle';o.frequency.value=q[0];o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(gv,t0+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t0+step+0.15);o.start(t0);o.stop(t0+step+0.2)})}}
 function say(t,f,n,guide){if(muted)return;var vol=guide?CFG.volG:CFG.volW;if(KO){var u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.1;u.volume=vol;speechSynthesis.cancel();speechSynthesis.speak(u)}else beep(f||880,0.12,n||2,vol)}
 function unlockAudio(){try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state!=='running')ac.resume();}catch(e){}setTimeout(function(){show('snd',!ac||ac.state!=='running')},300)}
 addEventListener('pointerdown',function(){var was=ac&&ac.state==='running';unlockAudio();setTimeout(function(){if(ac&&ac.state==='running'&&!window._vp){window._vp=1;voPreload()}},400);if(!was)setTimeout(function(){if(ac&&ac.state==='running')beep(660,0.08,1)},350)},true);
@@ -1836,7 +1836,7 @@ function tickBody(){
   arrTick(la,lo,now);
   tripTick(la,lo,kmh,now,over);
   document.body.classList.toggle('over',over);document.body.classList.toggle('zone',zone);
-  if(over&&now-lastBeep>700){beep(1400,0.15,1);lastBeep=now}
+  if(over&&now-lastBeep>1100){beep(1400,0.15,1);lastBeep=now}
   if(CFG.diag){var g=gaps.length?Math.round(gaps.reduce(function(a,b){return a+b},0)/gaps.length):0;
     $('diag').textContent=(demo?'시연 중 · ':'')+(LOGON?(LOGK?'기록 중':'기록 보내는 중')+(LOGFAIL?' 실패 '+LOGFAIL:'')+' · ':'')+'화면 '+FPS+(FASTIV?'+':'')+' · 정확도 '+Math.round(lastAcc)+'m · 간격 '+g+'ms · 수신 '+fixes+'\n속도 '+spdSrc+' · 알림 '+fmtD(alertD)+' · 음성 '+(KO?'한국어':'없음')+' · 카메라 기준 '+(LS.getItem('camsRef')||'-')+HID.last}
   
