@@ -1817,7 +1817,7 @@ function tickBody(){
     zone=c[5]>0&&d<alertD;
     if(d<alertD&&!announced[target.id]){announced[target.id]=1;if(TRIP)TRIP.alerts++;var r=Math.round(d/50)*50;
       sayParts([c[5]===2?'child':null,'d'+dk(d),(c[2]&&c[2]%10===0&&c[2]>=20&&c[2]<=120)?'lim'+c[2]:null,c[4]===1?'sec_start':(c[3]==='R'?'cam_sig':c[3]==='X'?'cam_sx':'cam_s')],false,(c[5]===2?'어린이보호구역, ':'')+'전방 '+r+'미터, '+(c[2]?'제한속도 '+c[2]+', ':'')+(c[4]===1?'구간단속 시작입니다':'단속 카메라입니다'),880,2)}
-    if(c[2]&&d<alertD&&Math.round(kmh)>c[2]+(c[5]===2?0:CFG.tol))over=true; /* 어린이 보호구역은 여유 없이 바로 */ /* 화면 속도(반올림)가 제한보다 클 때만 (11/22 실차: '딱 100인데 울리네' — 100.4 를 넘었다고 봄) */
+    if(c[2]&&d<alertD&&!(head!=null&&d>15&&Math.abs(adiff(head,brg(la,lo,c[0],c[1])))>90)&&Math.round(kmh)>c[2]+(c[5]===2?0:CFG.tol))over=true; /* 11/23 실차: 카메라 지난 뒤 80m 표시 유지 동안 과속음도 계속 울림 → 지난 뒤엔 안 울림 */ /* 어린이 보호구역은 여유 없이 바로 */ /* 화면 속도(반올림)가 제한보다 클 때만 (11/22 실차: '딱 100인데 울리네' — 100.4 를 넘었다고 봄) */
   }else if(section){setAlert('on sec',section.lim,'평균 '+Math.round(avg||0),'구간단속 중')}
   else setAlert('','','');
   var bp=(CFG.bumpOn&&head!=null&&kmh>20&&BUMPS.length)?findBump(la,lo,head,kmh>50?250:150):null;
