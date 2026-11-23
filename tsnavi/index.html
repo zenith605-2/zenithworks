@@ -72,7 +72,10 @@
   .lim.z b,.lim.x.z b{margin:0 0 -20px;font-size:25px;background:#fff;color:#111;border:2.5px solid #111;border-radius:4px;padding:1px 10px 2px;box-shadow:0 2px 5px #0006} /* 보조표지: 흰 바탕·검은 테·검은 글자 (별표 6) */
   /* 11/23 '속도가 안 이쁘다' → 어린이보호는 세모 아래로 숫자 판·거리·어린이보호를 틈 없이 한 덩어리 (폭 84 맞춤) */
   #alertBox.child{row-gap:0!important}
-  #alertBox.child #signWrap{height:74px;margin-bottom:46px}
+  #alertBox.child #signWrap{height:74px;margin-bottom:0}
+  .lim.z b,.lim.x.z b{display:none!important}
+  #alertBox.child #tag .tz{display:flex;align-items:center;justify-content:center;height:46px;margin:4px -0px -4px;background:#fff;color:#111;border:2.5px solid #111;border-top:0;border-radius:0 0 9px 9px;font-size:36px;font-weight:900;letter-spacing:-1px;box-sizing:border-box}
+  #alertBox.child #tag{border-radius:0;padding-bottom:4px}
   .lim.z,.lim.x.z{background-size:84px auto;inset:0;overflow:visible}
   .lim.z b,.lim.x.z b{position:absolute;left:0;top:72px;width:84px;height:46px;margin:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#fff;color:#111;border:2.5px solid #111;border-bottom:0;border-radius:9px 9px 0 0;padding:0;font-size:36px!important;font-weight:900;letter-spacing:-1px;font-family:system-ui,sans-serif;box-shadow:none}
   #alertBox.child #pill{width:84px;box-sizing:border-box;border-radius:0;min-width:0;padding:2px 0;font-size:23px}
@@ -1814,7 +1817,7 @@ function findAhead(la,lo,h){
   return best;
 }
 var TLH='<span class="tl"><i style="background:#ff3030"></i><i style="background:#ffc400"></i><i style="background:#22c55e"></i></span>';
-function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;$('lim').innerHTML=(/sx|sig/.test(cls)?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(/sx|sig/.test(cls)?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||''}
+function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;$('lim').innerHTML=(/sx|sig/.test(cls)?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(/sx|sig/.test(cls)?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||'';if(/child/.test(cls)&&lim){var z=document.createElement('b');z.className='tz';z.textContent=lim;$('tag').appendChild(z)}} /* 11/23 사용자: 노란 어린이보호 밑에 속도 */
 var bAnn={},aAnn={},restAt=0;
 /* 주의운전구간(국가교통정보센터, 집 맥이 하루 한 번 올림): 고속도로 사고잦은구간 등. 앞 700m, ±30°, 옆 80m 안 */
 (function(){fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.json()}).then(function(vj){return fetch(DATA+'caution.json?v='+vj.ver)}).then(function(r){return r.json()}).then(function(a){CAU=a;CGRID={};a.forEach(function(p,i){var k=Math.floor(p[0]*100)+'_'+Math.floor(p[1]*100);(CGRID[k]=CGRID[k]||[]).push(i)})}).catch(function(){})})();
