@@ -86,6 +86,10 @@
   #bInfo .gray{color:#888;font-size:15px}
   #bMid{gap:4px!important}
   #reroute{visibility:hidden}
+  /* 하단 안내 종료 (11/23 요청): 안내 중에만, 잘못 눌림 막으려 두 번 누르기 */
+  #endBtn{display:none;flex:0 0 auto;height:44px;padding:0 16px;border:0;border-radius:22px;background:#eceff3;color:#111;font:inherit;font-size:17px;font-weight:700;white-space:nowrap}
+  body.nav #endBtn{display:block}#endBtn.arm{background:#e3151a;color:#fff}
+  body.night #endBtn{background:#2c3037;color:#e8eaed}body.night #endBtn.arm{background:#e3151a;color:#fff}
   body.nav #reroute{visibility:visible}
   #diag{position:fixed;right:80px;bottom:66px;font-size:12px;color:#333;opacity:.75;text-align:right;white-space:pre;z-index:6;text-shadow:0 0 3px #fff}
 
@@ -449,6 +453,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
 <div id="bottom">
   <button class="ic" id="reroute" title="경로 다시 찾기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div id="bMid"><div id="bInfo"></div><div id="tbar"><div id="tbarIn"></div><div id="tbarDone"></div><div id="tbarDot"></div></div></div>
+  <button id="endBtn" type="button">안내 종료</button>
   <button class="ic" id="menuBtn" title="메뉴"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 </div>
 
@@ -676,6 +681,7 @@ $('mMap').onclick=function(){setMap(!mapOn);show('menuSheet',0)};
 $('mDemo').onclick=function(){toggleDemo();show('menuSheet',0)};
 $('mFix').onclick=function(){fixCam(this)};
 $('stopNav').onclick=function(){endNav();show('menuSheet',0)};
+$('endBtn').onclick=function(){var b=this;if(b.classList.contains('arm')){clearTimeout(b._t);b.classList.remove('arm');b.textContent='안내 종료';if(NAV)endNav();return}b.classList.add('arm');b.textContent='한 번 더 누르면 종료';b._t=setTimeout(function(){b.classList.remove('arm');b.textContent='안내 종료'},3000)};
 
 /* 카메라 데이터 */
 var CAMS=[],GRID={};
