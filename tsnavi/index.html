@@ -36,7 +36,7 @@
   .lim{position:absolute;inset:0;border-radius:50%;background:#fff;border:11px solid #e3151a;box-sizing:border-box;color:#111;font-size:34px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px #0005}
   .lim.z{box-shadow:0 0 0 6px #ffcc00,0 3px 10px #0005}
   #sgChild,#sgSig{position:absolute;display:none}
-  #sgChild{width:40px;height:37px;right:-16px;top:-10px}
+  #sgChild{width:42px;height:auto;right:-17px;top:-11px}
   #sgSig{width:62px;height:104px;left:28px;top:7px}
   #alertBox.child #sgChild,#alertBox.sig #sgSig{display:block}
   #alertBox.sig #sgSig{display:none}
@@ -54,6 +54,12 @@
 #oddBtn{display:none;margin-top:2px;font-size:16px;font-weight:800;padding:9px 16px;border-radius:20px;border:2px solid #fff;background:#111d;color:#fff;pointer-events:auto}
 #alertBox.on #oddBtn{display:block}
   #alertBox.sec #tag{background:#1f5fd6;color:#fff}
+  /* 11/23 표지 그림(제미나이, img/sg_*.png): 숫자만 코드로 */
+  .lim{background:url(img/sg_lim.png) center/contain no-repeat;border:0;box-shadow:none;filter:drop-shadow(0 3px 5px #0007)}
+  .lim.z{background-image:url(img/sg_limz.png);box-shadow:none;font-size:29px}
+  .lim.x{background-image:url(img/sg_limx.png)}.lim.x.z{background-image:url(img/sg_limxz.png)}
+  .lim .tl{display:none}.lim.x b{margin-top:30%;font-size:27px}.lim.x.z b{font-size:24px;margin-top:28%}
+  #sgChild{filter:drop-shadow(0 2px 3px #0006)}
   #spd{margin-bottom:4px;font-size:40px;font-weight:900;line-height:1;margin-top:2px;color:#111;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 8px #fff}
   body.nomap #alertBox{left:50%;transform:translateX(-50%);bottom:120px}
   body.nomap #spd{color:#fff;text-shadow:none;font-size:110px}
@@ -421,7 +427,7 @@ body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{
   <div id="limNow"></div>
   <div id="spd">-</div>
   <div id="signWrap"><div class="lim" id="lim">60</div>
-    <svg id="sgChild" viewBox="0 0 100 92"><polygon points="50,6 95,86 5,86" fill="#fff" stroke="#e02020" stroke-width="10" stroke-linejoin="round"/><circle cx="40" cy="44" r="6" fill="#111"/><circle cx="61" cy="50" r="5" fill="#111"/><path d="M40 51 L36 68 M40 51 L46 66 M40 54 L31 60 M40 54 L50 58 M61 56 L58 70 M61 56 L65 70 M61 59 L53 61 M61 59 L69 63" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/></svg>
+    <img id="sgChild" src="img/sg_kid.png" alt="">
     <svg id="sgSig" viewBox="0 0 60 100"><rect x="10" y="4" width="40" height="92" rx="10" fill="#222" stroke="#fff" stroke-width="4"/><circle cx="30" cy="25" r="10" fill="#ff3030"/><circle cx="30" cy="50" r="10" fill="#ffc400"/><circle cx="30" cy="75" r="10" fill="#22c55e"/></svg>
   </div>
   <div id="pill">-</div>
@@ -799,8 +805,13 @@ function ptEnd(e){delete PT[e.pointerId];if(!Object.keys(PT).length)drag=null;if
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('map').addEventListener(n,ptEnd,true)});
 $('map').addEventListener('wheel',function(e){e.preventDefault();setZ(e.deltaY>0?-0.25:0.25)},{passive:false});
 $('zIn').onclick=function(){setZ(0.5)};$('zOut').onclick=function(){setZ(-0.5)};
+var SGI={};['lim','limx','limz','limxz','bump'].forEach(function(n){var i=new Image();i.onload=function(){tmIconC={}};i.src='img/sg_'+n+'.png';SGI[n]=i});
+function sgOk(n){var i=SGI[n];return i&&i.complete&&i.naturalWidth>0}
 function iconCanvas(id){
   var cv=document.createElement('canvas'),x=cv.getContext('2d'),R=2;
+  if(id==='sig'&&sgOk('limx')){cv.width=40*R;cv.height=40*R;x.scale(R,R);x.drawImage(SGI.limx,0,0,40,40);return cv}
+  if(id==='bump'&&sgOk('bump')){cv.width=24*R;cv.height=21*R;x.scale(R,R);x.drawImage(SGI.bump,0,0,24,21);return cv}
+  if(/^limx?z?-/.test(id)){var n0=id.split('-')[1],k0=id.split('-')[0];if(sgOk(k0)){var S0=46,xx0=/x/.test(k0),z0=/z/.test(k0);cv.width=S0*R;cv.height=S0*R;x.scale(R,R);x.drawImage(SGI[k0],0,0,S0,S0);x.fillStyle='#111';x.font='800 '+(n0.length>2?(z0?10:12):(xx0?(z0?12:14):(z0?14:16)))+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(n0,S0/2,S0/2+(xx0?6:1));return cv}}
   if(id==='sig'){cv.width=22*R;cv.height=40*R;x.scale(R,R);x.fillStyle='#222';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.roundRect(2,2,18,36,5);x.fill();x.stroke();['#ff3030','#ffc400','#22c55e'].forEach(function(c,i){x.fillStyle=c;x.beginPath();x.arc(11,10+i*10,3.6,0,7);x.fill()})}
   else if(id==='chev'){cv.width=14*R;cv.height=14*R;x.scale(R,R);x.strokeStyle='#fff';x.lineWidth=3;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(4,2);x.lineTo(10,7);x.lineTo(4,12);x.stroke()}
   else if(id==='dest'){cv.width=56*R;cv.height=66*R;x.scale(R,R);x.fillStyle='#2b7bff';x.beginPath();x.moveTo(28,64);x.bezierCurveTo(14,46,4,36,4,24);x.arc(28,24,24,Math.PI,0);x.bezierCurveTo(52,36,42,46,28,64);x.fill();x.fillStyle='#fff';x.font='800 15px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('도착',28,24)}
@@ -1702,7 +1713,7 @@ function findAhead(la,lo,h){
   return best;
 }
 var TLH='<span class="tl"><i style="background:#ff3030"></i><i style="background:#ffc400"></i><i style="background:#22c55e"></i></span>';
-function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;$('lim').innerHTML=(/sx|sig/.test(cls)?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'');$('pill').textContent=pill;$('tag').textContent=tag||''}
+function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;$('lim').innerHTML=(/sx|sig/.test(cls)?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(/sx|sig/.test(cls)?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||''}
 var bAnn={},aAnn={},restAt=0;
 /* 주의운전구간(국가교통정보센터, 집 맥이 하루 한 번 올림): 고속도로 사고잦은구간 등. 앞 700m, ±30°, 옆 80m 안 */
 (function(){fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.json()}).then(function(vj){return fetch(DATA+'caution.json?v='+vj.ver)}).then(function(r){return r.json()}).then(function(a){CAU=a;CGRID={};a.forEach(function(p,i){var k=Math.floor(p[0]*100)+'_'+Math.floor(p[1]*100);(CGRID[k]=CGRID[k]||[]).push(i)})}).catch(function(){})})();
