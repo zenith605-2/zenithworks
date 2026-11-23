@@ -436,6 +436,18 @@ body.jvon #turn{display:none!important}body.jvon #jv{margin-top:0;border-top-lef
 #hpBox .hl b{box-shadow:0 2px 4px #0006}#hpBox .ht em{color:#0b7a3e}
 body.hpon #turn{display:none!important}body.hpon #hpBox{margin-top:0}
 #hpBox.big .ht{font-size:16px;line-height:1.1}#hpBox.big .ht span{display:block;font-size:44px;font-weight:900;color:#0d2340;margin:0 0 2px}#hpBox.big .ht span small{font-size:22px}#hpBox.big .ht b{display:inline}
+/* 11/23 사용자 '지저분해, 칸을 나눠서': 그림 위에 글자 얹지 않음 — 머리(파랑: 거리·이름) / 그림 / 바닥(어두움: 차로·막대) */
+#jv{height:auto!important}#jv svg{height:138px}#jv.fitSm{height:auto!important}#jv.fitSm svg{height:88px}#jv .cH .jvD{position:static;color:#fff;font-size:38px}
+.cH{background:#1d5fd6;color:#fff;display:flex;align-items:baseline;gap:10px;padding:6px 14px 7px;min-width:0}
+.cH b{font-size:38px;font-weight:900;line-height:1;white-space:nowrap}.cH b small{font-size:19px;margin-left:1px}
+.cH em{font-style:normal;font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cF{background:#1c1f24;padding:8px 12px}
+#jv .cF .jvP{position:static;height:6px;border-radius:3px;background:#ffffff33}#jv .jvP i{display:block;height:100%;border-radius:3px;background:#fff}
+#hpBox{width:340px!important;border-radius:0 12px 12px 0}#hpBox img{display:block;width:100%;height:auto}
+#hpBox .hb{position:static;inset:auto;display:block;padding:8px 12px 10px}
+#hpBox .ht{color:#9aa3ad;font-size:13px;font-weight:700;margin:0 0 6px}
+#hpBox .hl u{background:#2f343c}
+#hpBox:not(.big) .cH b{font-size:26px}#hpBox:not(.big) .cH b small{font-size:15px}#hpBox:not(.big) .cH{background:#2a2f36}
 </style>
 </head>
 <body>
@@ -607,9 +619,9 @@ function jvSvg(side,dir,jc){var road='<image href="img/'+(jc?'jv_jc':'jv_r')+'.j
  var sign='<rect x="'+sx+'" y="8" width="132" height="48" rx="6" fill="#1b7a44" stroke="#fff" stroke-width="2.5"/>'+
  '<text x="'+(sx+66+(side>0?-10:10))+'" y="41" text-anchor="middle" font-size="'+(t.length>5?17:22)+'" font-weight="800" fill="#fff">'+t+'</text>'+
  '<path d="'+(side>0?ax.replace(/(\d+) (\d+)/g,function(m,x,y){return (+x+sx-196)+' '+y}):ax.replace(/(\d+) (\d+)/g,function(m,x,y){return (+x+sx-12)+' '+y}))+'" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/>';
- return '<svg viewBox="0 0 340 190">'+road+(t?sign:'')+'</svg>'}
+ return '<svg viewBox="0 52 340 138">'+road+(t?sign:'')+'</svg>'}
 function jv(nx,dd,kmh){var e=$('jv');var off=function(){e.classList.remove('on');document.body.classList.remove('jvon')};if(!nx){off();return}var k=arrowKind(nx.t),side=(k==='exitR'||k==='sright'||nx.t===43)?1:(k==='exitL'||k==='sleft'||nx.t===44)?-1:0,thr=kmh>70?800:400;
- if(!side||dd>thr||dd<0){off();return}var nm=nx.dir||'',jc=/분기|JC/.test((nx.pname||'')+(nx.name||''));var key=side+'|'+nm+'|'+nx.s;if(e._k!==key){e._k=key;e.innerHTML=jvSvg(side,nm,jc)+'<div class="jvD'+(side<0?' r':'')+'"></div><div class="jvP"><i></i></div>'}
+ if(!side||dd>thr||dd<0){off();return}var nm=nx.dir||'',jc=/분기|JC/.test((nx.pname||'')+(nx.name||''));var key=side+'|'+nm+'|'+nx.s;if(e._k!==key){e._k=key;e.innerHTML='<div class="cH"><b class="jvD"></b><em>'+jvEsc(nm?nm+' 방면':(nx.pname||''))+'</em></div>'+jvSvg(side,'',jc)+'<div class="cF"><div class="jvP"><i></i></div></div>'}
  /* 11/23: 회전 카드와 갈림길 그림이 같은 정보라 하나로 — 그림 하늘에 거리, 아래에 남은 거리 막대 */
  e.querySelector('.jvD').innerHTML=bigD(dd);e.querySelector('.jvP i').style.width=Math.round(Math.min(1,Math.max(0,1-dd/thr))*100)+'%';e.classList.add('on');document.body.classList.add('jvon')}
 /* 11/23: 창이 낮으면 왼쪽 위 안내 묶음이 아래 속도 묶음과 겹침 → 공간 모자라면 정체·쉼터·공사 알림 순으로 숨기고 갈림길 그림을 줄인다 */
@@ -637,9 +649,9 @@ function hpRoute(N){N.tg=[];if(!HP||!N.R||!N.S)return;var R=N.R,S=N.S,T=N.T||[],
  N.tg.sort(function(a,b){return a.s-b.s})}
 function hpLanes(l){var o='',gap=0;for(var i=0;i<l.length;i++){var c=l[i];if(c==='X')continue;if(c==='H'||c==='B'||c==='M'){if(gap){o+='<i>–</i>';gap=0}o+='<b'+(c==='M'?' class="m"':'')+'>'+(i+1)+'</b>'}else gap=1}if(gap)o+='<i>–</i>';return o}
 function hpTick(){var e=$('hpBox'),off=function(){e.classList.remove('show');document.body.classList.remove('hpon')};if(!NAV||!NAV.tg||!CFG.hipass){off();return}var g=null;for(var i=0;i<NAV.tg.length;i++){var d=NAV.tg[i].s-NAV.s;if(d>-30&&d<1500){g=NAV.tg[i];break}}
- if(!g){off();return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<img src="img/tg.jpg" alt=""><div class="hb"><div class="ht"><span></span> <b>하이패스</b>'+jvEsc(g.n)+' 요금소</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}/* 11/23 사용자 '이것도 합쳐': 요금소 전에 할 회전이 없으면 회전 카드를 숨기고 이 카드 하나로 (그림 하늘에 큰 거리) */
+ if(!g){off();return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<div class="cH"><b class="hpD"></b><em>'+jvEsc(g.n)+' 요금소</em></div><img src="img/tg.jpg" alt=""><div class="cF hb"><div class="ht">하이패스 차로</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}/* 11/23 사용자 '이것도 합쳐': 요금소 전에 할 회전이 없으면 회전 카드를 숨기고 이 카드 하나로 (그림 하늘에 큰 거리) */
  var merge=!document.body.classList.contains('jvon')&&(NAV._nxk==='straight'||NAV.nextD==null||NAV.nextD>d+300);document.body.classList.toggle('hpon',merge);e.classList.toggle('big',merge);
- e.querySelector('.ht span').innerHTML=merge?bigD(d):fmtD(d);e.classList.add('show');var tw=0;['turn','jv'].forEach(function(id){var x=$(id);if(x&&x.offsetWidth)tw=Math.max(tw,x.getBoundingClientRect().width)});e.style.width=merge?'340px':Math.max(260,Math.round(tw||260))+'px'}
+ e.querySelector('.hpD').innerHTML=bigD(d);e.classList.add('show');var tw=0;['turn','jv'].forEach(function(id){var x=$(id);if(x&&x.offsetWidth)tw=Math.max(tw,x.getBoundingClientRect().width)});e.style.width=merge?'340px':Math.max(260,Math.round(tw||260))+'px'}
 setInterval(hpTick,1000);
 function setAr(id,k){var e=$(id);if(e._k!==k){e._k=k;e.innerHTML=AR[k]}}
 function arrowKind(t){if(t===201||(t>=182&&t<=189))return'dest';if(t===12)return'left';if(t===13)return'right';if(t===16)return'hleft';if(t===19)return'hright';if(t===14)return'uturn';if(t===17)return'sleft';if(t===18)return'sright';if([102,105,112,115,118].indexOf(t)>=0)return'exitL';if([101,104,111,114,117].indexOf(t)>=0)return'exitR';if(t>=131&&t<=142)return'round';return'straight'}
