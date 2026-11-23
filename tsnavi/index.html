@@ -422,6 +422,9 @@ body.nav #tripStat{display:none!important}
 #left #incChip small{max-width:300px}
 .fitHide{display:none!important}#jv.fitSm{width:216px;height:121px}
 #alertBox #spd{min-width:1.75em;text-align:center;font-variant-numeric:tabular-nums} /* 숫자 자릿수 바뀔 때 옆 버튼이 밀리지 않게 */
+#jv{position:relative}#jv .jvD{position:absolute;left:14px;top:8px;font-size:44px;font-weight:900;color:#0d2340;line-height:1}#jv .jvD.r{left:auto;right:14px}#jv .jvD small{font-size:22px;margin-left:2px}
+#jv .jvP{position:absolute;left:12px;right:12px;bottom:8px;height:6px;border-radius:3px;background:#ffffff55}#jv .jvP i{display:block;height:100%;border-radius:3px;background:#fff}
+body.jvon #turn{display:none!important}body.jvon #jv{margin-top:0;border-top-left-radius:0}
 </style>
 </head>
 <body>
@@ -437,8 +440,8 @@ body.nav #tripStat{display:none!important}
 
 <div id="left">
   <div id="turn"><svg id="tArrow" viewBox="0 0 100 100"></svg><div><div id="tDist">-</div><div id="tName"></div><div id="tSub"></div></div></div>
-  <div id="next"><svg id="nArrow" viewBox="0 0 100 100"></svg><span id="nDist"></span></div>
   <div id="jv"></div>
+  <div id="next"><svg id="nArrow" viewBox="0 0 100 100"></svg><span id="nDist"></span></div>
   <button id="restChip"></button>
   <div id="incChip"></div>
   <div id="jamChip"></div>
@@ -593,8 +596,10 @@ function jvSvg(side,dir){var road='<image href="img/jv_r.jpg" x="0" y="0" width=
  '<text x="'+(sx+66+(side>0?-10:10))+'" y="41" text-anchor="middle" font-size="'+(t.length>5?17:22)+'" font-weight="800" fill="#fff">'+t+'</text>'+
  '<path d="'+(side>0?ax.replace(/(\d+) (\d+)/g,function(m,x,y){return (+x+sx-196)+' '+y}):ax.replace(/(\d+) (\d+)/g,function(m,x,y){return (+x+sx-12)+' '+y}))+'" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/>';
  return '<svg viewBox="0 0 340 190">'+road+(t?sign:'')+'</svg>'}
-function jv(nx,dd,kmh){var e=$('jv');if(!nx){e.classList.remove('on');return}var k=arrowKind(nx.t),side=(k==='exitR'||k==='sright'||nx.t===43)?1:(k==='exitL'||k==='sleft'||nx.t===44)?-1:0,thr=kmh>70?800:400;
- if(!side||dd>thr||dd<0){e.classList.remove('on');return}var nm=nx.dir||'';var key=side+'|'+nm+'|'+nx.s;if(e._k!==key){e._k=key;e.innerHTML=jvSvg(side,nm)}e.classList.add('on')}
+function jv(nx,dd,kmh){var e=$('jv');var off=function(){e.classList.remove('on');document.body.classList.remove('jvon')};if(!nx){off();return}var k=arrowKind(nx.t),side=(k==='exitR'||k==='sright'||nx.t===43)?1:(k==='exitL'||k==='sleft'||nx.t===44)?-1:0,thr=kmh>70?800:400;
+ if(!side||dd>thr||dd<0){off();return}var nm=nx.dir||'';var key=side+'|'+nm+'|'+nx.s;if(e._k!==key){e._k=key;e.innerHTML=jvSvg(side,nm)+'<div class="jvD'+(side<0?' r':'')+'"></div><div class="jvP"><i></i></div>'}
+ /* 11/23: 회전 카드와 갈림길 그림이 같은 정보라 하나로 — 그림 하늘에 거리, 아래에 남은 거리 막대 */
+ e.querySelector('.jvD').innerHTML=bigD(dd);e.querySelector('.jvP i').style.width=Math.round(Math.min(1,Math.max(0,1-dd/thr))*100)+'%';e.classList.add('on');document.body.classList.add('jvon')}
 /* 11/23: 창이 낮으면 왼쪽 위 안내 묶음이 아래 속도 묶음과 겹침 → 공간 모자라면 정체·쉼터·공사 알림 순으로 숨기고 갈림길 그림을 줄인다 */
 function fitLeft(){try{var a=$('alertBox'),ab=a.getBoundingClientRect();if(!ab.height)return;var top=ab.top-8,L=['jamChip','restChip','incChip'];L.forEach(function(id){$(id).classList.remove('fitHide')});$('jv').classList.remove('fitSm');
  for(var i=0;i<=L.length;i++){if($('left').getBoundingClientRect().bottom<=top)break;if(i<L.length)$(L[i]).classList.add('fitHide');else $('jv').classList.add('fitSm')}}catch(e){}}
@@ -1668,7 +1673,7 @@ function layShowEv(){var c=layCenter();if(!c)return;LAY.evAt=c;api('pois/search/
 $('scBtn').onclick=function(){LAY.sc=!LAY.sc;this.classList.toggle('on',LAY.sc);if(LAY.sc)layShowSc();else layClear('sc')};
 $('evBtn').onclick=function(){LAY.ev=!LAY.ev;this.classList.toggle('on',LAY.ev);if(LAY.ev)layShowEv();else{layClear('ev');LAY.evAt=null}};
 setInterval(function(){if(LAY.ev&&LAY.evAt){var c=layCenter();if(c&&dist(c.la,c.lo,LAY.evAt.la,LAY.evAt.lo)>2500)layShowEv()}},6000);
-function endNav(){cctvClose();try{$('jv').classList.remove('on')}catch(e){}try{LS.removeItem('navResume')}catch(e){}show('incChip',0);fastR=null;show('fastCard',0);show('jamChip',0);show('hwBox',0);if(TMM)tmDrawTurn(null);RWX=null;setTimeout(updWxWarn,0);favDismissed=false;setTimeout(showFav,1500);NAV=null;document.body.classList.remove('nav');setTimeout(mapResize,60);drawRoute(true)}
+function endNav(){cctvClose();try{$('jv').classList.remove('on');document.body.classList.remove('jvon')}catch(e){}try{LS.removeItem('navResume')}catch(e){}show('incChip',0);fastR=null;show('fastCard',0);show('jamChip',0);show('hwBox',0);if(TMM)tmDrawTurn(null);RWX=null;setTimeout(updWxWarn,0);favDismissed=false;setTimeout(showFav,1500);NAV=null;document.body.classList.remove('nav');setTimeout(mapResize,60);drawRoute(true)}
 function project(la,lo){
   var R=NAV.R,best=null,from=Math.max(0,NAV.idx-5),to=Math.min(R.length-2,NAV.idx+120),kx=111320*Math.cos(la*D2R),ky=111320;
   for(var i=from;i<=to;i++){var ax=(R[i][1]-lo)*kx,ay=(R[i][0]-la)*ky,bx=(R[i+1][1]-lo)*kx,by=(R[i+1][0]-la)*ky,dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy,t=L2?Math.max(0,Math.min(1,-(ax*dx+ay*dy)/L2)):0,px=ax+t*dx,py=ay+t*dy,dd=Math.sqrt(px*px+py*py);
