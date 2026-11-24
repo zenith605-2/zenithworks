@@ -800,7 +800,19 @@ function commCams(arr){arr=arr.filter(function(x){return !x._q});var out=arr;COM
 function commMine(la,lo,lim,h){COMM.mine=(COMM.mine||[]).concat([[+la.toFixed(5),+lo.toFixed(5),lim,Math.round(h)%360,1]]);COMM.add=COMM.add.concat(COMM.mine.slice(-1));COMM._k=null;indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}
 function loadComm(){fetch(RELAY+'community').then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.add)return;var h={};(d.hide||[]).forEach(function(k){h[k]=1});var key=JSON.stringify(d);if(key===COMM._k)return;COMM={add:d.add.concat(COMM.mine||[]),hide:h,mine:COMM.mine,_k:key};if(CAMS&&CAMS.length){indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}}).catch(function(){})}
 setTimeout(loadComm,3000);setInterval(loadComm,600000);
-function indexCams(arr){arr=commCams(arr);var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0._k==null)a0._k=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0._k];a0.hid=(f0==='x'||COMM.hide[a0._k])?1:0;if(f0&&f0!=='x'){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){if(arr[i].hid)continue;var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
+/* 주인 차 전용 개인 레이어(11/25 사용자 "내 차에서만"): 주인 키(x-log)일 때만 중계 priv/inavi 를 받아 이 브라우저 메모리에서만 합침. 저장·신고·공개 데이터로 내보내지 않음.
+   공공 카메라와 40m 안이면 위치(제한속도·구간 같을 때)·빈 방향만 채운 복사본(_ip, 원래 좌표 _o), 없으면 새 카메라(_i) */
+var INV=null;
+function inaviApply(arr){if(!INV||!arr||!arr.length)return arr;for(var i=0;i<arr.length;i++)if(arr[i]._i||arr[i]._ip)return arr;
+  var out=arr.slice(),G={},used={};for(i=0;i<out.length;i++){var c0=out[i];if(c0._q)continue;var k0=Math.floor(c0[0]*200)+'_'+Math.floor(c0[1]*200);(G[k0]=G[k0]||[]).push(i)}
+  INV.forEach(function(r){var ca=Math.floor(r[0]*200),co=Math.floor(r[1]*200),best=-1,bd=40;
+    for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var L=G[(ca+dx)+'_'+(co+dy)];if(L)for(var j=0;j<L.length;j++){var d=dist(out[L[j]][0],out[L[j]][1],r[0],r[1]);if(d<bd){bd=d;best=L[j]}}}
+    if(best>=0){if(used[best])return;used[best]=1;var c=out[best],e=c.slice();e._ip=1;e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&(c[4]||0)===r[4]){e[0]=r[0];e[1]=r[1]}if(e[7]==null||e[7]<0)e[7]=r[5];out[best]=e}
+    else{var n=[r[0],r[1],r[2],r[3],r[4],(r[2]<=30&&!r[4])?2:0,'',r[5]];n._i=1;out.push(n)}});
+  return out}
+function loadInavi(){if(!LOGK)return;fetch(RELAY+'priv/inavi',{headers:ownH(),cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.c||!d.c.length)return;INV=d.c;if(CAMS&&CAMS.length){indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}}).catch(function(){})}
+setTimeout(loadInavi,2500);
+function indexCams(arr){arr=commCams(inaviApply(arr));var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}for(var i0=0;i0<arr.length;i0++){var a0=arr[i0];if(a0._k==null)a0._k=a0[0].toFixed(5)+'_'+a0[1].toFixed(5);var f0=fx[a0._k];a0.hid=(f0==='x'||COMM.hide[a0._k])?1:0;if(f0&&f0!=='x'){a0[0]=f0[0];a0[1]=f0[1]}}CAMS=arr;GRID={};for(var i=0;i<arr.length;i++){if(arr[i].hid)continue;var k=cellKey(arr[i][0],arr[i][1]);(GRID[k]=GRID[k]||[]).push(i)}camSrcAt=null}
 var DATA='https://actparty.app/tesla-webnav/';
 function loadCams(){
   var cur=LS.getItem('camsVer'),have=null;
@@ -882,7 +894,7 @@ $('qcBtn').onclick=function(e){e.stopPropagation();if(!fix){toast('위치를 기
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){if(!r.ok)toast('저장은 했지만 보내지 못했어요')}).catch(function(){toast('저장은 했지만 보내지 못했어요')});
   try{var q=JSON.parse(LS.getItem('qcList')||'[]');q.push([Date.now(),+fix.la.toFixed(6),+fix.lo.toFixed(6),ch.h==null?-1:Math.round(ch.h),Math.round(v*3.6),rl]);LS.setItem('qcList',JSON.stringify(q.slice(-200)))}catch(e){}
   lg(['camfix',Date.now(),body.kind,null,rl||null,'qc'])};
-function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:c?{la:c[0],lo:c[1],lim:c[2],dir:c[7]==null?-1:c[7]}:null};
+function camReport(kind,ll,id,lim){var c=id!=null?CAMS[id]:null,ch=carHeading();var body={kind:kind,la:ll.la,lo:ll.lo,lim:lim,h:ch.h,hOk:ch.ok,kmh:v*3.6,ver:'tsnavi',cam:(c&&!c._i)?{la:c._o?c._o[0]:c[0],lo:c._o?c._o[1]:c[1],lim:c[2],dir:(c._o?c._o[2]:c[7])==null?-1:(c._o?c._o[2]:c[7])}:null};/* 개인 레이어 좌표는 안 보냄 */
   fetch(RELAY+'camfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){toast(!r.ok?'지금은 보낼 수 없어요':kind==='odd'?'알려 주셔서 고마워요 · 이 카메라는 10분 동안 안 울려요':kind==='miss'?'이 자리를 보냈어요 · 확인해서 넣을게요':kind==='wrong'?'이 차에선 바로 숨겼어요 · 다른 분도 신고하면 모두에게서 숨겨요':'신고했어요 · 모두에게 바로 보여요')}).catch(function(){toast('보내지 못했어요')});
   lg(['camfix',Date.now(),kind,id,lim]);
   if(kind==='add'&&lim>=20&&ch.ok&&ch.h!=null)commMine(ll.la,ll.lo,lim,ch.h);
