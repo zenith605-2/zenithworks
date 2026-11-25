@@ -1859,7 +1859,7 @@ function jamInfo(){if(!NAV||!NAV.C||!NAV.S)return null;var C=NAV.C,S=NAV.S,i=Mat
 /* 고속도로 모드: 고속도로(도로 종류 0·1)나 70km/h 넘을 때, 앞의 IC·JC·휴게소·졸음쉼터 3개 */
 function hwRows(kmh,now){if(!NAV||!NAV.S)return null;var T=NAV.T||[],rt=T[Math.max(0,NAV.idx)];if(!(rt===0||rt===1||kmh>70))return null;
   var L=[],rem=NAV.total-NAV.s,secPerM=NAV.time/Math.max(1,NAV.total);
-  NAV.G.forEach(function(g){if(g.t>=101&&g.t<=116&&g.s>NAV.s+100){var nm=(g.pname||g.name||'').replace(/</g,'');var j=/분기|JC|분기점/.test(nm),tg=/TG|톨게이트|요금소/.test(nm);L.push({s:g.s,k:j?'JC':tg?'TG':'IC',c:j?'#7c3aed':'#475569',n:(nm||TT[g.t])+(nm?' · '+TT[g.t].replace(/(오른쪽|왼쪽) /,''):'')})}});
+  NAV.G.forEach(function(g){if(g.t>=101&&g.t<=116&&g.s>NAV.s+100){var nm=(g.pname||g.name||'').replace(/</g,'');var j=/분기|JC|분기점/.test(nm),tg=/TG|톨게이트|요금소/.test(nm);L.push({s:g.s,k:j?'JC':tg?'TG':'IC',c:j?'#7c3aed':'#475569',n:nm||TT[g.t]}) /* 11/25 실차 '우리 너무 길어 줄이자': IC/JC 배지가 있으니 ' · 고속도로 출구' 뺌 */}});
   (NAV.rp||[]).forEach(function(x){if(x.k==='rest'&&x.s>NAV.s+100)L.push({s:x.s,k:x.p[3]==='R'?'쉼':'휴',c:x.p[3]==='R'?'#4a8a3f':'#1f5fd6',n:x.p[2].replace(/</g,'')})});
   L.sort(function(a,b){return a.s-b.s});L=L.filter(function(x){return x.s-NAV.s<80000}).slice(0,3);if(!L.length)return null;
   return L.map(function(x){var d=x.s-NAV.s,eta=new Date(now+d*secPerM*1000);return'<div class="hr2"><span class="hk" style="background:'+x.c+'">'+x.k+'</span><span class="hn">'+x.n+'</span><span class="hd">'+fmtD(d)+'</span><span class="he">'+tm(eta).replace('오전 ','').replace('오후 ','')+'</span></div>'}).join('')}
