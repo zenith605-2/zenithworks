@@ -417,7 +417,7 @@ body.night #secBar{background:#2a2e35;color:#e8eaed}body.night #secBar i{backgro
 .calGrid .cd{border-radius:10px;padding:5px 0 4px;min-height:46px;display:flex;flex-direction:column;align-items:center;font-size:14px;color:#8a919c}
 .calGrid .cd b{font-weight:700}.calGrid .cd i{font-style:normal;font-size:13px;line-height:1.1}.calGrid .cd small{font-size:11px}
 .calGrid .cd.ok,.calGrid .cd.bad{background:#f1f3f6;color:#111}.calGrid .cd.ok i{color:#16a34a}.calGrid .cd.bad i{color:#e3151a}
-.calGrid .cd.now{outline:2px solid #2b7bff;outline-offset:-2px}
+.calGrid .cd.now{outline:2px solid #2b7bff;outline-offset:-2px}.calGrid .cd.ok{cursor:pointer}.calGrid .cd.sel{background:#2b7bff!important;color:#fff!important}
 .calSum{margin-top:10px;font-size:15px}.calSum b{font-size:20px;font-weight:800}.calLeg{font-size:12px;color:#8a919c;margin-top:2px}
 body.night .calHd button,body.night .calGrid .cd.ok,body.night .calGrid .cd.bad{background:#2a2e35;color:#e8eaed}
 
@@ -1227,19 +1227,14 @@ function calDraw(list,y,mo){var box=$('tripCal');if(!box)return;var first=new Da
   var today=new Date();for(var d=1;d<=days;d++){var o=by[d],cls='cd'+(o?' ok':'')+(today.getFullYear()===y&&today.getMonth()===mo&&today.getDate()===d?' now':'');
     h+='<span class="'+cls+'"><b>'+d+'</b>'+(o?'<small>'+Math.round(o.m/1000)+'km</small>':'')+'</span>'}
   h+='</div><div class="calSum"><b>'+(tot.m/1000).toFixed(1)+'</b>km · 주행 '+tot.n+'회</div>';
-  box.innerHTML=h;Array.prototype.forEach.call(box.querySelectorAll('.calHd button'),function(b){b.onclick=function(){var t=new Date(y,mo+(+b.dataset.d),1);calDraw(list,t.getFullYear(),t.getMonth())}})}
+  box.innerHTML=h;Array.prototype.forEach.call(box.querySelectorAll('.cd.ok'),function(c){var dd=+c.querySelector('b').textContent;if(TRIPDAY&&TRIPDAY[0]===y&&TRIPDAY[1]===mo&&TRIPDAY[2]===dd)c.classList.add('sel');c.onclick=function(){var same=TRIPDAY&&TRIPDAY[0]===y&&TRIPDAY[1]===mo&&TRIPDAY[2]===dd;tripListDraw(TRIPL,same?null:[y,mo,dd]);calDraw(TRIPL,y,mo)}});Array.prototype.forEach.call(box.querySelectorAll('.calHd button'),function(b){b.onclick=function(){var t=new Date(y,mo+(+b.dataset.d),1);calDraw(list,t.getFullYear(),t.getMonth())}})}
 function loadTrips(){try{return JSON.parse(LS.getItem('trips')||'[]')}catch(e){return[]}}
 function weekStart(d){var x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()}
 function sumOf(list,from){var o={n:0,m:0,t:0,c:0,tl:0,clean:0,sc:0,sn:0};list.forEach(function(r){if(r.st>=from){o.n++;var q=scoreOf(r);if(q!=null){o.sc+=q;o.sn++}o.m+=r.m;o.t+=r.en-r.st;o.c+=costOf(r);o.tl+=r.toll||0;if(!r.over)o.clean++}});return o}
 function sumLine(lbl,o){return '<div class="item"><span>'+lbl+' · '+o.n+'회 · '+(o.m/1000).toFixed(1)+'km · '+hm(o.t)+'</span><small>전기요금 약 '+o.c.toLocaleString()+'원'+(CFG.tollShow?' · 통행료 약 '+o.tl.toLocaleString()+'원':'')+(o.sn?' · 운전 점수 평균 '+Math.round(o.sc/o.sn)+'점':'')+'</small></div>'}
-$('mTrips').onclick=function(){show('menuSheet',0);
-  var list=loadTrips(),now=new Date(),mStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
-  /* 11/25 실차 '방금 주행 기록 없고': 3분 정차 전(주차장 등)이라 아직 저장 전인 이번 주행도 '주행 중'으로 맨 위에 보여 줌 */
-  if(TRIP&&TRIP.m>=300){var t=TRIP;list=[{st:t.st,en:Date.now(),m:Math.round(t.m),max:Math.round(t.max),over:t.over,alerts:t.alerts,cams:t.cams,toll:t.fare?tollOf(t.fare):0,ha:t.ha,hb:t.hb,from:t.from,dest:t.dest||(NAV&&NAV.dest?NAV.dest.name:''),eff:CFG.eff,kwh:CFG.kwh,path:t.path,_live:1}].concat(list.filter(function(x){return x.st!==t.st}))}
-  $('tripSum').outerHTML='<div id="tripSum"><div id="tripCal"></div>'+sumLine('이번 주',sumOf(list,weekStart(now)))+sumLine('이번 달',sumOf(list,mStart))+'<div class="acts"><button id="csvBtn">엑셀(CSV)로 내보내기</button></div></div>';
-  calDraw(list,now.getFullYear(),now.getMonth());
-  $('csvBtn').onclick=exportCsv;
-  var box=$('tripList');box.innerHTML=list.length?'':'<div class="muted">아직 기록이 없습니다. 주행을 마치고 3분 정차하면 저장됩니다.</div>';
+var TRIPL=[],TRIPDAY=null;
+function tripListDraw(list,day){TRIPDAY=day; /* 11/25 실차 '날짜 터치해도 반응이 없네': 달력 날짜를 누르면 그날 주행만 */
+  var box=$('tripList');var all=list;if(day){list=list.filter(function(r){var d=new Date(r.st);return d.getFullYear()===day[0]&&d.getMonth()===day[1]&&d.getDate()===day[2]})}box.innerHTML=(day?'<div class="muted">'+(day[1]+1)+'월 '+day[2]+'일 주행 '+list.length+'회 · 날짜를 다시 누르면 전체</div>':'')+(all.length?'':'<div class="muted">아직 기록이 없습니다. 주행을 마치고 3분 정차하면 저장됩니다.</div>');
   var streak=0;for(var q=list.length-1;q>=0;q--){list[q]._streak=list[q].over?0:++streak;if(list[q].over)streak=0}
   list.slice(0,60).forEach(function(r,i){var el=document.createElement('div');el.className='item trip';var d=new Date(r.st),dur=r.en-r.st;
     el.innerHTML='<div class="th"><span class="tt"></span><span class="score"></span><span class="badge"></span></div><div class="tbig"><b></b> km · <span class="dur"></span><span class="mx"></span></div><small class="t1"></small><small class="t2"></small>';
@@ -1250,6 +1245,15 @@ $('mTrips').onclick=function(){show('menuSheet',0);
     el.querySelector('.t1').textContent='음성 안내 '+(r.alerts||0)+' · 카메라 통과 '+(r.cams||0)+' · 속도 초과 '+(r.over||0)+(r.hb!=null?' · 급가속 '+r.ha+' · 급감속 '+r.hb:'')+' · 평균 '+Math.round(r.m/Math.max(1,dur/1000)*3.6)+'km/h';
     el.querySelector('.t2').textContent='전기요금 약 '+costOf(r).toLocaleString()+'원'+(CFG.tollShow&&r.toll?' · 통행료 '+r.toll.toLocaleString()+'원 (예상)':'');
     el.onclick=function(){tripMap(r)};box.appendChild(el)});
+  if(day)box.scrollIntoView({block:'start',behavior:'smooth'})}
+$('mTrips').onclick=function(){show('menuSheet',0);TRIPDAY=null;
+  var list=loadTrips(),now=new Date(),mStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  /* 11/25 실차 '방금 주행 기록 없고': 3분 정차 전(주차장 등)이라 아직 저장 전인 이번 주행도 '주행 중'으로 맨 위에 보여 줌 */
+  if(TRIP&&TRIP.m>=300){var t=TRIP;list=[{st:t.st,en:Date.now(),m:Math.round(t.m),max:Math.round(t.max),over:t.over,alerts:t.alerts,cams:t.cams,toll:t.fare?tollOf(t.fare):0,ha:t.ha,hb:t.hb,from:t.from,dest:t.dest||(NAV&&NAV.dest?NAV.dest.name:''),eff:CFG.eff,kwh:CFG.kwh,path:t.path,_live:1}].concat(list.filter(function(x){return x.st!==t.st}))}
+  $('tripSum').outerHTML='<div id="tripSum"><div id="tripCal"></div>'+sumLine('이번 주',sumOf(list,weekStart(now)))+sumLine('이번 달',sumOf(list,mStart))+'<div class="acts"><button id="csvBtn">엑셀(CSV)로 내보내기</button></div></div>';
+  calDraw(list,now.getFullYear(),now.getMonth());
+  $('csvBtn').onclick=exportCsv;
+  TRIPL=list;tripListDraw(list,null);
   show('tripSheet',1)};
 var tmap=null;
 function tripMap(r){if(!r.path||r.path.length<2||!window.maplibregl)return;show('tripMapBox',1);
