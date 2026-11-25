@@ -57,6 +57,7 @@
   body.over #pill{animation:blink .55s steps(2,jump-none) infinite}
   #tag{display:none;background:#ffc81e;color:#111;font-size:16px;font-weight:800;border-radius:7px;padding:2px 9px;min-width:70px;text-align:center;box-shadow:0 3px 10px #0004;margin-top:-4px}
   #alertBox.on #tag{display:block}
+  #tag .src{display:block;font-style:normal;font-size:12px;font-weight:800;background:#6b3fd6;color:#fff;border-radius:5px;margin:3px -5px 0;padding:1px 4px;white-space:nowrap}
 #oddBtn{display:none;margin-top:2px;font-size:16px;font-weight:800;padding:9px 16px;border-radius:20px;border:2px solid #fff;background:#111d;color:#fff;pointer-events:auto}
 #alertBox.on #oddBtn{display:block}
   #alertBox.sec #tag{background:#1f5fd6;color:#fff}
@@ -807,7 +808,7 @@ function inaviApply(arr){if(!INV||!arr||!arr.length)return arr;for(var i=0;i<arr
   var out=arr.slice(),G={},used={};for(i=0;i<out.length;i++){var c0=out[i];if(c0._q)continue;var k0=Math.floor(c0[0]*200)+'_'+Math.floor(c0[1]*200);(G[k0]=G[k0]||[]).push(i)}
   INV.forEach(function(r){var ca=Math.floor(r[0]*200),co=Math.floor(r[1]*200),best=-1,bd=40;
     for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var L=G[(ca+dx)+'_'+(co+dy)];if(L)for(var j=0;j<L.length;j++){var d=dist(out[L[j]][0],out[L[j]][1],r[0],r[1]);if(d<bd){bd=d;best=L[j]}}}
-    if(best>=0){if(used[best])return;used[best]=1;var c=out[best],e=c.slice();e._ip=1;e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&(c[4]||0)===r[4]){e[0]=r[0];e[1]=r[1]}if(e[7]==null||e[7]<0)e[7]=r[5];out[best]=e}
+    if(best>=0){if(used[best])return;used[best]=1;var c=out[best],e=c.slice();e._ip=1;e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&(c[4]||0)===r[4]){e[0]=r[0];e[1]=r[1];e._im=1}if(e[7]==null||e[7]<0)e[7]=r[5];out[best]=e}
     else{var n=[r[0],r[1],r[2],r[3],r[4],(r[2]<=30&&!r[4])?2:0,'',r[5]];n._i=1;out.push(n)}});
   return out}
 function loadInavi(){if(!LOGK)return;fetch(RELAY+'priv/inavi',{headers:ownH(),cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.c||!d.c.length)return;INV=d.c;if(CAMS&&CAMS.length){indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}}).catch(function(){})}
@@ -1836,7 +1837,7 @@ function findAhead(la,lo,h){
   return best;
 }
 var TLH='<span class="tl"><i style="background:#ff3030"></i><i style="background:#ffc400"></i><i style="background:#22c55e"></i></span>';
-function setAlert(cls,lim,pill,tag){var b=$('alertBox');b.className=cls;var tlx=/sx|sig/.test(cls)&&!lim; /* 11/23 사용자: 신호등 그림 빼기(표준 표지에 없음) → 숫자 없는 신호 전용 카메라만 신호등 */$('lim').innerHTML=(tlx?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(tlx?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||'';if(/child/.test(cls)&&lim){var z=document.createElement('b');z.className='tz';z.textContent=lim;$('tag').appendChild(z)}} /* 11/23 사용자: 노란 어린이보호 밑에 속도 */
+function setAlert(cls,lim,pill,tag,src){var b=$('alertBox');b.className=cls;var tlx=/sx|sig/.test(cls)&&!lim; /* 11/23 사용자: 신호등 그림 빼기(표준 표지에 없음) → 숫자 없는 신호 전용 카메라만 신호등 */$('lim').innerHTML=(tlx?TLH:'')+(lim?'<b>'+lim+'</b>':'');$('lim').className='lim'+(/child/.test(cls)?' z':'')+(tlx?' x':'');$('pill').textContent=pill;$('tag').textContent=tag||'';if(/child/.test(cls)&&lim){var z=document.createElement('b');z.className='tz';z.textContent=lim;$('tag').appendChild(z)}if(src){var q=document.createElement('i');q.className='src';q.textContent=src;$('tag').appendChild(q)}} /* 11/25 사용자: 아이나비 데이터인지 표시 */ /* 11/23 사용자: 노란 어린이보호 밑에 속도 */
 var bAnn={},aAnn={},restAt=0;
 /* 주의운전구간(국가교통정보센터, 집 맥이 하루 한 번 올림): 고속도로 사고잦은구간 등. 앞 700m, ±30°, 옆 80m 안 */
 (function(){fetch(DATA+'cctv-ver.json?t='+Math.floor(Date.now()/3600000)).then(function(r){return r.json()}).then(function(vj){return fetch(DATA+'caution.json?v='+vj.ver)}).then(function(r){return r.json()}).then(function(a){CAU=a;CGRID={};a.forEach(function(p,i){var k=Math.floor(p[0]*100)+'_'+Math.floor(p[1]*100);(CGRID[k]=CGRID[k]||[]).push(i)})}).catch(function(){})})();
@@ -1936,7 +1937,7 @@ function tickBody(){
   if(section&&NAV&&section.end!=null&&NAV.s>section.end+50){section=null;secEndAt=[la,lo];sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}
   if(section){var sdt2=section.lt?Math.min(3,Math.max(0,(now-section.lt)/1000)):0;section.lt=now;section.m+=v*sdt2; /* 거리 = 속도×시간 (위치 흔들림으로 평균이 높게 나오던 것) */section.lastLa=la;section.lastLo=lo;avg=section.m/Math.max(1,(now-section.t)/1000)*3.6;if(Math.round(avg)>section.lim+CFG.tol)over=true;if(section.m>30000)section=null}
   if(target&&target.d<alertD+30){var c=target.c,d=dist(la,lo,c[0],c[1]);target.d=Math.min(target.d,d);
-    setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',(head!=null&&Math.abs(adiff(head,brg(la,lo,c[0],c[1])))>90)?'지금':fmtD(d),camTag(c));
+    setAlert('on'+(c[3]==='R'?' sig':'')+(c[3]==='X'?' sx':'')+(c[5]===2?' child':'')+(c[4]>0?' sec':''),c[2]||'',(head!=null&&Math.abs(adiff(head,brg(la,lo,c[0],c[1])))>90)?'지금':fmtD(d),camTag(c),c._i?'아이나비':(c._im?'아이나비 위치':''));
     zone=c[5]>0&&d<alertD;
     if(d<alertD&&!announced[target.id]){announced[target.id]=1;if(TRIP)TRIP.alerts++;var r=Math.round(d/50)*50;
       sayParts([c[5]===2?'child':null,'d'+dk(d),(c[2]&&c[2]%10===0&&c[2]>=20&&c[2]<=120)?'lim'+c[2]:null,c[4]===1?'sec_start':(c[3]==='R'?'cam_sig':c[3]==='X'?'cam_sx':'cam_s')],false,(c[5]===2?'어린이보호구역, ':'')+'전방 '+r+'미터, '+(c[2]?'제한속도 '+c[2]+', ':'')+(c[4]===1?'구간단속 시작입니다':'단속 카메라입니다'),880,2)}
