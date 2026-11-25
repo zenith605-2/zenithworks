@@ -448,7 +448,7 @@ body.jvon #turn{display:none!important}body.jvon #jv{margin-top:0;border-top-lef
 #hpBox .hb{position:absolute;inset:0;padding:8px 10px;display:flex;flex-direction:column}
 #hpBox .ht{color:#0d2340;font-size:15px;font-weight:700}#hpBox .ht b{color:#1d5fd6}#hpBox .ht span{font-weight:900}
 #hpBox .ht{margin-bottom:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#hpBox .hl{flex-wrap:wrap;row-gap:4px}#hpBox .hl u{color:#fff;background:#1c1f24cc;border-radius:6px;padding:4px 6px;min-width:0;font-size:13px}#hpBox .hl i{color:#fff;text-shadow:0 1px 3px #000}
-#hpBox .hl b{box-shadow:0 2px 4px #0006}#hpBox .ht em{color:#0b7a3e}
+#hpBox .hl b{box-shadow:0 2px 4px #0006}#hpBox .hl{flex-wrap:nowrap!important;gap:3px}#hpBox .hl b{flex:1 1 0;min-width:0!important;max-width:34px;padding:0!important}#hpBox .hl b.g{background:#4b5260;color:#c9ced6;box-shadow:none}#hpBox .hl b.x{opacity:.4}#hpBox .hl b.h{background:#1d5fd6;color:#fff}#hpBox .ht em{color:#0b7a3e}
 body.hpon #turn{display:none!important}body.hpon #hpBox{margin-top:0}
 #hpBox.big .ht{font-size:16px;line-height:1.1}#hpBox.big .ht span{display:block;font-size:44px;font-weight:900;color:#0d2340;margin:0 0 2px}#hpBox.big .ht span small{font-size:22px}#hpBox.big .ht b{display:inline}
 /* 11/23 사용자 '지저분해, 칸을 나눠서': 그림 위에 글자 얹지 않음 — 머리(파랑: 거리·이름) / 그림 / 바닥(어두움: 차로·막대) */
@@ -663,9 +663,9 @@ function hpRoute(N){N.tg=[];if(!HP||!N.R||!N.S)return;var R=N.R,S=N.S,T=N.T||[],
    var hit=ls.filter(function(x){return x[0]&&x[0].split('-').some(function(w){return w&&txt.indexOf(w)>=0})});if(hit.length===1)ls=hit;else ls=ls.filter(function(x){return x[0]})}
   N.tg.push({s:s0,n:t[2],ls:ls})});
  N.tg.sort(function(a,b){return a.s-b.s})}
-function hpLanes(l){var o='',gap=0;for(var i=0;i<l.length;i++){var c=l[i];if(c==='X')continue;if(c==='H'||c==='B'||c==='M'){if(gap){o+='<i>–</i>';gap=0}o+='<b'+(c==='M'?' class="m"':'')+'>'+(i+1)+'</b>'}else gap=1}if(gap)o+='<i>–</i>';return o}
+function hpLanes(l){var o='',n=l.length;for(var i=0;i<n;i++){var c=l[i],h=(c==='H'||c==='B'||c==='M');o+='<b class="'+(h?'h':'g')+(c==='X'?' x':'')+'"'+(n>11?' style="font-size:'+(n>16?12:15)+'px"':'')+'>'+(i+1)+'</b>'}return o} /* 11/25 실차 '1-3 이 1부터 3인 줄': 모든 차로를 보여 주고 하이패스만 파랑, 나머지 회색 (줄바꿈 없이 칸이 좁아짐) */
 function hpTick(){var e=$('hpBox'),off=function(){e.classList.remove('show');document.body.classList.remove('hpon')};if(!NAV||!NAV.tg||!CFG.hipass){off();return}var g=null;for(var i=0;i<NAV.tg.length;i++){var d=NAV.tg[i].s-NAV.s;if(d>-30&&d<1500){g=NAV.tg[i];break}}
- if(!g){off();return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<div class="cH"><b class="hpD"></b><em>'+jvEsc(g.n)+' 요금소</em></div><div class="cF hb"><div class="ht">하이패스 차로</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}/* 11/23 사용자 '이것도 합쳐': 요금소 전에 할 회전이 없으면 회전 카드를 숨기고 이 카드 하나로 (그림 하늘에 큰 거리) */
+ if(!g){off();return}var d=Math.max(0,g.s-NAV.s),ls=g.ls||[['',g.l]];if(e._k!==g.s){e._k=g.s;var all=ls.map(function(x){return x[1]}).join('');e.innerHTML='<div class="cH"><b class="hpD"></b><em>'+jvEsc(g.n)+' 요금소</em></div><div class="cF hb"><div class="ht">차로 · 파랑 = 하이패스</div>'+ls.map(function(x){return'<div class="hl">'+(ls.length>1||x[0]?'<u>'+jvEsc(x[0]||'그 밖')+'</u>':'')+hpLanes(x[1])+'</div>'}).join('')+'</div>'}/* 11/23 사용자 '이것도 합쳐': 요금소 전에 할 회전이 없으면 회전 카드를 숨기고 이 카드 하나로 (그림 하늘에 큰 거리) */
  var merge=!document.body.classList.contains('jvon')&&(NAV._nxk==='straight'||NAV.nextD==null||NAV.nextD>d+300);document.body.classList.toggle('hpon',merge);e.classList.toggle('big',merge);
  e.querySelector('.hpD').innerHTML=bigD(d);e.classList.add('show');var tw=0;['turn','jv'].forEach(function(id){var x=$(id);if(x&&x.offsetWidth)tw=Math.max(tw,x.getBoundingClientRect().width)});e.style.width=merge?'340px':Math.max(260,Math.round(tw||260))+'px'}
 setInterval(hpTick,1000);
