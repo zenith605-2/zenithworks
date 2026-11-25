@@ -1507,7 +1507,7 @@ function parseRoute(d){
     if(g.type==='LineString'&&p.index==null)return;
     if(g.type==='LineString'){var base=R.length,skip=0;g.coordinates.forEach(function(xy,i){if(R.length&&i===0){var L=R[R.length-1];if(L[0]===xy[1]&&L[1]===xy[0]){skip=1;return}}R.push([xy[1],xy[0]]);C.push(0);T.push(p.roadType==null?-1:p.roadType);F.push(+p.facilityType||0);V.push(0);RN.push(p.name||'')});(g.traffic||[]).forEach(function(tr){for(var k=tr[0];k<tr[1];k++){var gi=base+k-skip;if(gi>=0&&gi<C.length){C[gi]=tr[2];V[gi]=+tr[3]||0}}})}
     else if(g.type==='Point'&&p.turnType==null&&/^B/.test(p.pointType||'')){G.push({la:g.coordinates[1],lo:g.coordinates[0],t:185,name:'',pname:'경유지',ri:Math.max(0,R.length-1)})}
-    else if(g.type==='Point'&&p.turnType!=null){var dm=/에서\s*(.+?)\s*방면/.exec(p.description||'');G.push({dir:dm?dm[1].split('/').filter(function(x){return x.trim()}).slice(0,2).join(' · '):'',la:g.coordinates[1],lo:g.coordinates[0],t:p.turnType,name:p.nextRoadName||'',pname:p.name||'',ri:Math.max(0,R.length-1)})}
+    else if(g.type==='Point'&&p.turnType!=null){var dm=/에서\s*(.+?)\s*방면/.exec(p.description||'')||/^(\S[^에]*?)\s*방면/.exec(p.description||''); /* 11/25 실차 '왜 방면 명이 없지': '분당 방면으로 왼쪽 방향'처럼 'OO에서'가 없는 안내도 방면 이름 읽기 */G.push({dir:dm?dm[1].split('/').filter(function(x){return x.trim()}).slice(0,2).join(' · '):'',la:g.coordinates[1],lo:g.coordinates[0],t:p.turnType,name:p.nextRoadName||'',pname:p.name||'',ri:Math.max(0,R.length-1)})}
     if(p.totalTime)time=p.totalTime;if(p.totalFare!=null&&p.totalTime)fare=p.totalFare;
   });
   var S=[0];for(var i=1;i<R.length;i++)S.push(S[i-1]+dist(R[i-1][0],R[i-1][1],R[i][0],R[i][1]));
