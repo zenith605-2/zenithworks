@@ -931,6 +931,8 @@ var SGI={};['lim','limx','limz','limxz','bump','kid'].forEach(function(n){var i=
 function sgOk(n){var i=SGI[n];return i&&i.complete&&i.naturalWidth>0}
 function iconCanvas(id){
   var cv=document.createElement('canvas'),x=cv.getContext('2d'),R=2;
+  /* 11/25 실차 '구간 시작·끝도 아이콘에 표시': 표지 위에 파란 '구간시작'/'구간끝' 띠 */
+  if(/\|[se]$/.test(id)){var bc=iconCanvas(id.slice(0,-2));if(!bc)return null;var bw=bc.width/R,bh=bc.height/R,tw=id.slice(-1)==='s'?50:40,W=Math.max(bw,tw);cv.width=W*R;cv.height=(bh+15)*R;x.scale(R,R);x.fillStyle='#1f5fd6';x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.roundRect((W-tw)/2+0.75,0.75,tw-1.5,13.5,4);x.fill();x.stroke();x.fillStyle='#fff';x.font='800 10px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(id.slice(-1)==='s'?'구간시작':'구간끝',W/2,8);x.drawImage(bc,(W-bw)/2,15,bw,bh);return cv}
   if(id==='sig'&&sgOk('limx')){cv.width=40*R;cv.height=40*R;x.scale(R,R);x.drawImage(SGI.limx,0,0,40,40);return cv}
   if(id==='bump'&&sgOk('bump')){cv.width=24*R;cv.height=21*R;x.scale(R,R);x.drawImage(SGI.bump,0,0,24,21);return cv}
   /* 11/23 사용자 '표준대로': 어린이보호 카메라는 주의표지 133(세모) + 보조표지(흰 바탕·검은 테·검은 글자) 숫자 판, 노란 테 원은 표준에 없어 안 씀 */
@@ -1091,7 +1093,7 @@ function updCamSrc(la,lo,h){
   for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++){var ck=(c0+a)+'_'+(c1+b),ids=GRID[ck];
     if(ids)for(var j=0;j<ids.length;j++){var c=CAMS[ids[j]];if(!camOk(ids[j],c))continue;var cp=camDraw(ids[j],c,la,lo,h);
       /* 같은 자리(30m)·같은 속도 카메라는 아이콘 하나만 (양방향 짝이 겹쳐 2개로 보이던 것, 11/22) */
-      if(DUPC.some(function(q){return q[2]===c[2]&&dist(q[0],q[1],cp[0],cp[1])<30}))continue;DUPC.push([cp[0],cp[1],c[2]]);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2],o:c[3]==='R'?0:1}})}
+      if(DUPC.some(function(q){return q[2]===c[2]&&dist(q[0],q[1],cp[0],cp[1])<30}))continue;DUPC.push([cp[0],cp[1],c[2]]);f.push({type:'Feature',geometry:{type:'Point',coordinates:[cp[1],cp[0]]},properties:{ic:c[3]==='R'?'sig':'lim'+(c[3]==='X'?'x':'')+(c[5]===2?'z':'')+'-'+c[2]+(c[4]===1?'|s':c[4]===2?'|e':''),o:c[3]==='R'?0:1}})}
     if(CFG.bumpOn&&Math.abs(a)<=1&&Math.abs(b)<=1&&BGRID[ck])BGRID[ck].forEach(function(i){var p=BUMPS[i];if(bumpOk(i,p))f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:'bump',o:-1}})});
     if(CFG.poiOn&&PGRID[ck])PGRID[ck].forEach(function(t){if(t[0]==='sc')return; /* 슈퍼차저는 ⚡ 버튼 말풍선으로만 (11/21) */var p=poiOf(t);f.push({type:'Feature',geometry:{type:'Point',coordinates:[p[1],p[0]]},properties:{ic:t[0]==='sc'?'sc':'rest'+p[3],o:2}})})}
   (function(){var L=NAV&&NAV.inc?NAV.inc.filter(function(x){return x.s>NAV.s-30&&x.s-NAV.s<5000}).map(function(x){return x.q}):INC.filter(function(q){return dist(la,lo,q[0],q[1])<2000});L.forEach(function(q){f.push({type:'Feature',geometry:{type:'Point',coordinates:[q[1],q[0]]},properties:{ic:'inc',o:3}})})})();
