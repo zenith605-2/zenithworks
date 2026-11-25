@@ -1784,7 +1784,7 @@ function navTick(la,lo,kmh,now){
   if(Math.abs(NAV.idx-lastDrawIdx)>=3){lastDrawIdx=NAV.idx;drawRoute()}
   /* 이탈 판정 (11/22 "다른 길로 들어가면 바로"): 25m 벗어나거나, 12m 넘게 벗어난 채 진행 방향이 경로와 50° 넘게 다르면 1.5초 뒤 다시 찾기 */
   var segB=brg(NAV.R[pr.i][0],NAV.R[pr.i][1],NAV.R[pr.i+1][0],NAV.R[pr.i+1][1]),offDir=head!=null&&v>3&&dist(NAV.R[pr.i][0],NAV.R[pr.i][1],NAV.R[pr.i+1][0],NAV.R[pr.i+1][1])>3&&Math.abs(adiff(segB,head))>50;
-  var isOff=pr.d>25||(pr.d>12&&offDir);
+  var isOff=pr.d>25||(pr.d>12&&offDir);NAV.offD=pr.d;
   if(isOff&&v>3&&fix&&now-fix.t<5000){if(!NAV.offT)NAV.offT=now; /* GPS 가 5초 넘게 없으면 '벗어남' 근거가 낡은 위치뿐이라 재탐색 안 함 (11/21 터널 시뮬레이션). 11/22 실차 "너무 오래 걸려": 50m·4초·30초 간격 → 40m·2.5초·12초 */if(now-NAV.offT>1500&&now-NAV.lastRoute>10000){lg(['off',now,Math.round(pr.d),offDir?1:0]);NAV.offT=0;$('tDist').textContent='경로 다시 찾는 중';sayParts(['reroute'],true,'경로를 다시 찾습니다',440,1);route();return null}}else NAV.offT=0;
   var remain=NAV.total-NAV.s;
   if(remain<30||dist(la,lo,NAV.dest.la,NAV.dest.lo)<30){sayParts(['arrive'],true,'목적지에 도착했습니다',660,3);var AN=NAV;endNav();showArrive(AN);return null}
@@ -1832,17 +1832,17 @@ function secDraw(){var b=$('secBar');if(!b)return;var sc=section;if(!sc){if(b.st
 var secEndAt=null,lastPassed=null,target=null,passed={},announced={},lastBeep=0,section=null;
 function fixCam(b){var id=target?target.id:lastPassed;if(id==null||!fix){b.textContent='고칠 카메라 없음';setTimeout(function(){b.textContent='카메라 여기'},1500);return}var fx={};try{fx=JSON.parse(LS.getItem('camfix4')||'{}')}catch(e){}fx[CAMS[id]._k]=[fix.la,fix.lo];LS.setItem('camfix4',JSON.stringify(fx));var old=dist(CAMS[id][0],CAMS[id][1],fix.la,fix.lo);CAMS[id][0]=fix.la;CAMS[id][1]=fix.lo;indexCams(CAMS);passed[id]=Date.now();if(target&&target.id===id)target=null;b.textContent='고침 ('+Math.round(old)+'m 옮김)';setTimeout(function(){b.textContent='카메라 여기'},2500)}
 function findAhead(la,lo,h){
-  var c0=Math.floor(la*100),c1=Math.floor(lo*100),best=null;
+  var c0=Math.floor(la*100),c1=Math.floor(lo*100),best=null,RC=!!(NAV&&NAV.cams&&!(NAV.offD>20)); /* 11/25 실차: 경로를 벗어난 동안(다시 찾기 전후)엔 경로 위 카메라만 보던 탓에 바로 앞 아이나비 60 카메라를 놓침 → 벗어나 있으면 안내 없을 때처럼 찾음 */
   for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){var ids=GRID[(c0+a)+'_'+(c1+b)];if(!ids)continue;
-    for(var j=0;j<ids.length;j++){var id=ids[j],c=CAMS[id];if(passed[id])continue;var d=dist(la,lo,c[0],c[1]);if(d>(NAV&&NAV.cams?2100:1000)||d<5)continue; /* 안내 없을 땐 1km 까지만: 직선 앞 먼 카메라는 다른 길일 때가 많음 */
-      if(NAV&&NAV.cams){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
+    for(var j=0;j<ids.length;j++){var id=ids[j],c=CAMS[id];if(passed[id])continue;var d=dist(la,lo,c[0],c[1]);if(d>(RC?2100:1000)||d<5)continue; /* 안내 없을 땐 1km 까지만: 직선 앞 먼 카메라는 다른 길일 때가 많음 */
+      if(RC){var cs=NAV.cams[id];if(cs==null||cs<NAV.s-10)continue}
       if(c[7]!=null&&c[7]>=0&&Math.abs(adiff(h,c[7]))>=60)continue; /* 단속 방향이 반대인 카메라 (11/21 재생 시험: 안내 없을 때 성남대로 반대편 경고) */
       /* 굽은 길: 단속 방향이 내 방향과 맞거나(45° 안), 고속도로 카메라(80+)를 시속 60 넘게 달릴 땐 정면 30°·좌우 거리의 35%까지 (11/21 재생 시험: 고속도로 커브에서 100 카메라를 200m 앞에서야 잡음) */
-      var curve=!(NAV&&NAV.cams)&&((c[7]!=null&&c[7]>=0&&Math.abs(adiff(h,c[7]))<45)||(c[2]>=80&&v>16.7));
-      var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(NAV&&NAV.cams?40:curve?30:20))continue;
+      var curve=!(RC)&&((c[7]!=null&&c[7]>=0&&Math.abs(adiff(h,c[7]))<45)||(c[2]>=80&&v>16.7));
+      var df=adiff(h,brg(la,lo,c[0],c[1]));if(Math.abs(df)>(RC?40:curve?30:20))continue;
       /* 안내 없을 때 좌우 범위: 멀수록 방향 오차로 벌어져서 거리에 비례(500m 에서 -25~+40m). 방향이 맞는 카메라는 ±35m 더 넓게. 예전 -6~+28m 고정이라 고속도로 100 카메라를 200m 앞에서야 잡음 (11/21 재생 시험) */
-      var lat=d*Math.sin(df*D2R),dirOk=c[7]!=null&&c[7]>=0;if(!(NAV&&NAV.cams)&&(curve?Math.abs(lat)>Math.max(35,d*0.35):(lat<-Math.max(dirOk?35:8,d*0.05)||lat>Math.max(dirOk?35:28,d*0.08))))continue;
-      if(!(NAV&&NAV.cams)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c,roadNowHw()))continue}
+      var lat=d*Math.sin(df*D2R),dirOk=c[7]!=null&&c[7]>=0;if(!(RC)&&(curve?Math.abs(lat)>Math.max(35,d*0.35):(lat<-Math.max(dirOk?35:8,d*0.05)||lat>Math.max(dirOk?35:28,d*0.08))))continue;
+      if(!(RC)){var rn=roadNowName(la,lo);if(rn&&!camRoadOk(rn,c,roadNowHw()))continue}
       if(!best||d<best.d)best={id:id,c:c,d:d}}}
   return best;
 }
@@ -1934,10 +1934,11 @@ function tickBody(){
   var over=false,zone=false,alertD=target?alertFor(target.c[2]):alertFor(0);
   if(head!=null&&v>1.5&&CAMS.length){
     var t=findAhead(la,lo,head);
+    try{if(LOGON&&now-(window._mcT||0)>1000){window._mcT=now;var g0=Math.floor(la*100),g1=Math.floor(lo*100),MC=window._mcS=window._mcS||{};for(var ga=-1;ga<=1;ga++)for(var gb=-1;gb<=1;gb++)(GRID[(g0+ga)+'_'+(g1+gb)]||[]).forEach(function(id){var c=CAMS[id];if(MC[id]||(target&&target.id===id))return;var dd=dist(la,lo,c[0],c[1]);if(dd>20)return;if(c[7]!=null&&c[7]>=0&&Math.abs(adiff(head,c[7]))>=60)return;MC[id]=1;lg(['mc',now,id,Math.round(dd),c[2],c[7],passed[id]?1:0,NAV&&NAV.cams?(NAV.cams[id]==null?-1:Math.round(NAV.cams[id]-NAV.s)):-2,NAV&&NAV.offD!=null?Math.round(NAV.offD):-1,c._i?'i':c._im?'im':c._ip?'ip':''])})}}catch(e){} /* 11/25 주행 분석: 방향 맞는 카메라 20m 안을 경고 없이 지나면 이유 단서 기록 (지남 표시·경로 위 여부·경로 이탈 거리) */
     if(target&&(!t||t.id!==target.id)){var tc=CAMS[target.id];var dNow=dist(la,lo,tc[0],tc[1]);var behind=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])))>90;
       /* 회전·서행으로 카메라가 옆으로 빠지면(진행 방향 40° 밖, 안내 중엔 경로 위가 아니면) 대상에서 놓아 준다 — 옆 도로 카메라를 붙잡고 있던 문제 */
-      var dfT=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])));if(!behind&&dNow>40&&(dfT>40||(NAV&&NAV.cams&&NAV.cams[target.id]==null))){target=null;setAlert('','','')}else 
-      /* 점 카메라는 지난 뒤 80m 까지 경고 유지: 경찰청 좌표가 실제보다 앞에 찍힌 곳이 있음 (11/22 신평화로 80, 티맵보다 82m 앞) */var hold=tc[4]!==0?0:(tc._i||tc._im)?20:80; /* 11/25 실차 '지난 게 안 없어져': 아이나비 좌표는 실제 위치라 지난 뒤 20m 만 유지 (공공 좌표만 80m) */if((behind&&dNow>hold)||dNow>Math.max(target.d+40,hold)){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 방금 구간이 끝난 자리 400m 안의 '시작'은 반대 방향 카메라로 봄 (11/21 실차) */if(!(secEndAt&&dist(secEndAt[0],secEndAt[1],la,lo)<400))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2){secEndAt=[la,lo]}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}if(!tc[4])passSnd(); /* 11/25 사용자 '통과하면 소리 없나' → '과속 소리 같다': 경고음(띵-동 내려감)과 다른 짧게 올라가는 '뾰롱' */target=null}}
+      var hold=tc[4]!==0?0:(tc._i||tc._im)?20:80; /* 11/25: else 와 if 사이에 두면 else 가 이 줄만 덮어 target=null 뒤 target.d 오류 → 위로 */var dfT=Math.abs(adiff(head,brg(la,lo,tc[0],tc[1])));if(!behind&&dNow>40&&(dfT>40||(NAV&&NAV.cams&&NAV.cams[target.id]==null))){target=null;setAlert('','','')}else 
+      /* 점 카메라는 지난 뒤 80m 까지 경고 유지: 경찰청 좌표가 실제보다 앞에 찍힌 곳이 있음 (11/22 신평화로 80, 티맵보다 82m 앞) */ /* 11/25 실차 '지난 게 안 없어져': 아이나비 좌표는 실제 위치라 지난 뒤 20m 만 유지 (공공 좌표만 80m) */if((behind&&dNow>hold)||dNow>Math.max(target.d+40,hold)){passed[target.id]=now;lastPassed=target.id;if(TRIP)TRIP.cams++;if(tc[4]===1){var se=secEnd();/* 방금 구간이 끝난 자리 400m 안의 '시작'은 반대 방향 카메라로 봄 (11/21 실차) */if(!(secEndAt&&dist(secEndAt[0],secEndAt[1],la,lo)<400))section={lim:tc[2],t:now,m:0,lastLa:la,lastLo:lo,s0:NAV?NAV.s:null,end:se}}if(tc[4]===2){secEndAt=[la,lo]}if(tc[4]===2&&section){section=null;sayParts(['sec_end'],false,'구간단속이 끝났습니다',880,1)}if(!tc[4])passSnd(); /* 11/25 사용자 '통과하면 소리 없나' → '과속 소리 같다': 경고음(띵-동 내려감)과 다른 짧게 올라가는 '뾰롱' */target=null}}
     if(t&&(!target||t.d<target.d+40)){if(!target||target.id!==t.id)lg(['al',Date.now(),t.id,Math.round(t.d),CAMS[t.id][2],CAMS[t.id][7]]);target=t} /* 경고 시작을 기록 (11/22: 놓쳤는지 주행 기록으로 확인) */
   }
   for(var k in passed)if(now-passed[k]>120000)delete passed[k];
