@@ -809,7 +809,7 @@ function inaviApply(arr){if(!INV||!arr||!arr.length)return arr;for(var i=0;i<arr
   var out=arr.slice(),G={},used={};for(i=0;i<out.length;i++){var c0=out[i];if(c0._q)continue;var k0=Math.floor(c0[0]*200)+'_'+Math.floor(c0[1]*200);(G[k0]=G[k0]||[]).push(i)}
   INV.forEach(function(r){var ca=Math.floor(r[0]*200),co=Math.floor(r[1]*200),best=-1,bd=40;
     for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var L=G[(ca+dx)+'_'+(co+dy)];if(L)for(var j=0;j<L.length;j++){var d=dist(out[L[j]][0],out[L[j]][1],r[0],r[1]);if(d<bd){bd=d;best=L[j]}}}
-    if(best>=0){if(used[best])return;used[best]=1;var c=out[best],e=c.slice();e._ip=1;e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&(c[4]||0)===r[4]){e[0]=r[0];e[1]=r[1];e._im=1}if(e[7]==null||e[7]<0)e[7]=r[5];out[best]=e}
+    if(best>=0){if(used[best])return;used[best]=1;var c=out[best],e=c.slice();e._ip=1;e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&(c[4]||0)===r[4]){e[0]=r[0];e[1]=r[1];e._im=1}out[best]=e}
     else{var n=[r[0],r[1],r[2],r[3],r[4],(r[2]<=30&&!r[4])?2:0,'',r[5]];n._i=1;out.push(n)}});
   return out}
 function loadInavi(){if(!LOGK)return;fetch(RELAY+'priv/inavi',{headers:ownH(),cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.c||!d.c.length)return;INV=d.c;if(CAMS&&CAMS.length){indexCams(CAMS);if(NAV&&NAV.R)routeHits(NAV)}}).catch(function(){})}
