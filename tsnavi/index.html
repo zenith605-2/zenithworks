@@ -973,7 +973,7 @@ var tmP=null;
 /* 티맵 setZoom 은 parseInt 로 소수점을 버려 줌이 한 단계씩 '팍' 바뀜(11/22 실차) → 지도 카메라에 직접 소수 줌 */
 function tmZoom(z){try{TMM._data.vsmMap.getCamera().setZoom(z)}catch(e){TMM.setZoom(z)}}
 function tmGetZoom(){try{return TMM._data.vsmMap.getCamera().getZoom()}catch(e){return TMM.getZoom()}}
-function tmFollow(la,lo,b,z){z+=TMZ;var pt=VIEW==='3d'?50:0;
+function tmFollow(la,lo,b,z){z+=TMZ;var pt=VIEW==='3d'?50:0; /* 11/27 실차 '멈춘 듯'(16:52 터널): 지도가 수도권 전체로 줌아웃된 채 남음 — 우리는 줌이 바뀔 때만 다시 맞춰서 바깥에서 바뀐 줌을 못 고침 → 2초마다 실제 줌을 확인해 어긋나면 다시 맞춤 */if(tmZ!=null&&Date.now()-(window._tzC||0)>2000){window._tzC=Date.now();try{var rz=tmGetZoom();if(rz!=null&&Math.abs(rz-tmZ)>0.4){if(LOGON)lg(['zfix',Date.now(),+rz.toFixed(1),+tmZ.toFixed(1)]);tmZ=tmB=tmMppZ=null}}catch(e){}}
   if(tmP!==pt){try{TMM.setPitch(pt)}catch(e){}tmP=pt;tmMppZ=null}
   if(tmZ==null||Math.abs(z-tmZ)>0.01){tmZoom(z);tmZ=z}
   if(tmB==null||Math.abs(adiff(tmB,b))>0.3){TMM.setBearing(b);tmB=b;if(VIEW==='3d')tmMppZ=null}
