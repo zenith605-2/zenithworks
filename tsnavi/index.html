@@ -1325,7 +1325,7 @@ function errText(e){var m=String(e&&e.message||e);return /이용자가 많아/.t
 /* 주인 차(개발 모드 기록 키)는 무료 한도 마지막 10%까지 쓴다 (11/22) */
 function ownH(){return LOGK?{'x-log':LOGK}:{}}
 function api(path,opt){opt=opt||{};opt.headers=Object.assign(KEY?{'appKey':KEY,'Accept':'application/json'}:Object.assign({'Accept':'application/json'},ownH()),opt.headers||{});return fetch((KEY?'https://apis.openapi.sk.com/tmap/':RELAY+'tmap/')+path,opt).then(function(r){if(r.status===204)return{};if(!r.ok)return r.text().then(function(t){var m=t;try{m=JSON.parse(t).error||t}catch(e){}throw new Error((r.status===429?'':'HTTP '+r.status+' ')+String(m).slice(0,120))});return r.json()})}
-$('navBtn').onclick=function(){hideFav();show('navSheet',1);renderRecent();renderQuick();$('sbar').classList.toggle('has',!!$('q').value);$('results').innerHTML='';setTimeout(function(){$('q').focus()},50)};
+$('navBtn').onclick=function(){hideFav();show('navSheet',1);renderRecent();renderQuick();$('sbar').classList.toggle('has',!!$('q').value);$('results').innerHTML='';/* 11/28 '입력을 두번 눌러야': 타이머 안 focus 는 누른 동작이 아니라 차 키보드가 안 뜸 → 누른 순간 바로 focus */try{$('q').focus()}catch(e){}setTimeout(function(){if(document.activeElement!==$('q'))$('q').focus()},50)};
 $('navClose').onclick=function(){show('navSheet',0);showFav()};
 /* 차 키보드 [입력]: 한글 조합 중이면 Enter 가 글자 확정에 먹히므로 여러 길로 받는다 (0.6초 안 같은 검색은 한 번만) */
 var lastQ='',lastQT=0;function searchOnce(){var q=$('q').value.trim();if(!q)return;if(q===lastQ&&Date.now()-lastQT<600)return;lastQ=q;lastQT=Date.now();search()}
