@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TSnavi 핸들 버튼 시험</title>
+<style>
+body{margin:0;background:#111;color:#eee;font:20px/1.5 system-ui,sans-serif;padding:16px}
+button{font:900 26px system-ui;padding:16px 28px;border-radius:14px;border:0;background:#1d5fd6;color:#fff;margin:6px 8px 6px 0}
+#big{font:900 64px system-ui;margin:10px 0;color:#ffd23f;min-height:80px}
+#log{white-space:pre-wrap;font:15px/1.4 ui-monospace,monospace;background:#000;padding:10px;border-radius:8px;margin-top:12px;max-height:45vh;overflow:auto}
+</style></head><body>
+<h2>핸들 버튼 시험</h2>
+<div>1) [시작] 누르기 → 2) 핸들 왼쪽 휠 돌리기·누르기, 다음 곡·이전 곡, 음성 버튼을 하나씩 → 3) [기록 보내기]</div>
+<div><button id="b1">시작</button><button id="b2">기록 보내기</button></div>
+<div id="big">-</div>
+<div id="log"></div>
+<script>
+var L=[];
+function lg(s){var t=new Date().toTimeString().slice(0,8);L.push(t+' '+s);document.getElementById('log').textContent=L.slice(-60).join('\n');document.getElementById('big').textContent=s}
+lg('mediaSession='+('mediaSession' in navigator)+' 화면 '+innerWidth+'x'+innerHeight);
+['keydown','keyup'].forEach(function(ev){addEventListener(ev,function(e){lg(ev+' key='+e.key+' code='+e.code+' kc='+e.keyCode)},true)});
+addEventListener('wheel',function(e){lg('wheel dy='+Math.round(e.deltaY))},{passive:true});
+document.addEventListener('visibilitychange',function(){lg('visibility '+document.visibilityState)});
+var au=null;
+document.getElementById('b1').onclick=function(){
+  try{
+    /* 무음 반복 소리: 브라우저가 이 페이지를 '재생 중인 미디어'로 보게 함 */
+    var ac=new (window.AudioContext||window.webkitAudioContext)(),dst=ac.createMediaStreamDestination(),o=ac.createOscillator(),g=ac.createGain();
+    g.gain.value=0.0001;o.connect(g);g.connect(dst);o.start();
+    au=new Audio();au.srcObject=dst.stream;au.loop=true;
+    au.play().then(function(){lg('소리 재생 시작')}).catch(function(e){lg('재생 실패 '+e.message)});
+  }catch(e){lg('소리 실패 '+e.message)}
+  if('mediaSession' in navigator){
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:'TSnavi',artist:'핸들 버튼 시험'})}catch(e){}
+    ['play','pause','stop','nexttrack','previoustrack','seekforward','seekbackward','seekto','skipad'].forEach(function(a){
+      try{navigator.mediaSession.setActionHandler(a,function(d){lg('미디어 '+a+(d&&d.seekTime!=null?' '+d.seekTime:''))})}catch(e){lg(a+' 등록 실패')}
+    });
+    try{navigator.mediaSession.playbackState='playing'}catch(e){}
+    lg('미디어 버튼 대기 중');
+  }
+};
+document.getElementById('b2').onclick=function(){fetch('https://tsnavi-relay.zenithworks.workers.dev/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'[핸들시험] '+L.join(' | ').slice(0,900)})}).then(function(r){lg(r.ok?'보냈어요':'전송 실패 '+r.status)}).catch(function(){lg('전송 실패')})};
+</script></body></html>
