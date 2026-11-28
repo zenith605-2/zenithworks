@@ -812,8 +812,8 @@ setTimeout(loadComm,3000);setInterval(loadComm,600000);
 var INV=null;
 function inaviApply(arr){if(!INV||!arr||!arr.length)return arr;for(var i=0;i<arr.length;i++)if(arr[i]._i||arr[i]._ip)return arr;
   var out=arr.slice(),G={},used={};for(i=0;i<out.length;i++){var c0=out[i];if(c0._q)continue;var k0=Math.floor(c0[0]*200)+'_'+Math.floor(c0[1]*200);(G[k0]=G[k0]||[]).push(i)}
-  INV.forEach(function(r){var ca=Math.floor(r[0]*200),co=Math.floor(r[1]*200),best=-1,bd=40;
-    for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var L=G[(ca+dx)+'_'+(co+dy)];if(L)for(var j=0;j<L.length;j++){var d=dist(out[L[j]][0],out[L[j]][1],r[0],r[1]),cd=out[L[j]][7];if(cd!=null&&cd>=0&&r[5]!=null){var a=Math.abs(cd-r[5])%360;if(a>180)a=360-a;if(a>60)continue;d-=10}if(d<bd){bd=d;best=L[j]}}}
+  INV.forEach(function(r){var ca=Math.floor(r[0]*200),co=Math.floor(r[1]*200),best=-1,bd=250;/* 11/28 실차 '구간단속 시작이 2개': 구간 시작·끝은 공공·아이나비 좌표가 90m 넘게 벌어지기도 해서 같은 속도·같은 구간 종류면 250m, 나머지는 40m */
+    for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var L=G[(ca+dx)+'_'+(co+dy)];if(L)for(var j=0;j<L.length;j++){var d=dist(out[L[j]][0],out[L[j]][1],r[0],r[1]),cd=out[L[j]][7];if(cd!=null&&cd>=0&&r[5]!=null){var a=Math.abs(cd-r[5])%360;if(a>180)a=360-a;if(a>60)continue;d-=10}if(d<bd&&d<((r[4]&&out[L[j]][2]===r[2]&&out[L[j]][4]===r[4])?250:40)){bd=d;best=L[j]}}}
     if(best>=0){if(used[best]){var u=out[best];if(u._ds&&r[5]!=null)u._ds.push(r[5]);return}used[best]=1;var c=out[best],e=c.slice();e._ip=1;if((c[7]==null||c[7]<0)&&r[5]!=null)e._ds=[r[5]];/* 11/27 실차(서현 분당로 교차로): 방향 모르는 공공 카메라는 근처 아이나비 카메라들 방향으로만 경고 */e._k=c._k||(c[0].toFixed(5)+'_'+c[1].toFixed(5));e._o=[c[0],c[1],c[7]];if(c[2]===r[2]&&((c[4]||0)===r[4]||!c[4])){e[0]=r[0];e[1]=r[1];e[4]=r[4];e._im=1}/* 11/28 실차 '구간단속 시작인데': 공공은 점 카메라, 아이나비는 같은 속도 구간 시작·끝이면 아이나비 구간 정보로 */out[best]=e}
     else{var n=[r[0],r[1],r[2],r[3],r[4],(r[2]<=30&&!r[4])?2:0,'',r[5]];n._i=1;out.push(n)}});
   return out}
